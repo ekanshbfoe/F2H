@@ -1,0 +1,41 @@
+# F2H: reference material and local-only tooling (never pushed)
+doc/
+.claude/
+skills-lock.json
+
+# secrets
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/.env
+scripts/spikes/*.local.*
+
+# dependencies and build output
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+expo-env.d.ts
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.tgz
+
+# native (managed workflow, generated)
+ios/
+android/
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.*
+yarn-error.*
+.idea/
+.vscode/*
+!.vscode/extensions.json
