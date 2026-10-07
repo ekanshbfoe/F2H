@@ -30,6 +30,11 @@ npx expo-doctor              # dependency and config health
 
 Run typecheck, lint and tests before declaring any task done. Commit with Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`, `ci:`, `perf:`), one logical unit per commit; commitlint enforces it.
 
+## Git workflow
+
+- Conventional Commits, one logical unit per commit; commitlint enforces the format.
+- Strict Rule: Never append a 'Co-authored-by' trailer or mention Claude in any Git commit messages. All commits must be authored solely by the user.
+
 ## Folder rules
 
 - `src/app/` holds routes only (thin wrappers). Components, hooks, services and features live outside it.
