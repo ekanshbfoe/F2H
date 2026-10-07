@@ -15,7 +15,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 2 | Coding standards & tooling | Foundation | planned |
 | 3 | Design system & motion | Foundation | in-progress |
 | 4 | Crypto core | Foundation | in-progress |
-| 5 | Backend foundation (data model & RLS) | Foundation | in-progress |
+| 5 | Backend foundation (data model & RLS) | Foundation | done |
 | 6 | Auth & device gate | Slice 1 | in-progress |
 | 7 | App lock | Slice 1 | planned |
 | 8 | Contacts vault | Slice 2 | planned |
@@ -75,7 +75,7 @@ Pure JavaScript envelope encryption that runs in Expo Go: KDF, AEAD, sealed box,
 - [ ] Document it: `/document crypto core`
 Spec [0001-crypto-envelope](../specs/0001-system-architecture/0001-crypto-envelope.md) · code in `src/crypto/`, `scripts/bench-kdf.ts`
 
-### 5. Backend foundation (data model & RLS) · in-progress
+### 5. Backend foundation (data model & RLS) · done
 Supabase project, migrations for every table, the approved device RLS helper, audit triggers, cron and webhook wiring, generated types, the Admin bootstrap script and the free tier keep alive.
 **Done when:** migrations apply on a fresh local Supabase, RLS tests prove isolation (a member cannot read another member, a pending device cannot read key material), and the bootstrap script seeds the Admin.
 - [x] Design it (spec): `/architect backend foundation`
@@ -85,7 +85,7 @@ Supabase project, migrations for every table, the approved device RLS helper, au
    - [x] Shared function helpers, generated types, client with device header (AC-8..9)
    - [x] Bootstrap script and keepalive workflow (AC-10..11)
 - [x] Verify it: `/check verify backend foundation`
-- [ ] Test it: `/test backend foundation`
+- [x] Test it: `/test backend foundation`
 Spec [0001-data-model-rls](../specs/0001-system-architecture/0001-data-model-rls.md) · code in `supabase/`, `src/services/`, `src/types/`, `scripts/bootstrap-admin.ts`, `.github/workflows/keepalive.yml` · migrations applied to the hosted project 2026-10-07; pgTAP not yet run (needs Docker)
 
 ## Slice 1: Get in safely
