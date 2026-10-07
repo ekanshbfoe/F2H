@@ -180,30 +180,52 @@ describe('requireAdmin', () => {
 
 describe('requireServiceCall', () => {
   const deno = { env: { get: jest.fn() } };
+  const fetchMock = jest.fn<Promise<Response>, [RequestInfo | URL, RequestInit?]>();
   beforeEach(() => {
     (globalThis as unknown as { Deno: unknown }).Deno = deno;
     deno.env.get.mockReset();
+    deno.env.get.mockImplementation((name: string) =>
+      name === 'SUPABASE_SERVICE_ROLE_KEY'
+        ? 'legacy-jwt-key'
+        : name === 'SUPABASE_URL'
+          ? 'https://x.supabase.co'
+          : undefined,
+    );
+    fetchMock.mockReset();
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
   });
   afterAll(() => {
     delete (globalThis as unknown as { Deno?: unknown }).Deno;
   });
 
-  it('accepts the service role key as a bearer token', () => {
-    deno.env.get.mockReturnValue('service-key');
-    expect(() =>
-      requireServiceCall(request({ Authorization: 'Bearer service-key' })),
-    ).not.toThrow();
+  it('accepts the legacy service role JWT as a bearer token without a probe', async () => {
+    await expect(
+      requireServiceCall(request({ Authorization: 'Bearer legacy-jwt-key' })),
+    ).resolves.toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('rejects a missing, wrong or anon bearer, and fails closed when the env is unset', () => {
-    deno.env.get.mockReturnValue('service-key');
-    expect(() => requireServiceCall(request())).toThrow(expect.objectContaining({ status: 401 }));
-    expect(() => requireServiceCall(request({ Authorization: 'Bearer anon-key' }))).toThrow(
-      expect.objectContaining({ code: 'service_key_required' }),
-    );
-    deno.env.get.mockReturnValue(undefined);
-    expect(() => requireServiceCall(request({ Authorization: 'Bearer ' }))).toThrow(
-      expect.objectContaining({ code: 'service_key_required' }),
-    );
+  it('accepts any other key only when the admin probe succeeds', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    await expect(
+      requireServiceCall(request({ Authorization: 'Bearer sb_secret_abc' })),
+    ).resolves.toBeUndefined();
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toBe('https://x.supabase.co/auth/v1/admin/users?per_page=1');
+    expect(new Headers(init?.headers).get('apikey')).toBe('sb_secret_abc');
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 401 }));
+    await expect(
+      requireServiceCall(request({ Authorization: 'Bearer sb_secret_wrong' })),
+    ).rejects.toMatchObject({ code: 'service_key_required' });
+  });
+
+  it('rejects a missing bearer without probing and an anon key that fails the probe', async () => {
+    await expect(requireServiceCall(request())).rejects.toMatchObject({ status: 401 });
+    expect(fetchMock).not.toHaveBeenCalled();
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 401 }));
+    await expect(
+      requireServiceCall(request({ Authorization: 'Bearer anon-key' })),
+    ).rejects.toMatchObject({ code: 'service_key_required' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

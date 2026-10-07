@@ -1,4 +1,4 @@
-import type { User } from '@supabase/supabase-js';
+import type { User } from 'npm:@supabase/supabase-js@2';
 
 import { HttpError } from './errors.ts';
 import { base64ToBytes, sha256Hex } from './hash.ts';
@@ -68,9 +68,20 @@ export async function requireAdmin(req: Request): Promise<Caller> {
   return caller;
 }
 
-/** Internal calls from pg_cron and database triggers carry the service role key as a bearer token. */
-export function requireServiceCall(req: Request): void {
+/**
+ * Internal calls from pg_cron, database triggers and the keep alive carry the service role key as
+ * the bearer token. Equality with the injected env key is the fast path; otherwise the key is
+ * proven by a probe of the auth admin endpoint, which only a valid service key can pass.
+ */
+export async function requireServiceCall(req: Request): Promise<void> {
+  const got = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  if (!got) throw new HttpError(401, 'service_key_required');
   const expected = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const got = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-  if (!expected || got !== expected) throw new HttpError(401, 'service_key_required');
+  if (expected && got === expected) return;
+  const url = Deno.env.get('SUPABASE_URL');
+  if (!url) throw new HttpError(500, 'config_missing', 'SUPABASE_URL is not set');
+  const probe = await fetch(`${url}/auth/v1/admin/users?per_page=1`, {
+    headers: { apikey: got, Authorization: `Bearer ${got}` },
+  });
+  if (!probe.ok) throw new HttpError(401, 'service_key_required');
 }
