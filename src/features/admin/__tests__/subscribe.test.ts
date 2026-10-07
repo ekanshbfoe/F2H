@@ -1,5 +1,7 @@
 // Regression: Home and Approvals both watch pending devices; a shared channel name made the second
 // subscriber add a listener after subscribe(), which the Supabase client refuses.
+import { subscribePendingDevices } from '../api';
+
 const mockChannels: { name: string; on: jest.Mock; subscribe: jest.Mock }[] = [];
 const mockRemoveChannel = jest.fn(async (_c: unknown) => 'ok');
 
@@ -15,8 +17,6 @@ jest.mock('@/services/supabase', () => ({
     removeChannel: (c: unknown) => mockRemoveChannel(c),
   },
 }));
-
-import { subscribePendingDevices } from '../api';
 
 describe('subscribePendingDevices', () => {
   it('gives every subscriber its own channel and removes exactly that channel on unsubscribe', () => {
