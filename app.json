@@ -30,7 +30,8 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 120
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
