@@ -101,8 +101,8 @@ Invite code signup, zero knowledge login, device registration with model and app
    - [x] Denied/expired states, expire cron, reset-password and change password (AC-13..16)
 - [ ] Verify it: `/check verify auth & device gate`
 - [x] Test it: `/test auth & device gate`
-- [ ] Review it: `/check review auth & device gate`
-- [ ] Document it: `/document auth & device gate`
+- [x] Review it: `/check review auth & device gate`
+- [x] Document it: `/document auth & device gate`
 Spec [0001-account-and-device-gate](../specs/0001-system-architecture/0001-account-and-device-gate.md) · code in `src/app/(auth)`, `src/app/(admin)`, `src/app/(app)`, `src/features/{auth,device,keyring,admin,vault}`, `src/services/{functions,push,device-info}.ts`, `src/state/`, `supabase/functions/`, migration 0009
 
 ### 7. App lock · needs a decision

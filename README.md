@@ -42,7 +42,7 @@ npm test
    `select vault.create_secret('<service role key>', 'service_role_key');`
 5. Dashboard → Authentication: turn off "Allow new users to sign up" and email confirmations (the repo config does this for local runs only).
 6. `npm run bootstrap:admin -- <admin email> --password '<admin password>'` seeds the Admin once; rerunning is safe.
-7. `npx supabase functions deploy` publishes the Edge Functions in `supabase/functions/` (rerun after changing them). They read the project URL and keys from the runtime; no secrets to set for this slice.
+7. `npx supabase functions deploy` publishes the Edge Functions in `supabase/functions/` (rerun after changing them). They read the project URL and keys from the runtime. The cron jobs and the approval webhook still need the two Vault secrets from step 4.
 8. GitHub → Settings → Secrets: add `SUPABASE_URL` and `SUPABASE_ANON_KEY` for the keep alive workflow.
 
 Local stack (needs Docker): `npx supabase start`, `npx supabase db reset`, `npm run db:test` for the pgTAP isolation tests.
