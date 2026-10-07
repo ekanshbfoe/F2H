@@ -565,6 +565,10 @@ export type Database = {
         Args: { p_body?: Json; p_name: string };
         Returns: number;
       };
+      cancel_my_device: {
+        Args: { p_device_id: string };
+        Returns: Database['public']['Enums']['device_status'];
+      };
       create_invite: {
         Args: {
           p_email: string;
