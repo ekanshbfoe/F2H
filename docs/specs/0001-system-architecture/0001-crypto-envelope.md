@@ -72,17 +72,17 @@ Primitives: XChaCha20 Poly1305 (`@noble/ciphers`), scrypt + HKDF SHA 256 (`@nobl
 
 ## Build plan
 
-1. Install `@noble/hashes`, `@noble/ciphers`, `@noble/curves`, `@scure/bip39`, `expo-crypto`; add `polyfill.ts`, `random.ts`, `encoding.ts`, satisfies **AC-1**.
-2. `kdf.ts` with scrypt and hkdf wrappers and typed params, satisfies **AC-2**.
-3. `aead.ts` with versioned wire format, satisfies **AC-3**.
-4. `box.ts` sealed box, satisfies **AC-4**.
-5. `envelope.ts` DEK wrap/unwrap, satisfies **AC-5**.
-6. `password-split.ts`, satisfies **AC-6**.
-7. `verifier.ts`, satisfies **AC-7**.
-8. `chunked.ts` with a file adapter interface (byte range read, append write) and an in memory fake for tests, satisfies **AC-8**, **AC-9**.
-9. `mnemonic.ts`, satisfies **AC-10**.
-10. Generate and commit `vectors.json` plus Jest tests, satisfies **AC-11**.
-11. `scripts/bench-kdf.ts` and recorded defaults, satisfies **AC-12**.
+1. Install `@noble/hashes`, `@noble/ciphers`, `@noble/curves`, `@scure/bip39`, `expo-crypto`; add `polyfill.ts`, `random.ts`, `encoding.ts`, satisfies **AC-1**. (done 2026-10-07)
+2. `kdf.ts` with scrypt and hkdf wrappers and typed params, satisfies **AC-2**. (done 2026-10-07)
+3. `aead.ts` with versioned wire format, satisfies **AC-3**. (done 2026-10-07)
+4. `box.ts` sealed box, satisfies **AC-4**. (done 2026-10-07)
+5. `envelope.ts` DEK wrap/unwrap, satisfies **AC-5**. (done 2026-10-07)
+6. `password-split.ts`, satisfies **AC-6**. (done 2026-10-07)
+7. `verifier.ts`, satisfies **AC-7**. (done 2026-10-07)
+8. `chunked.ts` with a file adapter interface (byte range read, append write) and an in memory fake for tests, satisfies **AC-8**, **AC-9**. (done 2026-10-07)
+9. `mnemonic.ts`, satisfies **AC-10**. (done 2026-10-07)
+10. Generate and commit `vectors.json` plus Jest tests, satisfies **AC-11**. (done 2026-10-07)
+11. `scripts/bench-kdf.ts` and recorded defaults, satisfies **AC-12**. (done 2026-10-07; Node timings recorded, phone timing to fill from the gallery bench)
 
 ## Consequences
 

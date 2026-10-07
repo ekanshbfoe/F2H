@@ -64,16 +64,16 @@ Spec [0001-design-system-motion](../specs/0001-system-architecture/0001-design-s
 Pure JavaScript envelope encryption that runs in Expo Go: KDF, AEAD, sealed box, master key wraps, password split, chunked file format, recovery mnemonic.
 **Done when:** every primitive reproduces committed test vectors, the chunk format rejects truncation and reordering, and KDF timings on a mid range phone are recorded.
 - [x] Design it (spec): `/architect crypto core`
-- [ ] Build it: `/develop crypto core`
-   - [ ] Random, encoding, KDF, AEAD with versioned wire format (AC-1..3)
-   - [ ] Sealed box, envelope wrap/unwrap, password split, verifier (AC-4..7)
-   - [ ] Chunked file encrypt/decrypt streams, mnemonic (AC-8..10)
-   - [ ] Test vectors and Hermes benchmark (AC-11..12)
+- [x] Build it: `/develop crypto core`
+   - [x] Random, encoding, KDF, AEAD with versioned wire format (AC-1..3)
+   - [x] Sealed box, envelope wrap/unwrap, password split, verifier (AC-4..7)
+   - [x] Chunked file encrypt/decrypt streams, mnemonic (AC-8..10)
+   - [x] Test vectors and Hermes benchmark (AC-11..12)
 - [ ] Verify it: `/check verify crypto core`
 - [ ] Test it: `/test crypto core`
 - [ ] Review it: `/check review crypto core`
 - [ ] Document it: `/document crypto core`
-Spec [0001-crypto-envelope](../specs/0001-system-architecture/0001-crypto-envelope.md)
+Spec [0001-crypto-envelope](../specs/0001-system-architecture/0001-crypto-envelope.md) · code in `src/crypto/`, `scripts/bench-kdf.ts`
 
 ### 5. Backend foundation (data model & RLS) · in-progress
 Supabase project, migrations for every table, the approved device RLS helper, audit triggers, cron and webhook wiring, generated types, the Admin bootstrap script and the free tier keep alive.
