@@ -20,6 +20,13 @@ jest.mock('@/services/supabase', () => ({
       const filters: [string, unknown][] = [];
       const chain: Record<string, unknown> = {};
       Object.assign(chain, {
+        delete: () => ({
+          eq: async (_c: string, id: unknown) => {
+            const i = mockItems.findIndex((r) => r.id === id);
+            if (i >= 0) mockItems.splice(i, 1);
+            return { error: null };
+          },
+        }),
         insert: async (row: Row) => {
           mockItems.push({ ...row, created_at: new Date().toISOString(), deleted_at: null });
           return { error: null };
@@ -116,6 +123,7 @@ describe('recovery kit', () => {
     await expect(
       finishRecoveryKit(startRecoveryKit(), new Uint8Array(32).fill(5), ADMIN),
     ).rejects.toThrow(/already_initialized/);
+    // the note written before the publish is removed again
     expect(mockItems).toHaveLength(0);
   });
 });

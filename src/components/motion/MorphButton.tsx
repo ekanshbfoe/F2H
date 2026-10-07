@@ -33,6 +33,8 @@ export interface MorphButtonProps {
   /** Rendered inside the reveal on error. */
   error?: ReactNode;
   tone?: 'primary' | 'danger';
+  /** Keeps the idle button inert (for example until a safety check passes). */
+  disabled?: boolean;
   testID?: string;
 }
 
@@ -45,6 +47,7 @@ export function MorphButton({
   state,
   label,
   onPress,
+  disabled = false,
   children,
   pendingTitle = 'Working on it',
   pendingSubtitle,
@@ -83,7 +86,11 @@ export function MorphButton({
       <View style={{ height: edge }} />
       {state === 'idle' ? (
         <View style={styles.buttonSlot}>
-          <Button variant={tone === 'danger' ? 'danger' : 'primary'} onPress={onPress}>
+          <Button
+            variant={tone === 'danger' ? 'danger' : 'primary'}
+            onPress={onPress}
+            disabled={disabled}
+          >
             {label}
           </Button>
         </View>

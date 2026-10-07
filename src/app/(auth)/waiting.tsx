@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { Badge, Button, Callout, Card, Row, Screen, Text } from '@/components/ui';
-import { completeApproval, wipeLocalState } from '@/features/auth/api';
+import { cancelMyRequest, completeApproval, wipeLocalState } from '@/features/auth/api';
 import { describeAuthError, pathFor } from '@/features/auth/routes';
 import { useApprovalWatch } from '@/features/device/useApprovalWatch';
 import { useSession } from '@/state/session.store';
@@ -62,7 +62,10 @@ export default function WaitingScreen() {
           variant="ghost"
           disabled={finishing}
           onPress={() =>
-            wipeLocalState('signed_out').finally(() => router.replace(pathFor('login')))
+            cancelMyRequest()
+              .catch(() => undefined)
+              .then(() => wipeLocalState('signed_out'))
+              .finally(() => router.replace(pathFor('login')))
           }
         >
           Cancel this request

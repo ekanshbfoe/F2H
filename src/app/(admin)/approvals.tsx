@@ -83,6 +83,7 @@ export default function ApprovalsScreen() {
 
   const decide = async (next: 'approve' | 'reject') => {
     if (!selected?.id) return;
+    if (next === 'approve' && check !== 'verified') return; // AC-10: never approve an unverified wrap
     setDecision(next);
     setMorph('pending');
     setActionError(null);
@@ -151,7 +152,14 @@ export default function ApprovalsScreen() {
         {selected ? (
           <MorphButton
             state={morph}
-            label="Approve"
+            label={
+              check === 'verified'
+                ? 'Approve'
+                : check === 'checking'
+                  ? 'Checking key material'
+                  : 'Approve unavailable'
+            }
+            disabled={check !== 'verified'}
             tone={decision === 'reject' ? 'danger' : 'primary'}
             onPress={() => void decide('approve')}
             pendingTitle={decision === 'approve' ? 'Approving' : 'Rejecting'}

@@ -1,5 +1,5 @@
-import { box, fromBase64, mnemonic, recovery, toBase64, verifier, envelope } from '@/crypto';
-import { createNoteItem, findNoteByTag } from '@/features/vault/api';
+import { box, envelope, fromBase64, mnemonic, recovery, toBase64, verifier, zero } from '@/crypto';
+import { createNoteItem, deleteItem, findNoteByTag } from '@/features/vault/api';
 import { SecureKeys, secureGet, secureSet } from '@/services/secure-store';
 import { supabase } from '@/services/supabase';
 
@@ -15,6 +15,7 @@ export interface RecoveryKitDraft {
 export function startRecoveryKit(): RecoveryKitDraft {
   const seed = recovery.generateSeed();
   const pair = recovery.deriveRecoveryKeypair(seed);
+  zero(pair.secretKey);
   return {
     seed,
     words: mnemonic.fromSeed(seed),
@@ -34,9 +35,10 @@ export function pickConfirmPositions(count = 24, picks = 3): number[] {
 }
 
 /**
- * Step 2: publish the public key and fingerprint, create the Admin's own key material (the MK is
- * sealed to the same key, so the mnemonic recovers the Admin too), and keep the seed as a vault
- * note so every approved Admin device can open member vaults.
+ * Step 2: keep the seed as a vault note first (so a failed publish can be retried from scratch),
+ * then publish the public key and fingerprint and create the Admin's own key material in one RPC.
+ * The Admin MK is sealed to the same key, so the mnemonic recovers the Admin too. On a failed RPC
+ * the note is removed again and every secret is zeroed.
  */
 export async function finishRecoveryKit(
   draft: RecoveryKitDraft,
@@ -45,24 +47,32 @@ export async function finishRecoveryKit(
 ): Promise<Uint8Array> {
   const pair = recovery.deriveRecoveryKeypair(draft.seed);
   const mk = envelope.generateMasterKey();
-  const { error } = await supabase.rpc('admin_first_run', {
-    p_recovery_pub: toBase64(pair.publicKey),
-    p_fingerprint: draft.fingerprint,
-    p_mk_wrapped_pw: toBase64(envelope.wrapMk(kek, mk, userId)),
-    p_mk_wrapped_admin: toBase64(box.seal(pair.publicKey, mk)),
-    p_mk_verifier: toBase64(verifier.make(mk, userId)),
-  });
-  pair.secretKey.fill(0);
-  if (error) throw new Error(`admin_first_run failed: ${error.message}`);
-  const itemId = await createNoteItem(mk, userId, {
-    v: 1,
-    type: 'note',
-    tag: RECOVERY_TAG,
-    title: 'Recovery key',
-    body: toBase64(draft.seed),
-  });
-  await secureSet(SecureKeys.recoveryItemId, itemId);
-  return mk;
+  let itemId: string | null = null;
+  try {
+    itemId = await createNoteItem(mk, userId, {
+      v: 1,
+      type: 'note',
+      tag: RECOVERY_TAG,
+      title: 'Recovery key',
+      body: toBase64(draft.seed),
+    });
+    const { error } = await supabase.rpc('admin_first_run', {
+      p_recovery_pub: toBase64(pair.publicKey),
+      p_fingerprint: draft.fingerprint,
+      p_mk_wrapped_pw: toBase64(envelope.wrapMk(kek, mk, userId)),
+      p_mk_wrapped_admin: toBase64(box.seal(pair.publicKey, mk)),
+      p_mk_verifier: toBase64(verifier.make(mk, userId)),
+    });
+    if (error) throw new Error(`admin_first_run failed: ${error.message}`);
+    await secureSet(SecureKeys.recoveryItemId, itemId);
+    return mk;
+  } catch (error) {
+    if (itemId) await deleteItem(itemId).catch(() => undefined);
+    zero(mk);
+    throw error;
+  } finally {
+    zero(pair.secretKey);
+  }
 }
 
 /** The Admin recovery secret key, read from the vault note after unlock. Zero it after use. */
@@ -73,7 +83,7 @@ export async function loadRecoverySecretKey(mk: Uint8Array): Promise<Uint8Array 
   if (found.id !== hint) await secureSet(SecureKeys.recoveryItemId, found.id);
   const seed = fromBase64(found.note.body);
   const pair = recovery.deriveRecoveryKeypair(seed);
-  seed.fill(0);
+  zero(seed);
   return pair.secretKey;
 }
 
@@ -84,6 +94,6 @@ export async function exportRecoveryWords(mk: Uint8Array): Promise<string[] | nu
   if (!found) return null;
   const seed = fromBase64(found.note.body);
   const words = mnemonic.fromSeed(seed);
-  seed.fill(0);
+  zero(seed);
   return words;
 }

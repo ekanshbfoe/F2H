@@ -1,4 +1,13 @@
-import { box, envelope, fromBase64, passwordSplit, SCRYPT_DEFAULT, toBase64, zero } from '@/crypto';
+import {
+  box,
+  envelope,
+  fromBase64,
+  passwordSplit,
+  SCRYPT_DEFAULT,
+  toBase64,
+  verifier,
+  zero,
+} from '@/crypto';
 import { buildDevicePayload, deviceSecretKey, registerDevice } from '@/features/device/register';
 import { createMemberKeys } from '@/features/keyring/bootstrap';
 import { unlockWithKek } from '@/features/keyring/unlock';
@@ -125,6 +134,7 @@ export class AuthError extends Error {
       | 'email_exists'
       | 'no_recovery_key'
       | 'network'
+      | 'account_created'
       | 'auth_unreachable'
       | 'function_failed'
       | 'profile_missing'
@@ -221,7 +231,10 @@ export async function signUp(form: SignupForm): Promise<AuthRoute> {
     email: form.email,
     password: split.authSecret,
   });
-  if (error) throw new AuthError('network', error.message);
+  if (error) {
+    zero(split.kek);
+    throw new AuthError('account_created', error.message);
+  }
   const profile = await loadProfile(res.user_id);
   if (profile) s.setProfile(profile);
   s.setDevice(res.device_id, 'pending');
@@ -279,18 +292,30 @@ export async function changePassword(currentPassword: string, newPassword: strin
   });
   if (check.error) throw new AuthError('bad_credentials');
   const next = await passwordSplit(profile.email, newPassword);
-  const { error } = await supabase.auth.updateUser({ password: next.authSecret });
-  if (error) {
-    zero(next.kek);
-    throw new AuthError('network', error.message);
-  }
   const wrapped = toBase64(envelope.wrapMk(next.kek, mk, profile.id));
   zero(next.kek);
+  const { error } = await supabase.auth.updateUser({ password: next.authSecret });
+  if (error) throw new AuthError('network', error.message);
   const { error: kmError } = await supabase
     .from('key_material')
     .update({ mk_wrapped_pw: wrapped, updated_by_device: s.deviceId })
     .eq('user_id', profile.id);
-  if (kmError) throw new AuthError('network', kmError.message);
+  if (kmError) {
+    // Put the old password back so the member is never locked out by a half applied change.
+    const rollback = await supabase.auth.updateUser({ password: current.authSecret });
+    throw new AuthError(
+      'network',
+      rollback.error
+        ? `wrap failed and rollback failed: ${kmError.message}; use the Admin recovery path`
+        : `wrap failed, password unchanged: ${kmError.message}`,
+    );
+  }
+}
+
+/** The waiting phone closes its own request so the Admin's list and the server agree (AC-13). */
+export async function cancelMyRequest(): Promise<void> {
+  const deviceId = useSession.getState().deviceId;
+  if (deviceId) await supabase.rpc('cancel_my_device', { p_device_id: deviceId });
 }
 
 export interface MyGrant {
@@ -324,14 +349,28 @@ export async function redeemGrant(grant: MyGrant, newPassword: string): Promise<
   } finally {
     zero(secret);
   }
-  const next = await passwordSplit(user.email, newPassword);
-  const wrapped = toBase64(envelope.wrapMk(next.kek, mk, user.id));
-  zero(next.kek);
-  await callFunction('reset-password', {
-    grant_id: grant.id,
-    new_auth_secret: next.authSecret,
-    new_mk_wrapped_pw: wrapped,
-  });
+  try {
+    // Prove the unsealed key before anything is persisted under it.
+    const { data: km } = await supabase
+      .from('key_material')
+      .select('mk_verifier')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (!km || !verifier.check(mk, user.id, fromBase64(km.mk_verifier))) {
+      throw new AuthError('unknown', 'the recovery grant does not match this account');
+    }
+    const next = await passwordSplit(user.email, newPassword);
+    const wrapped = toBase64(envelope.wrapMk(next.kek, mk, user.id));
+    zero(next.kek);
+    await callFunction('reset-password', {
+      grant_id: grant.id,
+      new_auth_secret: next.authSecret,
+      new_mk_wrapped_pw: wrapped,
+    });
+  } catch (error) {
+    zero(mk);
+    throw error;
+  }
   const profile = await loadProfile(user.id);
   if (profile) s.setProfile(profile);
   s.setMk(mk);

@@ -8,6 +8,7 @@ import { changePassword, redeemGrant, signIn } from '../api';
 
 type Row = Record<string, unknown>;
 const mockTables: Record<string, Row[]> = {};
+const mockFailNextUpdate: { table: string | null } = { table: null };
 const mockUpdates: { table: string; values: Row; filters: [string, unknown][] }[] = [];
 const mockAuth = {
   signInWithPassword: jest.fn(),
@@ -50,7 +51,12 @@ jest.mock('@/services/supabase', () => ({
               filters.push([c, v]);
               return upd;
             },
-            then: (resolve: (v: { error: null }) => void) => resolve({ error: null }),
+            then: (resolve: (v: { error: { message: string } | null }) => void) => {
+              if (mockFailNextUpdate.table === table) {
+                mockFailNextUpdate.table = null;
+                resolve({ error: { message: 'rls denied' } });
+              } else resolve({ error: null });
+            },
           };
           return upd;
         },
@@ -113,6 +119,7 @@ function seedKeyMaterial(mk: Uint8Array, kek: Uint8Array) {
 beforeEach(() => {
   for (const k of Object.keys(mockTables)) delete mockTables[k];
   mockUpdates.length = 0;
+  mockFailNextUpdate.table = null;
   mockStore.clear();
   jest.clearAllMocks();
   useSession.getState().reset('signed_out');
@@ -210,6 +217,20 @@ describe('changePassword (AC-16)', () => {
     expect(update?.filters).toEqual([['user_id', USER.id]]);
   });
 
+  it('rolls the auth password back when the new wrap cannot be written', async () => {
+    const mk = envelope.generateMasterKey();
+    const s = useSession.getState();
+    s.setProfile(profile as never);
+    s.setMk(mk);
+    mockAuth.updateUser.mockResolvedValue({ error: null });
+    mockFailNextUpdate.table = 'key_material';
+    await expect(changePassword(PASSWORD, 'a brand new passphrase')).rejects.toMatchObject({
+      message: expect.stringContaining('password unchanged'),
+    });
+    const current = passwordSplitSync(EMAIL, PASSWORD);
+    expect(mockAuth.updateUser).toHaveBeenLastCalledWith({ password: current.authSecret });
+  });
+
   it('refuses when the current password is wrong and touches nothing', async () => {
     const s = useSession.getState();
     s.setProfile(profile as never);
@@ -233,6 +254,9 @@ describe('redeemGrant (AC-15)', () => {
     mockDeviceSecret.mockResolvedValue(device.secretKey.slice());
     mockAuth.getUser.mockResolvedValue({ data: { user: USER } });
     mockCall.mockResolvedValue({ ok: true });
+    mockTables.key_material = [
+      { user_id: USER.id, mk_verifier: toBase64(verifier.make(mk, USER.id)) },
+    ];
     const grant = {
       id: '22222222-2222-4222-8222-222222222222',
       expires_at: new Date(Date.now() + 3600_000).toISOString(),
@@ -257,6 +281,12 @@ describe('redeemGrant (AC-15)', () => {
     const other = box.generateKeypair();
     mockDeviceSecret.mockResolvedValue(device.secretKey.slice());
     mockAuth.getUser.mockResolvedValue({ data: { user: USER } });
+    mockTables.key_material = [
+      {
+        user_id: USER.id,
+        mk_verifier: toBase64(verifier.make(envelope.generateMasterKey(), USER.id)),
+      },
+    ];
     const grant = {
       id: '22222222-2222-4222-8222-222222222222',
       expires_at: new Date(Date.now() + 3600_000).toISOString(),

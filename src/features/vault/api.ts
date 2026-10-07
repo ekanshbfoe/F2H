@@ -37,6 +37,12 @@ export async function createNoteItem(
   return id;
 }
 
+/** Hard delete of an own item (used to undo a half finished first run). */
+export async function deleteItem(id: string): Promise<void> {
+  const { error } = await supabase.from('vault_items').delete().eq('id', id);
+  if (error) throw new Error(`vault delete failed: ${error.code ?? error.message}`);
+}
+
 export function decryptNote(mk: Uint8Array, row: VaultItemRow): NotePayload {
   const dek = envelope.unwrapDek(mk, fromBase64(row.dek_wrapped), row.id);
   try {
@@ -57,8 +63,12 @@ export async function findNoteByTag(
   if (hintId) {
     const { data } = await supabase.from('vault_items').select('*').eq('id', hintId).maybeSingle();
     if (data) {
-      const note = decryptNote(mk, data);
-      if (note.tag === tag) return { id: data.id, note };
+      try {
+        const note = decryptNote(mk, data);
+        if (note.tag === tag) return { id: data.id, note };
+      } catch {
+        /* stale or foreign hint: fall through to the scan */
+      }
     }
   }
   const { data } = await supabase

@@ -52,7 +52,12 @@ export default function LoginScreen() {
       const route = await run();
       router.replace(pathFor(route));
     } catch (e) {
-      if (__DEV__) console.warn('auth failed', e);
+      if (__DEV__)
+        console.warn(
+          'auth failed',
+          (e as { code?: string })?.code ?? 'unknown',
+          (e as { message?: string })?.message ?? '',
+        );
       setError(describeAuthError(e));
     } finally {
       setBusy(false);

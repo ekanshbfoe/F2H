@@ -29,6 +29,8 @@ export function describeAuthError(error: unknown): string {
       return 'The Admin has not finished setting up F2H yet. Ask them to open the app first.';
     case 'pending_exists':
       return 'A request for this account is already waiting for the Admin.';
+    case 'account_created':
+      return 'Your account was created but the first login did not go through. Switch to Login and sign in with your new password.';
     case 'network':
       return 'Could not reach the vault (' + detail + '). Check your connection and try again.';
     case 'auth_unreachable':

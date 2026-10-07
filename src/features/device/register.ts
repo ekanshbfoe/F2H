@@ -2,7 +2,7 @@ import { box, fromBase64, randomUuid, toBase64 } from '@/crypto';
 import { getDeviceInfo } from '@/services/device-info';
 import { callFunction, FunctionError } from '@/services/functions';
 import { getPushToken } from '@/services/push';
-import { SecureKeys, secureGet, secureSet } from '@/services/secure-store';
+import { SecureKeys, secureDelete, secureGet, secureSet } from '@/services/secure-store';
 import { setDeviceToken } from '@/services/supabase';
 
 export type DeviceStatus = 'pending' | 'approved' | 'rejected' | 'revoked' | 'expired';
@@ -67,7 +67,7 @@ export interface Registration {
  * goes straight into SecureStore and the request header. A 409 means a request is already
  * waiting: the stored id is kept and the screen keeps watching it.
  */
-export async function registerDevice(): Promise<Registration> {
+export async function registerDevice(retried = false): Promise<Registration> {
   const { device, nonce } = await buildDevicePayload();
   try {
     const res = await callFunction<{
@@ -80,12 +80,17 @@ export async function registerDevice(): Promise<Registration> {
     return { deviceId: res.device_id, status: res.status };
   } catch (error) {
     if (error instanceof FunctionError && error.code === 'pending_exists') {
+      // Only this install's own request may be resumed; another phone's request is never adopted.
       const stored = await secureGet(SecureKeys.deviceId);
-      const existing = (error.payload?.device_id as string | undefined) ?? stored;
-      if (existing) {
-        await secureSet(SecureKeys.deviceId, existing);
-        return { deviceId: existing, status: 'pending' };
-      }
+      const serverId = error.payload?.device_id as string | undefined;
+      if (stored && serverId === stored) return { deviceId: stored, status: 'pending' };
+      throw error;
+    }
+    if (error instanceof FunctionError && error.code === 'nonce_used' && !retried) {
+      // The old request is closed (rejected, expired, cancelled): start a fresh one.
+      await secureDelete(SecureKeys.registrationNonce);
+      await secureDelete(SecureKeys.deviceId);
+      return registerDevice(true);
     }
     throw error;
   }

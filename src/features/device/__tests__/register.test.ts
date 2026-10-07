@@ -17,6 +17,9 @@ jest.mock('@/services/secure-store', () => ({
   secureSet: jest.fn(async (key: string, value: string) => {
     mockStore.set(key, value);
   }),
+  secureDelete: jest.fn(async (key: string) => {
+    mockStore.delete(key);
+  }),
 }));
 jest.mock('@/services/functions', () => {
   class FunctionError extends Error {
@@ -85,11 +88,42 @@ describe('registerDevice', () => {
     expect(mockCall.mock.calls[0]?.[0]).toBe('register-device');
   });
 
-  it('reuses the existing request on 409 pending_exists without touching the token', async () => {
+  it('resumes its own pending request on 409 without touching the token', async () => {
+    mockStore.set('f2h.device_id', 'dev-old');
     mockCall.mockRejectedValue(new FunctionError(409, 'pending_exists', { device_id: 'dev-old' }));
     await expect(registerDevice()).resolves.toEqual({ deviceId: 'dev-old', status: 'pending' });
     expect(mockSetToken).not.toHaveBeenCalled();
-    expect(mockStore.get('f2h.device_id')).toBe('dev-old');
+  });
+
+  it("never adopts another phone's pending request on 409", async () => {
+    mockStore.set('f2h.device_id', 'dev-mine');
+    mockCall.mockRejectedValue(
+      new FunctionError(409, 'pending_exists', { device_id: 'dev-other' }),
+    );
+    await expect(registerDevice()).rejects.toMatchObject({ code: 'pending_exists' });
+    expect(mockStore.get('f2h.device_id')).toBe('dev-mine');
+    mockStore.clear();
+    await expect(registerDevice()).rejects.toMatchObject({ code: 'pending_exists' });
+    expect(mockStore.has('f2h.device_id')).toBe(false);
+  });
+
+  it('starts over with a fresh nonce when the old registration is closed (nonce_used)', async () => {
+    await ensureDeviceIdentity();
+    const oldNonce = mockStore.get('f2h.registration_nonce');
+    mockStore.set('f2h.device_id', 'dev-closed');
+    mockCall
+      .mockRejectedValueOnce(new FunctionError(409, 'nonce_used', { status: 'rejected' }))
+      .mockResolvedValueOnce({ device_id: 'dev-new', device_token: 'bmV3', status: 'pending' });
+    await expect(registerDevice()).resolves.toEqual({ deviceId: 'dev-new', status: 'pending' });
+    expect(mockStore.get('f2h.registration_nonce')).not.toBe(oldNonce);
+    expect(mockStore.get('f2h.device_id')).toBe('dev-new');
+    expect(mockCall).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after one nonce_used retry', async () => {
+    mockCall.mockRejectedValue(new FunctionError(409, 'nonce_used', { status: 'expired' }));
+    await expect(registerDevice()).rejects.toMatchObject({ code: 'nonce_used' });
+    expect(mockCall).toHaveBeenCalledTimes(2);
   });
 
   it('rethrows other function errors', async () => {
