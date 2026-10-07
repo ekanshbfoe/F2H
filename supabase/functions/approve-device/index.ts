@@ -15,7 +15,11 @@ Deno.serve(
     const deviceId = String(body.device_id ?? '');
     const decision =
       body.decision === 'approve' ? 'approve' : body.decision === 'reject' ? 'reject' : null;
-    if (!/^[0-9a-f-]{36}$/i.test(deviceId)) throw new HttpError(400, 'bad_device_id');
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(deviceId)
+    ) {
+      throw new HttpError(400, 'bad_device_id');
+    }
     if (!decision) throw new HttpError(400, 'bad_decision');
 
     const db = serviceClient();

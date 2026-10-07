@@ -1,6 +1,8 @@
 /**
  * register-device: a new phone for an existing account waits for the Admin (AC-6), except the very
- * first Admin device, which is approved on the spot (AC-4). Idempotent by nonce.
+ * first Admin device, which is approved on the spot (AC-4). A retry with the same nonce is only
+ * honoured while that request is still pending: a token is never reissued for an approved device,
+ * so knowing a nonce (or the password) does not take a device over.
  */
 import { requireUser } from '../_shared/auth.ts';
 import { writeAudit } from '../_shared/audit.ts';
@@ -16,7 +18,8 @@ Deno.serve(
     const input = parseDeviceInput({ ...(body.device as object), nonce: body.nonce });
     const db = serviceClient();
 
-    // Same nonce again (a retry): same row, fresh token.
+    // Same nonce again: a retry of a request that is still waiting gets the same row and a fresh
+    // token. Any other status means the nonce is spent; the phone must start a new registration.
     const { data: existing } = await db
       .from('devices')
       .select('id, status')
@@ -24,8 +27,17 @@ Deno.serve(
       .eq('registration_nonce', input.nonce)
       .maybeSingle();
     if (existing) {
+      if (existing.status !== 'pending') {
+        return json(
+          {
+            error: { code: 'nonce_used', message: 'this registration is closed' },
+            status: existing.status,
+          },
+          409,
+        );
+      }
       const token = await rotateToken(db, existing.id);
-      return json({ device_id: existing.id, device_token: token, status: existing.status });
+      return json({ device_id: existing.id, device_token: token, status: 'pending' });
     }
 
     // One pending request per user.
@@ -45,19 +57,19 @@ Deno.serve(
       );
     }
 
-    // First Admin device: auto approve when this is the Admin and no approved Admin device exists.
+    // True first run only: this is the Admin, the recovery key was never published, and the Admin
+    // has no device row of any status. A lost Admin phone later means a fresh bootstrap, by design.
     const { data: config } = await db
       .from('family_config')
-      .select('admin_user_id')
+      .select('admin_user_id, admin_recovery_pubkey')
       .eq('id', 1)
       .maybeSingle();
     let status: 'pending' | 'approved' = 'pending';
-    if (config?.admin_user_id === user.id) {
+    if (config?.admin_user_id === user.id && !config.admin_recovery_pubkey) {
       const { count } = await db
         .from('devices')
         .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'approved');
+        .eq('user_id', user.id);
       if ((count ?? 0) === 0) status = 'approved';
     }
 

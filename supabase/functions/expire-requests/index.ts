@@ -27,7 +27,8 @@ Deno.serve(
       const { error } = await db
         .from('devices')
         .update({ status: 'expired', decided_at: new Date().toISOString() })
-        .in('id', staleIds);
+        .in('id', staleIds)
+        .eq('status', 'pending');
       if (error) throw new HttpError(500, 'expire_failed');
       for (const d of stale ?? []) {
         await writeAudit(db, {
