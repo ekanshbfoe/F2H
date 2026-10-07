@@ -13,6 +13,7 @@ import {
   type MorphState,
 } from '@/components/motion';
 import { Avatar, Badge, Button, Callout, Card, Row, Sheet, Text, TextField } from '@/components/ui';
+import { benchScrypt, type KdfBenchResult } from '@/crypto';
 import { useTheme } from '@/theme';
 
 /** Dev only gallery of every primitive and motion. Not reachable in production. */
@@ -25,6 +26,7 @@ export default function GalleryScreen() {
   const [glow, setGlow] = useState<GlowState>('idle');
   const [deckKey, setDeckKey] = useState(0);
   const [email, setEmail] = useState('');
+  const [bench, setBench] = useState<KdfBenchResult[] | 'running' | null>(null);
 
   useEffect(() => {
     if (morph === 'pending') {
@@ -211,6 +213,31 @@ export default function GalleryScreen() {
           <Row label="Device" value="Pixel 8" dashed />
           <Row label="Time" value="Just now" dashed />
         </Sheet>
+      </Section>
+
+      <Section title="Crypto bench">
+        <Card>
+          <Text variant="body" color="muted">
+            scrypt r=8 p=1 on this device. Copy the numbers into the SCRYPT_DEFAULT comment in
+            src/crypto/kdf.ts.
+          </Text>
+          {bench !== null && bench !== 'running'
+            ? bench.map((r) => (
+                <Row key={r.N} label={`N = 2^${Math.log2(r.N)}`} value={`${r.ms} ms`} />
+              ))
+            : null}
+          <Button
+            loading={bench === 'running'}
+            onPress={() => {
+              setBench('running');
+              benchScrypt()
+                .then(setBench)
+                .catch(() => setBench(null));
+            }}
+          >
+            Run KDF benchmark
+          </Button>
+        </Card>
       </Section>
 
       <Section title="Card deck (onboarding palette)">
