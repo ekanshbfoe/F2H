@@ -1,4 +1,6 @@
 // covers: AC-9 (the SecureStore wrapper the device token and local wraps go through)
+import { SecureKeys, secureDelete, secureGet, secureSet, secureWipe } from '../secure-store';
+
 const mockStore = new Map<string, string>();
 
 jest.mock('expo-secure-store', () => ({
@@ -10,8 +12,6 @@ jest.mock('expo-secure-store', () => ({
     mockStore.delete(key);
   }),
 }));
-
-import { SecureKeys, secureDelete, secureGet, secureSet, secureWipe } from '../secure-store';
 
 beforeEach(() => mockStore.clear());
 
