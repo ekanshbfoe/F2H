@@ -12,7 +12,11 @@
     "test": "jest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:push": "supabase db push",
+    "db:test": "supabase test db",
+    "db:types": "supabase gen types typescript --project-id abkjryjrwvnutwmzbkex --schema public > src/types/database.types.ts",
+    "bootstrap:admin": "node scripts/bootstrap-admin.ts"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
@@ -20,8 +24,10 @@
     "@noble/ciphers": "^2.4.0",
     "@noble/curves": "^2.4.0",
     "@noble/hashes": "^2.4.0",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@scure/base": "^2.4.0",
     "@scure/bip39": "^2.4.0",
+    "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.27",
     "expo-asset": "~57.0.19",
     "expo-constants": "~57.0.21",
@@ -31,6 +37,7 @@
     "expo-haptics": "~57.0.3",
     "expo-linking": "~57.0.12",
     "expo-router": "~57.0.25",
+    "expo-secure-store": "~57.0.4",
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
