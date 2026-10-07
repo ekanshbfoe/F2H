@@ -93,4 +93,4 @@ Medium confidence facts to confirm during the build: Drive resumable PUTs withou
 
 ## Drive spike result
 
-_Pending. Record here: date, whether a chunked PUT to a Drive resumable session URI succeeded without an Authorization header, and the chosen upload path (direct or proxy)._
+Ran 2026-10-07 by the project owner with `scripts/spikes/drive-resumable.ts`: the resumable session was opened server side with a one off token, and the chunk PUTs sent without an Authorization header succeeded (308 per chunk, then 200). Decision: **direct upload** from the phone to both session URIs. The proxy path remains only as the `DOWNLOAD_MODE=proxy` switch for downloads.
