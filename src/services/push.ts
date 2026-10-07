@@ -1,5 +1,4 @@
-import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
@@ -11,13 +10,39 @@ const SCREEN_ROUTES = {
 } as const;
 
 type PushScreen = keyof typeof SCREEN_ROUTES;
+type NotificationsModule = typeof import('expo-notifications');
 
+let notifications: NotificationsModule | null | undefined;
 let handlerInstalled = false;
 
-function installForegroundHandler() {
+/** True inside the Expo Go client (remote push was removed there on Android with SDK 53). */
+export function isExpoGo(): boolean {
+  return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+}
+
+/**
+ * `expo-notifications` throws the moment it is imported in Expo Go on Android, so it is loaded
+ * lazily and only where it can work. Everywhere else push simply reports "unavailable".
+ */
+export function loadNotifications(): NotificationsModule | null {
+  if (notifications !== undefined) return notifications;
+  if (isExpoGo() && Platform.OS === 'android') {
+    notifications = null;
+    return null;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    notifications = require('expo-notifications') as NotificationsModule;
+  } catch {
+    notifications = null;
+  }
+  return notifications;
+}
+
+function installForegroundHandler(mod: NotificationsModule) {
   if (handlerInstalled) return;
   handlerInstalled = true;
-  Notifications.setNotificationHandler({
+  mod.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
       shouldShowList: true,
@@ -34,25 +59,26 @@ function projectId(): string | undefined {
 }
 
 /**
- * The Expo push token for this install, or null when unavailable: permission refused, no EAS
- * project id, or Expo Go on Android (remote push is not supported there since SDK 53).
+ * The Expo push token for this install, or null when unavailable: Expo Go on Android, permission
+ * refused, or no EAS project id. Registration continues without it (Realtime still works).
  */
 export async function getPushToken(): Promise<string | null> {
+  const mod = loadNotifications();
+  if (!mod) return null;
   try {
-    installForegroundHandler();
+    installForegroundHandler(mod);
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
+      await mod.setNotificationChannelAsync('default', {
         name: 'F2H',
-        importance: Notifications.AndroidImportance.HIGH,
+        importance: mod.AndroidImportance.HIGH,
       });
     }
-    const current = await Notifications.getPermissionsAsync();
-    const granted =
-      current.granted || (await Notifications.requestPermissionsAsync()).granted === true;
+    const current = await mod.getPermissionsAsync();
+    const granted = current.granted || (await mod.requestPermissionsAsync()).granted === true;
     if (!granted) return null;
     const id = projectId();
     if (!id) return null;
-    const token = await Notifications.getExpoPushTokenAsync({ projectId: id });
+    const token = await mod.getExpoPushTokenAsync({ projectId: id });
     return token.data || null;
   } catch {
     return null;
@@ -68,15 +94,18 @@ function routeFor(data: unknown): (typeof SCREEN_ROUTES)[PushScreen] | null {
 export function usePushNavigation(): void {
   const router = useRouter();
   useEffect(() => {
-    installForegroundHandler();
+    const mod = loadNotifications();
+    if (!mod) return undefined;
+    installForegroundHandler(mod);
     let active = true;
-    Notifications.getLastNotificationResponseAsync()
+    mod
+      .getLastNotificationResponseAsync()
       .then((response) => {
         const route = response ? routeFor(response.notification.request.content.data) : null;
         if (active && route) router.push(route);
       })
       .catch(() => undefined);
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+    const sub = mod.addNotificationResponseReceivedListener((response) => {
       const route = routeFor(response.notification.request.content.data);
       if (route) router.push(route);
     });
