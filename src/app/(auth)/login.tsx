@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CascadeList, SegmentedToggle } from '@/components/motion';
 import { Button, Callout, Card, Screen, Text, TextField } from '@/components/ui';
 import { fetchRecoveryPubkey, signIn, signUp } from '@/features/auth/api';
+import { formatConnectionCheck, runConnectionCheck } from '@/features/auth/diagnostics';
 import { loginSchema, signupSchema, type LoginForm, type SignupForm } from '@/features/auth/model';
 import { describeAuthError, pathFor } from '@/features/auth/routes';
 import { getDeviceInfo } from '@/services/device-info';
@@ -24,6 +25,7 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fingerprint, setFingerprint] = useState<string | null>(null);
+  const [diagnostics, setDiagnostics] = useState<string | null>(null);
 
   const login = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -282,6 +284,28 @@ export default function LoginScreen() {
             Your account waits for the Admin to approve this phone before anything opens.
           </Text>
         )}
+        {__DEV__ ? (
+          <Card elevation="flat" style={{ gap: t.spacing.sm }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => {
+                setDiagnostics('Checking…');
+                runConnectionCheck()
+                  .then((r) => setDiagnostics(formatConnectionCheck(r)))
+                  .catch((e: unknown) => setDiagnostics(e instanceof Error ? e.message : 'failed'));
+              }}
+              testID="connection-check"
+            >
+              Connection check (dev)
+            </Button>
+            {diagnostics ? (
+              <Text variant="caption" color="muted" selectable>
+                {diagnostics}
+              </Text>
+            ) : null}
+          </Card>
+        ) : null}
       </View>
     </Screen>
   );
