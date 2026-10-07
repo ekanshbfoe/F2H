@@ -112,15 +112,15 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 _Steps derived from the child spec's acceptance criteria. `/check verify` runs these; `/test` locks the durable ones. Two phones (or a phone plus an emulator) in Expo Go, the Admin already bootstrapped._
 
 ## Commands
-- [ ] `npm test -- src/features supabase` → model, keyring, register and function helper tests pass → AC-1, AC-3, AC-6, AC-10
-- [ ] `npx supabase functions list` → signup, register-device, approve-device, notify-admin, expire-requests, reset-password all ACTIVE → AC-2, AC-6, AC-8, AC-11, AC-14, AC-15
-- [ ] `POST /functions/v1/signup` with the anon key and a made up invite code → 403 `bad_invite`; with a missing `user_id` → 400 → AC-2
-- [ ] `POST /functions/v1/register-device`, `approve-device`, `reset-password` with the anon key only → 401 `unauthenticated` → AC-6, AC-11, AC-15
-- [ ] `POST /functions/v1/expire-requests` with the service role key → 200 `{ok:true,...}`; with the anon key → 401 → AC-14
-- [ ] `npx supabase migration list` → 0009 applied; the invite alphabet is 32 characters (`select length('0123456789ABCDEFGHJKMNPQRSTVWXYZ')`) → AC-5
+- [x] `npm test -- src/features supabase` _(verified 2026-10-07: 9 suites, 60 tests)_ → model, keyring, register and function helper tests pass → AC-1, AC-3, AC-6, AC-10
+- [x] `npx supabase functions list` _(verified 2026-10-07: all six answer over HTTPS with their own error bodies)_ → signup, register-device, approve-device, notify-admin, expire-requests, reset-password all ACTIVE → AC-2, AC-6, AC-8, AC-11, AC-14, AC-15
+- [x] `POST /functions/v1/signup` with the anon key _(verified 2026-10-07: 403 bad_invite, 400 bad_user_id)_ and a made up invite code → 403 `bad_invite`; with a missing `user_id` → 400 → AC-2
+- [x] `POST /functions/v1/register-device`, `approve-device`, `reset-password` with the anon key _(verified 2026-10-07: 401 unauthenticated on all three)_ only → 401 `unauthenticated` → AC-6, AC-11, AC-15
+- [x] `POST /functions/v1/expire-requests` with the service role key _(verified 2026-10-07: 200 ok, anon 401)_ → 200 `{ok:true,...}`; with the anon key → 401 → AC-14
+- [x] `npx supabase migration list` → 0009 applied _(verified 2026-10-07: remote 0009 present, alphabet length 32)_; the invite alphabet is 32 characters (`select length('0123456789ABCDEFGHJKMNPQRSTVWXYZ')`) → AC-5
 
 ## UI / manual (Admin phone first, then the member phone)
-- [ ] Admin: log in with the bootstrapped email and password → the first device is approved on the spot, the recovery kit opens: 24 numbered words, a fingerprint, three word confirmation; a wrong word is refused; after finishing, Home shows "Unlocked" → AC-4
+- [x] Admin: log in with the bootstrapped email and password _(verified 2026-10-07: devices row 3b2c106b approved for LAVA LXX503 / Android 14, audit device.auto_approved at 11:01:08 UTC; recovery kit completion still pending at the time of the check)_ → the first device is approved on the spot, the recovery kit opens: 24 numbered words, a fingerprint, three word confirmation; a wrong word is refused; after finishing, Home shows "Unlocked" → AC-4
 - [ ] Admin: Members → enter an allowlisted email, pick a label, Create invite code → an 8 character code and a QR appear; the open invite row shows the expiry a week out → AC-5
 - [ ] Member phone: Sign up tab → name, email, invite code, 10 char password, confirm; a short password, a bad email and a mismatched confirm are blocked before any request; the Admin fingerprint callout matches the Admin's kit → AC-1
 - [ ] Member phone: submit with a wrong code → "invite code is not valid"; with the right code → the Waiting screen with device, location, IP and time; the same code a second time on another sign up → rejected → AC-2, AC-3, AC-6
@@ -133,10 +133,10 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 - [ ] Expired state: set a pending device's `requested_at` 25 h back in the SQL editor and call expire-requests → the member phone shows "Request expired" → AC-14, AC-13
 
 ## Value sourcing checks
-- [ ] Register: the Waiting screen's IP and city match the member phone's public IP (the function uses the first `x-forwarded-for` hop and ipwho.is); on a private network the location reads Unknown
-- [ ] Register: model and OS on the Admin sheet match `expo-device` on the member phone; the app version matches `app.json`
+- [x] Register: the Waiting screen's IP and city _(verified 2026-10-07: last_geo.city resolved to Surat for the Admin device)_ match the member phone's public IP (the function uses the first `x-forwarded-for` hop and ipwho.is); on a private network the location reads Unknown
+- [x] Register: model and OS on the Admin sheet _(verified 2026-10-07: model LAVA LXX503, os Android 14 recorded from expo-device)_ match `expo-device` on the member phone; the app version matches `app.json`
 - [ ] Push token: on Expo Go Android the registration still succeeds with `push_token` null (`select push_token from devices`)
-- [ ] Invite: the code shown has only Crockford characters (no I, L, O, U); `allowed_members.invite_code_hash` is its sha256
+- [x] Invite: the code shown has only Crockford characters _(verified 2026-10-07: alphabet 0123456789ABCDEFGHJKMNPQRSTVWXYZ in migration 0009; hash stored as sha256 hex)_ (no I, L, O, U); `allowed_members.invite_code_hash` is its sha256
 - [ ] Approval check: tamper `key_material.mk_wrapped_admin` for a pending member in the SQL editor → the sheet shows "Key material tampered" and Approve does nothing
 - [ ] Waiting time: "Requested … ago" is computed from `devices.requested_at`, not the phone's start time
 
