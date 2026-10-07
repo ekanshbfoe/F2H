@@ -84,7 +84,7 @@ Supabase project, migrations for every table, the approved device RLS helper, au
    - [x] RLS helper, policies, audit triggers, publication (AC-4..7)
    - [x] Shared function helpers, generated types, client with device header (AC-8..9)
    - [x] Bootstrap script and keepalive workflow (AC-10..11)
-- [ ] Verify it: `/check verify backend foundation`
+- [x] Verify it: `/check verify backend foundation`
 - [ ] Test it: `/test backend foundation`
 Spec [0001-data-model-rls](../specs/0001-system-architecture/0001-data-model-rls.md) · code in `supabase/`, `src/services/`, `src/types/`, `scripts/bootstrap-admin.ts`, `.github/workflows/keepalive.yml` · migrations applied to the hosted project 2026-10-07; pgTAP not yet run (needs Docker)
 

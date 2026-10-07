@@ -79,13 +79,13 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 - [x] `npm test -- src/services` _(verified 2026-10-07: 4 passed)_ → 4 tests pass: no header before a token, header set after `setDeviceToken`, token persisted in SecureStore, `rpc('health')` carries the header → AC-9
 - [x] `npm run bootstrap:admin -- <email> --password '<pw>'` twice → second run prints "auth user exists" and every step "ok"; `profiles` has one admin row, `allowed_members` one admin row, `family_config.admin_user_id` set → AC-10 _(verified 2026-10-07: run twice earlier this session, second run printed auth user exists; rows confirmed over REST)_
 - [x] `grep -n "enable_signup _(verified 2026-10-07: all false)_\|enable_confirmations" supabase/config.toml` → every `enable_signup = false`, `enable_confirmations = false` → AC-3
-- [ ] GitHub → Actions → "Supabase keep alive" → Run workflow → the step prints `health: "ok"`; remove the secret and rerun → the job fails → AC-11
+- [x] GitHub → Actions → "Supabase keep alive" → Run workflow → the step prints `health: "ok"`; remove the secret and rerun → the job fails → AC-11 _(confirmed by you 2026-10-07: run succeeded after fixing a secret typo)_
 
 ## Dashboard / manual
 - [x] Table editor shows the 11 tables _(verified 2026-10-07: all 12 relations answer 200 over REST; 7 enums in the generated types)_, `drive_status_view`, and the enums `member_label`, `member_role`, `profile_status`, `device_status`, `item_kind`, `blob_state`, `drive_status` → AC-2
 - [x] Database → Publications _(verified 2026-10-07: pg_publication_tables lists devices only)_ → `supabase_realtime` lists `devices` only → AC-7
 - [x] Integrations → Cron shows _(verified 2026-10-07: cron.job lists the three jobs)_ `expire-requests`, `reconcile-blobs`, `backup-metadata` → AC-11 precondition
-- [ ] Authentication → Providers → Email: sign ups off, confirmations off (hosted settings are not controlled by `config.toml`) → AC-3
+- [x] Authentication → Providers → Email: sign ups off, confirmations off (hosted settings are not controlled by `config.toml`) → AC-3 _(confirmed by you in the dashboard 2026-10-07)_
 - [x] SQL editor as the service role _(verified 2026-10-07: rpc/is_approved_device with the service key returns false)_: `select public.is_approved_device()` → false (no header in the editor) → AC-4
 
 ## Value sourcing checks
