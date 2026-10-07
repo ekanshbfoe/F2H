@@ -6,6 +6,7 @@ select plan(23);
 -- Fixtures -----------------------------------------------------------------
 -- Device tokens are 32 bytes; the client sends them base64, the DB stores sha256 hex.
 create temporary table fx (name text primary key, uid uuid, token text);
+grant select on fx to authenticated; -- the pg_temp helpers read it after the role switch
 insert into fx values
   ('admin', 'a0000000-0000-4000-8000-000000000001', encode(decode(repeat('aa', 32), 'hex'), 'base64')),
   ('a',     '11111111-1111-4111-8111-111111111111', encode(decode(repeat('01', 32), 'hex'), 'base64')),
