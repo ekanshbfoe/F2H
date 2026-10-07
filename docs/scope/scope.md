@@ -51,14 +51,14 @@ Capture conventions, then install lint, format and commit hooks so every commit 
 Blue and white 2.5D tokens derived from the bear logo, base components, and the motion primitives reverse engineered from the reference videos (overshoot toggle, cascading fields, glow boxes, morph button, radial reveal, card deck).
 **Done when:** tokens, fonts and primitives exist, a dev only gallery route shows every primitive and motion, and all primitives have tests.
 - [x] Design it (spec): `/architect design system & motion`
-- [ ] Build it: `/develop design system & motion`
-   - [ ] Tokens, fonts, theme provider (AC-1..2)
-   - [ ] UI primitives: Surface, Card, Button, TextField, Sheet, Callout, Row, Badge (AC-3..4)
-   - [ ] Motion primitives: SegmentedToggle, CascadeList, MorphButton, RadialReveal, GlowBox, CardDeck (AC-5..8)
-   - [ ] Dev gallery route and tests (AC-9)
+- [x] Build it: `/develop design system & motion`
+   - [x] Tokens, fonts, theme provider (AC-1..2)
+   - [x] UI primitives: Surface, Card, Button, TextField, Sheet, Callout, Row, Badge (AC-3..4)
+   - [x] Motion primitives: SegmentedToggle, CascadeList, MorphButton, RadialReveal, GlowBox, CardDeck (AC-5..8)
+   - [x] Dev gallery route and tests (AC-9)
 - [ ] Verify it: `/check verify design system & motion`
 - [ ] Test it: `/test design system & motion`
-Spec [0001-design-system-motion](../specs/0001-system-architecture/0001-design-system-motion.md)
+Spec [0001-design-system-motion](../specs/0001-system-architecture/0001-design-system-motion.md) · code in `src/theme/`, `src/components/ui/`, `src/components/motion/`, `design.md`
 
 ### 4. Crypto core · in-progress · GA
 Pure JavaScript envelope encryption that runs in Expo Go: KDF, AEAD, sealed box, master key wraps, password split, chunked file format, recovery mnemonic.

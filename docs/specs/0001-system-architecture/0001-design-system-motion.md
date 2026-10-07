@@ -50,18 +50,18 @@ A blue and white, lightly three dimensional look (soft shadows, raised cards, bu
 
 ## Build plan
 
-1. Tokens, fonts, `ThemeProvider`, `useTheme`, satisfies **AC-1**, **AC-2**.
-2. `Surface`, `Card`, `Button`, satisfies **AC-3** (part).
-3. `TextField`, satisfies **AC-3** (part).
-4. `Sheet`, `Callout`, `Row`, `Badge`, `Avatar`, satisfies **AC-3**.
-5. Motion presets module, satisfies **AC-1** (motion part).
-6. `SegmentedToggle`, satisfies **AC-5**.
-7. `CascadeList`, satisfies **AC-6**.
-8. `MorphButton` + `RadialReveal`, satisfies **AC-7** (part).
-9. `GlowBox` with border trace and states, satisfies **AC-7**.
-10. `CardDeck`, satisfies **AC-8**.
-11. Dev gallery route, satisfies **AC-4**.
-12. Tests, satisfies **AC-9**.
+1. Tokens, fonts, `ThemeProvider`, `useTheme`, satisfies **AC-1**, **AC-2**. (done 2026-10-07)
+2. `Surface`, `Card`, `Button`, satisfies **AC-3** (part). (done 2026-10-07)
+3. `TextField`, satisfies **AC-3** (part). (done 2026-10-07)
+4. `Sheet`, `Callout`, `Row`, `Badge`, `Avatar`, satisfies **AC-3**. (done 2026-10-07)
+5. Motion presets module, satisfies **AC-1** (motion part). (done 2026-10-07)
+6. `SegmentedToggle`, satisfies **AC-5**. (done 2026-10-07)
+7. `CascadeList`, satisfies **AC-6**. (done 2026-10-07)
+8. `MorphButton` + `RadialReveal`, satisfies **AC-7** (part). (done 2026-10-07)
+9. `GlowBox` with border trace and states, satisfies **AC-7**. (done 2026-10-07)
+10. `CardDeck`, satisfies **AC-8**. (done 2026-10-07)
+11. Dev gallery route, satisfies **AC-4**. (done 2026-10-07)
+12. Tests, satisfies **AC-9**. (done 2026-10-07)
 
 ## Consequences
 

@@ -1,7 +1,7 @@
 # 0001. F2H system architecture (umbrella)
 
 **Date**: 2026-10-07
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
