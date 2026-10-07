@@ -82,11 +82,11 @@ Supabase project, migrations for every table, the approved device RLS helper, au
 - [ ] Build it: `/develop backend foundation`
    - [ ] Config, extensions, tables and enums (AC-1..3)
    - [ ] RLS helper, policies, audit triggers, publication (AC-4..7)
-   - [ ] Shared function helpers, generated types, client with device header (AC-8..9)
+   - [x] Shared function helpers, generated types, client with device header (AC-8..9)
    - [ ] Bootstrap script and keepalive workflow (AC-10..11)
 - [ ] Verify it: `/check verify backend foundation`
 - [ ] Test it: `/test backend foundation`
-Spec [0001-data-model-rls](../specs/0001-system-architecture/0001-data-model-rls.md)
+Spec [0001-data-model-rls](../specs/0001-system-architecture/0001-data-model-rls.md) · code in `supabase/`, `src/services/`, `src/types/`, `scripts/bootstrap-admin.ts`, `.github/workflows/keepalive.yml` · migrations written, apply pending (`npm run db:push` after `supabase link`)
 
 ## Slice 1: Get in safely
 

@@ -31,3 +31,17 @@ npm test
 - `supabase/`: migrations, Edge Functions, tests.
 
 `doc/` (singular) is local reference material and is not tracked.
+
+## Backend setup (once per Supabase project)
+
+1. `npx supabase login`, then `npx supabase link --project-ref <ref>` (the ref is the first part of your project URL).
+2. Put `SUPABASE_DB_PASSWORD` and `SUPABASE_SERVICE_ROLE_KEY` in `supabase/.env` (git ignored, see `supabase/.env.example`).
+3. `npm run db:push` applies `supabase/migrations/`, then `npm run db:types` regenerates `src/types/database.types.ts`.
+4. In the dashboard SQL editor, store the two values the cron jobs read:
+   `select vault.create_secret('https://<ref>.supabase.co', 'project_url');`
+   `select vault.create_secret('<service role key>', 'service_role_key');`
+5. Dashboard → Authentication: turn off "Allow new users to sign up" and email confirmations (the repo config does this for local runs only).
+6. `npm run bootstrap:admin -- <admin email> --password '<admin password>'` seeds the Admin once; rerunning is safe.
+7. GitHub → Settings → Secrets: add `SUPABASE_URL` and `SUPABASE_ANON_KEY` for the keep alive workflow.
+
+Local stack (needs Docker): `npx supabase start`, `npx supabase db reset`, `npm run db:test` for the pgTAP isolation tests.

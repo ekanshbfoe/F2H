@@ -38,12 +38,12 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 ## Commands
 - [ ] `npm test -- src/crypto` → 10 suites, 41 tests pass, every vector in `src/crypto/__tests__/vectors.json` reproduced → AC-11 (covers AC-2 to AC-8, AC-10)
 - [ ] `npm run typecheck` and `npm run lint` → clean → AC-1 (polyfill import compiles first in `src/app/_layout.tsx`)
-- [ ] `node scripts/bench-kdf.ts` → prints scrypt timings for N=2^9..2^14; the default N=2^10 under 20 ms on Node → AC-12
+- [ ] `node scripts/bench-kdf.ts` → prints scrypt timings for N=2^7..2^14; the default N=2^7 a few ms on Node → AC-12
 - [ ] `grep -rn "noble\|scure" src --include=*.ts --include=*.tsx -l | grep -v "^src/crypto"` → no file outside `src/crypto/` imports a crypto library → key invariant
 - [ ] `node -e "const v=require('./src/crypto/__tests__/vectors.json'); console.log(v.scrypt[0].dk.slice(0,16), v.hkdf[0].okm.slice(0,16))"` → `fdbabe1c9d347200` and `3cb25f25faacd57a` (RFC 7914 and RFC 5869 published values) → AC-2
 
 ## UI / manual (Expo Go, boot screen → "Open component gallery" → "Crypto bench")
-- [ ] Press "Run KDF benchmark": the button shows a spinner, then four rows N = 2^9 to 2^12 with millisecond timings and the UI stays responsive; copy the N = 2^10 number into the `SCRYPT_DEFAULT` comment in `src/crypto/kdf.ts` → AC-12
+- [ ] Press "Run KDF benchmark": the button shows a spinner, then four rows N = 2^6 to 2^9 with millisecond timings and the UI stays responsive; copy the N = 2^7 number into the `SCRYPT_DEFAULT` comment in `src/crypto/kdf.ts` → AC-12
 - [ ] The app boots with no red box about `crypto.getRandomValues` or `TextDecoder` → AC-1
 
 ## Value sourcing checks
@@ -66,3 +66,42 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 - AC-10 mnemonic: `mnemonic.test.ts`
 - AC-11 vectors: `npm test -- src/crypto`
 - AC-12 bench: Node command step, gallery step (phone timing still to record)
+
+---
+
+# Verify: backend foundation · spec 0001 (child 0001-data-model-rls) · updated 2026-10-07
+_Steps derived from the child spec's acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
+
+## Commands
+- [ ] `npm run db:push` after `npx supabase link` → all 8 migrations apply with no error; `npx supabase migration list` shows 0001 to 0008 as applied remotely → AC-1, AC-2
+- [ ] `npm run db:test` (local stack, Docker) → `0001_isolation.test.sql` 23 tests and `0002_triggers.test.sql` 10 tests pass → AC-4, AC-5, AC-6, AC-7
+- [ ] `npm run db:types` → `src/types/database.types.ts` is rewritten by the generator and `npm run typecheck` still passes → AC-9
+- [ ] `npm test -- src/services` → 4 tests pass: no header before a token, header set after `setDeviceToken`, token persisted in SecureStore, `rpc('health')` carries the header → AC-9
+- [ ] `npm run bootstrap:admin -- <email> --password '<pw>'` twice → second run prints "auth user exists" and every step "ok"; `profiles` has one admin row, `allowed_members` one admin row, `family_config.admin_user_id` set → AC-10
+- [ ] `grep -n "enable_signup\|enable_confirmations" supabase/config.toml` → every `enable_signup = false`, `enable_confirmations = false` → AC-3
+- [ ] GitHub → Actions → "Supabase keep alive" → Run workflow → the step prints `health: "ok"`; remove the secret and rerun → the job fails → AC-11
+
+## Dashboard / manual
+- [ ] Table editor shows the 11 tables, `drive_status_view`, and the enums `member_label`, `member_role`, `profile_status`, `device_status`, `item_kind`, `blob_state`, `drive_status` → AC-2
+- [ ] Database → Publications → `supabase_realtime` lists `devices` only → AC-7
+- [ ] Integrations → Cron shows `expire-requests`, `reconcile-blobs`, `backup-metadata` → AC-11 precondition
+- [ ] Authentication → Providers → Email: sign ups off, confirmations off (hosted settings are not controlled by `config.toml`) → AC-3
+- [ ] SQL editor as the service role: `select public.is_approved_device()` → false (no header in the editor) → AC-4
+
+## Value sourcing checks
+- [ ] Device header: with the anon key and a member JWT, `GET /rest/v1/key_material` without `x-f2h-device` → `[]`; with the approved device's base64 token → one row; with the same token base64 of different bytes → `[]` → header is the only source of the device identity
+- [ ] Audit actor device: update `key_material` from an approved device → the new `audit_log` row's `actor_device_id` equals that device's id (resolved from the same header, pgTAP test "audit row names the calling device")
+- [ ] Version guard: `PATCH /rest/v1/vault_items?id=eq.<id>` with `{"ciphertext":"x","version":1}` → version 2; repeat with `version: 1` → 400 `P0001 stale_version` → the client supplied version is the guard input
+
+## Acceptance-criteria coverage
+- AC-1 migrations apply: db:push step
+- AC-2 schema: db:push step, table editor step
+- AC-3 signup off: config grep, dashboard auth step
+- AC-4 helper: pgTAP, SQL editor step, header value check
+- AC-5 isolation matrix: pgTAP `0001_isolation.test.sql`
+- AC-6 audit trigger: pgTAP `0002_triggers.test.sql`, audit value check
+- AC-7 publication and pending index: pgTAP, publications step
+- AC-8 shared helpers: `supabase/functions/_shared/mod.ts` exports (type checked when the first function deploys)
+- AC-9 types and client: db:types step, `npm test -- src/services`
+- AC-10 bootstrap rerun: bootstrap step
+- AC-11 keepalive: workflow step

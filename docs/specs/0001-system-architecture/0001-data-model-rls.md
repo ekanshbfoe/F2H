@@ -95,20 +95,20 @@ create or replace function public.is_admin() returns boolean ... -- role = 'admi
 
 ## Build plan
 
-1. `supabase init`, `config.toml` with auth settings, `seed.sql` for local dev (admin + 3 emails), satisfies **AC-1**, **AC-3**.
-2. Migration 0001: extensions (`citext`, `pgcrypto`, `pg_cron`, `pg_net`, `vault`), enums, `family_config`, `allowed_members`, satisfies **AC-2**.
-3. Migration 0002: `profiles`, `key_material`, satisfies **AC-2**.
-4. Migration 0003: `devices` with indexes and realtime publication, satisfies **AC-2**, **AC-7**.
-5. Migration 0004: `vault_items` with version trigger, satisfies **AC-2**.
-6. Migration 0005: `file_blobs`, `drive_accounts`, `recovery_grants`, `backups`, satisfies **AC-2**.
-7. Migration 0006: `audit_log` with revoked update/delete and the `key_material` trigger, satisfies **AC-6**.
-8. Migration 0007: helpers and all policies, satisfies **AC-4**.
-9. Migration 0008: cron jobs, webhook, `health` RPC, satisfies **AC-11** precondition.
-10. pgTAP tests, satisfies **AC-5**.
-11. `functions/_shared/` helpers, satisfies **AC-8**.
-12. `db:types` script and the app client with the device header, satisfies **AC-9**.
-13. `scripts/bootstrap-admin.ts`, satisfies **AC-10**.
-14. `keepalive.yml`, satisfies **AC-11**.
+1. `supabase init`, `config.toml` with auth settings, `seed.sql` for local dev (admin + 3 emails), satisfies **AC-1**, **AC-3**. (done 2026-10-07)
+2. Migration 0001: extensions (`citext`, `pgcrypto`, `pg_cron`, `pg_net`, `vault`), enums, `family_config`, `allowed_members`, satisfies **AC-2**. (written 2026-10-07, apply with db:push once the CLI is linked)
+3. Migration 0002: `profiles`, `key_material`, satisfies **AC-2**. (written 2026-10-07, apply with db:push once the CLI is linked)
+4. Migration 0003: `devices` with indexes and realtime publication, satisfies **AC-2**, **AC-7**. (written 2026-10-07, apply with db:push once the CLI is linked)
+5. Migration 0004: `vault_items` with version trigger, satisfies **AC-2**. (written 2026-10-07, apply with db:push once the CLI is linked)
+6. Migration 0005: `file_blobs`, `drive_accounts`, `recovery_grants`, `backups`, satisfies **AC-2**. (written 2026-10-07, apply with db:push once the CLI is linked)
+7. Migration 0006: `audit_log` with revoked update/delete and the `key_material` trigger, satisfies **AC-6**. (written 2026-10-07, apply with db:push once the CLI is linked)
+8. Migration 0007: helpers and all policies, satisfies **AC-4**. (written 2026-10-07, apply with db:push once the CLI is linked)
+9. Migration 0008: cron jobs, webhook, `health` RPC, satisfies **AC-11** precondition. (written 2026-10-07, apply with db:push once the CLI is linked)
+10. pgTAP tests, satisfies **AC-5**. (written 2026-10-07, apply with db:push once the CLI is linked)
+11. `functions/_shared/` helpers, satisfies **AC-8**. (done 2026-10-07)
+12. `db:types` script and the app client with the device header, satisfies **AC-9**. (done 2026-10-07; hand written types until db:types runs against the linked project)
+13. `scripts/bootstrap-admin.ts`, satisfies **AC-10**. (written 2026-10-07, run once the service key is in supabase/.env)
+14. `keepalive.yml`, satisfies **AC-11**. (done 2026-10-07)
 
 ## Consequences
 
