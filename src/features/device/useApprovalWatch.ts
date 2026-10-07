@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { randomUuid } from '@/crypto';
 import { supabase } from '@/services/supabase';
 import type { Tables } from '@/types/database.types';
 
@@ -48,7 +49,7 @@ export function useApprovalWatch(deviceId: string | null): {
       void fetchOnce();
     }, POLL_MS);
     const channel = supabase
-      .channel(`device-${deviceId}`)
+      .channel(`device-${deviceId}-${randomUuid()}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'devices', filter: `id=eq.${deviceId}` },

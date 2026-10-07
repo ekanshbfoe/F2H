@@ -1,4 +1,4 @@
-import { box, CryptoError, fromBase64, toBase64, verifier } from '@/crypto';
+import { box, CryptoError, fromBase64, randomUuid, toBase64, verifier } from '@/crypto';
 import { callFunction } from '@/services/functions';
 import { supabase } from '@/services/supabase';
 import type { Database, Tables } from '@/types/database.types';
@@ -17,10 +17,14 @@ export async function listPendingDevices(): Promise<MemberDevice[]> {
   return data ?? [];
 }
 
-/** Calls `onChange` on any devices change; the screen refetches the list (AC-9). */
+/**
+ * Calls `onChange` on any devices change; the screen refetches the list (AC-9). The channel name
+ * is unique per subscriber: the client hands back an existing channel for a repeated topic, and
+ * adding a listener after `subscribe()` throws (Home and Approvals both watch this table).
+ */
 export function subscribePendingDevices(onChange: () => void): () => void {
   const channel = supabase
-    .channel('admin-pending-devices')
+    .channel(`admin-pending-devices-${randomUuid()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'devices' }, () => onChange())
     .subscribe();
   return () => {
