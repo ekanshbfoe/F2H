@@ -15,16 +15,21 @@ export interface ScryptParams {
 /**
  * Default scrypt parameters for the password split and the local PIN wrap.
  *
- * Recorded timings (`scripts/bench-kdf.ts`, and the "Crypto bench" card in the dev gallery):
- * - Node 24 on the dev machine (2026-10-07): N=2^13 93 ms, N=2^14 137 ms, N=2^15 251 ms, N=2^16 453 ms.
- * - Mid range Android phone, Hermes, Expo Go: fill in from the gallery bench (AC-12).
+ * Target hardware is an 8 year old budget Android phone with 1 GB of RAM running Hermes in
+ * Expo Go. N=2^14 (16 MiB) froze that device, so the default is N=2^10 (1 MiB), chosen on
+ * 2026-10-07 to keep one derivation under a second there. That is 16 times cheaper for an
+ * offline password guess than 2^14; the device approval gate, the Supabase bcrypt of the auth
+ * secret and long passphrases carry the rest. Raise N again when a dev build adopts native crypto.
  *
- * 2^14 with r=8 uses 16 MiB, the ceiling that stays comfortable in Expo Go. Argon2id is not used
- * because pure JS argon2 is too slow on Hermes; this module is the only place to change if a
- * native build adopts it.
+ * Recorded timings (`scripts/bench-kdf.ts`, and the "Crypto bench" card in the dev gallery):
+ * - Node 24 on the dev machine (2026-10-07): N=2^10 about 9 ms, N=2^12 about 40 ms, N=2^14 137 ms.
+ * - 1 GB budget Android phone, Hermes, Expo Go: fill in from the gallery bench (AC-12).
+ *
+ * Argon2id is not used because pure JS argon2 is too slow on Hermes; this module is the only
+ * place to change if a native build adopts it.
  */
 export const SCRYPT_DEFAULT: Readonly<ScryptParams> = Object.freeze({
-  N: 2 ** 14,
+  N: 2 ** 10,
   r: 8,
   p: 1,
   dkLen: 32,

@@ -14,11 +14,11 @@
       "name": "f2h-default",
       "password": "correct horse battery staple",
       "salt": "f2h:pw:v1:father@example.com",
-      "N": 16384,
+      "N": 1024,
       "r": 8,
       "p": 1,
       "dkLen": 32,
-      "dk": "184f5762352fc86bf4f602bffa399607428f0605a9583a3e347c41d46d5820ba"
+      "dk": "a8969d7e245d15a2082f4cf4d4eb71cc1b96e885841376fc5621c6436b816945"
     }
   ],
   "hkdf": [
@@ -73,8 +73,8 @@
   "passwordSplit": {
     "email": "Father@Example.COM",
     "password": "correct horse battery staple",
-    "authSecret": "45g7s7J1ThN4P5_L_PoOD5jVmgvyMorNelPD6OKkVQc",
-    "kek": "e0b58b63ad0ae1af67d42641203b22fda10183e932e122288a99a9631a42706f"
+    "authSecret": "SshhOrSLOhYCFLxDLAYHJ3fpLOC_nnCK48BoZsWOlqw",
+    "kek": "ceba9e2c0363ac4385ab491c2ecb185e8c4916ec117c730bc4934020e13b9095"
   },
   "verifier": {
     "mk": "505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f",
@@ -117,7 +117,7 @@
     "pin": "482913",
     "deviceSalt": "05060708090a0b0c0d0e0f1011121314",
     "deviceSecret": "999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8",
-    "wrapKey": "862c51e2fa410679c4d77571fcec71177843cbf334c4a06a40e33918f8f0d503",
+    "wrapKey": "178835606a59400f06ca04885da80bc94db704643723df429a2414f664ba84ae",
     "bioKey": "827a8d266cda5e1455301e59e02fd3d9089a9b6f72737f1619c8d7935739cfaa"
   }
 }

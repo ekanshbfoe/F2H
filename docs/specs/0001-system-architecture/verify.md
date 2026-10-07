@@ -38,12 +38,12 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 ## Commands
 - [ ] `npm test -- src/crypto` → 10 suites, 41 tests pass, every vector in `src/crypto/__tests__/vectors.json` reproduced → AC-11 (covers AC-2 to AC-8, AC-10)
 - [ ] `npm run typecheck` and `npm run lint` → clean → AC-1 (polyfill import compiles first in `src/app/_layout.tsx`)
-- [ ] `node scripts/bench-kdf.ts` → prints scrypt timings for N=2^13..2^16; N=2^14 in the low hundreds of ms on Node → AC-12
+- [ ] `node scripts/bench-kdf.ts` → prints scrypt timings for N=2^9..2^14; the default N=2^10 under 20 ms on Node → AC-12
 - [ ] `grep -rn "noble\|scure" src --include=*.ts --include=*.tsx -l | grep -v "^src/crypto"` → no file outside `src/crypto/` imports a crypto library → key invariant
 - [ ] `node -e "const v=require('./src/crypto/__tests__/vectors.json'); console.log(v.scrypt[0].dk.slice(0,16), v.hkdf[0].okm.slice(0,16))"` → `fdbabe1c9d347200` and `3cb25f25faacd57a` (RFC 7914 and RFC 5869 published values) → AC-2
 
 ## UI / manual (Expo Go, boot screen → "Open component gallery" → "Crypto bench")
-- [ ] Press "Run KDF benchmark": the button shows a spinner, then three rows N = 2^13, 2^14, 2^15 with millisecond timings; copy the N = 2^14 number into the `SCRYPT_DEFAULT` comment in `src/crypto/kdf.ts` → AC-12
+- [ ] Press "Run KDF benchmark": the button shows a spinner, then four rows N = 2^9 to 2^12 with millisecond timings and the UI stays responsive; copy the N = 2^10 number into the `SCRYPT_DEFAULT` comment in `src/crypto/kdf.ts` → AC-12
 - [ ] The app boots with no red box about `crypto.getRandomValues` or `TextDecoder` → AC-1
 
 ## Value sourcing checks

@@ -11,7 +11,7 @@ describe('kdf (AC-2)', () => {
   });
 
   it('defaults are the spec values', () => {
-    expect(SCRYPT_DEFAULT).toEqual({ N: 16384, r: 8, p: 1, dkLen: 32 });
+    expect(SCRYPT_DEFAULT).toEqual({ N: 1024, r: 8, p: 1, dkLen: 32 });
   });
 
   it('hkdf reproduces RFC 5869 case 1 and a string salt and info', () => {
