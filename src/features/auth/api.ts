@@ -108,6 +108,15 @@ async function continueApproved(kek: Uint8Array, profile: SessionProfile): Promi
   return 'home';
 }
 
+/** Names the exact call and status so a red banner says which hop failed. */
+function functionFailure(name: string, e: FunctionError): AuthError {
+  if (e.status === 0) return new AuthError('network', name + ': ' + e.code + ' (no HTTP response)');
+  return new AuthError(
+    'function_failed',
+    name + ': ' + e.code + ' (HTTP ' + String(e.status) + ')',
+  );
+}
+
 export class AuthError extends Error {
   constructor(
     readonly code:
@@ -116,6 +125,8 @@ export class AuthError extends Error {
       | 'email_exists'
       | 'no_recovery_key'
       | 'network'
+      | 'auth_unreachable'
+      | 'function_failed'
       | 'profile_missing'
       | 'unknown',
     message?: string,
@@ -135,7 +146,14 @@ export async function signIn(form: LoginForm): Promise<AuthRoute> {
   });
   if (error || !data.user) {
     zero(split.kek);
-    throw new AuthError(error?.status === 400 ? 'bad_credentials' : 'network', error?.message);
+    if (error?.status === 400) throw new AuthError('bad_credentials', error.message);
+    throw new AuthError(
+      'auth_unreachable',
+      'Supabase Auth signInWithPassword: status ' +
+        String(error?.status ?? 'none') +
+        ', ' +
+        (error?.message ?? 'no response'),
+    );
   }
   const profile = await loadProfile(data.user.id);
   if (!profile) throw new AuthError('profile_missing');
@@ -145,7 +163,8 @@ export async function signIn(form: LoginForm): Promise<AuthRoute> {
     registration = await registerDevice();
   } catch (e) {
     zero(split.kek);
-    throw e instanceof FunctionError ? new AuthError('network', e.code) : e;
+    if (e instanceof FunctionError) throw functionFailure('register-device', e);
+    throw e;
   }
   s.setDevice(registration.deviceId, registration.status);
   if (form.deviceName) {
@@ -191,7 +210,7 @@ export async function signUp(form: SignupForm): Promise<AuthRoute> {
     if (e instanceof FunctionError) {
       if (e.code === 'bad_invite') throw new AuthError('bad_invite');
       if (e.code === 'email_exists') throw new AuthError('email_exists');
-      throw new AuthError(e.status === 0 ? 'network' : 'unknown', e.code);
+      throw functionFailure('signup', e);
     }
     throw e;
   }

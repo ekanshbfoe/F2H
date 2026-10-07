@@ -17,6 +17,7 @@ export function pathFor(route: AuthRoute): (typeof AUTH_ROUTES)[AuthRoute] {
 /** Human copy for the errors the auth flows raise. */
 export function describeAuthError(error: unknown): string {
   const code = (error as { code?: string } | null)?.code;
+  const detail = (error as { message?: string } | null)?.message ?? '';
   switch (code) {
     case 'bad_credentials':
       return 'That email and password do not match.';
@@ -29,7 +30,19 @@ export function describeAuthError(error: unknown): string {
     case 'pending_exists':
       return 'A request for this account is already waiting for the Admin.';
     case 'network':
-      return 'Could not reach the vault. Check your connection and try again.';
+      return 'Could not reach the vault (' + detail + '). Check your connection and try again.';
+    case 'auth_unreachable':
+      return (
+        'Could not reach Supabase Auth (' +
+        detail +
+        '). On an older phone this is often a certificate problem; try the same login on another phone.'
+      );
+    case 'function_failed':
+      return (
+        'The vault refused the request (' +
+        detail +
+        '). Check the function logs in the Supabase dashboard.'
+      );
     case 'not_released':
       return 'Key material is not available for this device yet.';
     case 'verifier_failed':

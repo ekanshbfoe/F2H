@@ -50,6 +50,7 @@ export default function LoginScreen() {
       const route = await run();
       router.replace(pathFor(route));
     } catch (e) {
+      if (__DEV__) console.warn('auth failed', e);
       setError(describeAuthError(e));
     } finally {
       setBusy(false);
