@@ -87,21 +87,21 @@ Supabase Auth with public signup disabled; the `signup`, `register-device`, `app
 
 ## Build plan
 
-1. Login / Sign up screen on the design system toggle and fields, satisfies **AC-1**.
-2. `register-device` function with geo, nonce idempotency and first admin auto approve; client registration storing the token in SecureStore, satisfies **AC-6**, part of **AC-4**.
-3. Admin first run recovery kit (seed, mnemonic, confirm, publish pub + fingerprint, vault item), satisfies **AC-4**.
-4. Members screen with `create_invite` RPC, QR and text, satisfies **AC-5**.
-5. `signup` function and client signup wiring with the password split and key generation, satisfies **AC-2**, **AC-3**.
-6. Push registration with EAS `projectId` and deep link handling, prerequisite for **AC-8**.
-7. Waiting screen with Realtime subscription and poll fallback, satisfies **AC-7**.
-8. `notify-admin` webhook function and Database Webhook wiring, satisfies **AC-8**.
-9. Approvals inbox with live list, satisfies **AC-9** (list part).
-10. Approval check RPC and client verifier check, satisfies **AC-10**.
-11. Approval sheet with morph and radial reveal, `approve-device` function, satisfies **AC-9**, **AC-11**.
-12. Post approval unwrap and handoff to Set PIN, satisfies **AC-12**.
-13. Denied and expired screens with wipe; `expire-requests` cron, satisfies **AC-13**, **AC-14**.
-14. Recovery grants RPC, Admin UI, `reset-password` function and the forgot password flow, satisfies **AC-15**.
-15. Change password flow, satisfies **AC-16**.
+1. Login / Sign up screen on the design system toggle and fields, satisfies **AC-1**. (done 2026-10-07)
+2. `register-device` function with geo, nonce idempotency and first admin auto approve; client registration storing the token in SecureStore, satisfies **AC-6**, part of **AC-4**. (done 2026-10-07)
+3. Admin first run recovery kit (seed, mnemonic, confirm, publish pub + fingerprint, vault item), satisfies **AC-4**. (done 2026-10-07)
+4. Members screen with `create_invite` RPC, QR and text, satisfies **AC-5**. (done 2026-10-07)
+5. `signup` function and client signup wiring with the password split and key generation, satisfies **AC-2**, **AC-3**. (done 2026-10-07)
+6. Push registration with EAS `projectId` and deep link handling, prerequisite for **AC-8**. (done 2026-10-07; push opens the screen named in the payload, no custom scheme needed in Expo Go)
+7. Waiting screen with Realtime subscription and poll fallback, satisfies **AC-7**. (done 2026-10-07)
+8. `notify-admin` webhook function and Database Webhook wiring, satisfies **AC-8**. (done 2026-10-07)
+9. Approvals inbox with live list, satisfies **AC-9** (list part). (done 2026-10-07)
+10. Approval check RPC and client verifier check, satisfies **AC-10**. (done 2026-10-07)
+11. Approval sheet with morph and radial reveal, `approve-device` function, satisfies **AC-9**, **AC-11**. (done 2026-10-07)
+12. Post approval unwrap and handoff to Set PIN, satisfies **AC-12**. (done 2026-10-07; lands on Home until App lock adds Set PIN)
+13. Denied and expired screens with wipe; `expire-requests` cron, satisfies **AC-13**, **AC-14**. (done 2026-10-07; expire-requests deployed, cron needs the Vault secrets)
+14. Recovery grants RPC, Admin UI, `reset-password` function and the forgot password flow, satisfies **AC-15**. (done 2026-10-07)
+15. Change password flow, satisfies **AC-16**. (done 2026-10-07)
 
 ## Consequences
 

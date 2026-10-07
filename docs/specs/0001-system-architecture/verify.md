@@ -105,3 +105,55 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 - AC-9 types and client: db:types step, `npm test -- src/services`
 - AC-10 bootstrap rerun: bootstrap step
 - AC-11 keepalive: workflow step
+
+---
+
+# Verify: auth & device gate · spec 0001 (child 0001-account-and-device-gate) · updated 2026-10-07
+_Steps derived from the child spec's acceptance criteria. `/check verify` runs these; `/test` locks the durable ones. Two phones (or a phone plus an emulator) in Expo Go, the Admin already bootstrapped._
+
+## Commands
+- [ ] `npm test -- src/features supabase` → model, keyring, register and function helper tests pass → AC-1, AC-3, AC-6, AC-10
+- [ ] `npx supabase functions list` → signup, register-device, approve-device, notify-admin, expire-requests, reset-password all ACTIVE → AC-2, AC-6, AC-8, AC-11, AC-14, AC-15
+- [ ] `POST /functions/v1/signup` with the anon key and a made up invite code → 403 `bad_invite`; with a missing `user_id` → 400 → AC-2
+- [ ] `POST /functions/v1/register-device`, `approve-device`, `reset-password` with the anon key only → 401 `unauthenticated` → AC-6, AC-11, AC-15
+- [ ] `POST /functions/v1/expire-requests` with the service role key → 200 `{ok:true,...}`; with the anon key → 401 → AC-14
+- [ ] `npx supabase migration list` → 0009 applied; the invite alphabet is 32 characters (`select length('0123456789ABCDEFGHJKMNPQRSTVWXYZ')`) → AC-5
+
+## UI / manual (Admin phone first, then the member phone)
+- [ ] Admin: log in with the bootstrapped email and password → the first device is approved on the spot, the recovery kit opens: 24 numbered words, a fingerprint, three word confirmation; a wrong word is refused; after finishing, Home shows "Unlocked" → AC-4
+- [ ] Admin: Members → enter an allowlisted email, pick a label, Create invite code → an 8 character code and a QR appear; the open invite row shows the expiry a week out → AC-5
+- [ ] Member phone: Sign up tab → name, email, invite code, 10 char password, confirm; a short password, a bad email and a mismatched confirm are blocked before any request; the Admin fingerprint callout matches the Admin's kit → AC-1
+- [ ] Member phone: submit with a wrong code → "invite code is not valid"; with the right code → the Waiting screen with device, location, IP and time; the same code a second time on another sign up → rejected → AC-2, AC-3, AC-6
+- [ ] Admin phone: with Approvals open, the new request appears within 2 s without a refresh; with the app closed and the Vault secrets set, a push arrives naming the member, model and city and opens Approvals → AC-8, AC-9
+- [ ] Admin: open the request → the sheet shows "Key material verified" before Approve is useful; tap Approve → the button grows into the panel, "Approving", then the radial reveal "All set" → AC-9, AC-10, AC-11
+- [ ] Member phone: the Waiting screen flips within 2 s, the vault unwraps and Home opens with "Unlocked"; turn the member's wifi off before approving and it still flips within 10 s after reconnecting (poll) → AC-7, AC-12
+- [ ] Second member phone with the same password: log in → Waiting; the Admin rejects it → the phone shows "Request rejected" and returns to login with no key material (SecureStore cleared) → AC-6, AC-12, AC-13
+- [ ] Member: Home → Change password → wrong current password refused; a new password works on the next login → AC-16
+- [ ] Member: Forgot your password? on the login screen → "No grant yet"; Admin: Members → member → device → Create recovery grant; member: Check again → set a new password → Home opens; the grant cannot be used twice → AC-15
+- [ ] Expired state: set a pending device's `requested_at` 25 h back in the SQL editor and call expire-requests → the member phone shows "Request expired" → AC-14, AC-13
+
+## Value sourcing checks
+- [ ] Register: the Waiting screen's IP and city match the member phone's public IP (the function uses the first `x-forwarded-for` hop and ipwho.is); on a private network the location reads Unknown
+- [ ] Register: model and OS on the Admin sheet match `expo-device` on the member phone; the app version matches `app.json`
+- [ ] Push token: on Expo Go Android the registration still succeeds with `push_token` null (`select push_token from devices`)
+- [ ] Invite: the code shown has only Crockford characters (no I, L, O, U); `allowed_members.invite_code_hash` is its sha256
+- [ ] Approval check: tamper `key_material.mk_wrapped_admin` for a pending member in the SQL editor → the sheet shows "Key material tampered" and Approve does nothing
+- [ ] Waiting time: "Requested … ago" is computed from `devices.requested_at`, not the phone's start time
+
+## Acceptance-criteria coverage
+- AC-1 validation and toggle: signup step, `model.test.ts`
+- AC-2 invite enforcement: signup command and manual steps
+- AC-3 signup creates user, profile, key material, device, token once: signup step, `keys.test.ts`
+- AC-4 Admin first run and kit: Admin login step
+- AC-5 invites: Members step, alphabet command
+- AC-6 registration and 409 reuse: second phone step, `register.test.ts`
+- AC-7 Realtime plus poll: wifi step
+- AC-8 push to Admin: push step (needs Vault secrets and a non Expo Go Android build)
+- AC-9 live inbox and morph: Admin steps
+- AC-10 wrap verification: sheet badge, tamper check, `keys.test.ts`
+- AC-11 decide in one transaction with audit and push: Approve step, `decide_device`
+- AC-12 unwrap after approval, 0 rows before: member flip step, second phone step
+- AC-13 wipe on reject or expiry: reject and expiry steps
+- AC-14 expiry cron: expire-requests command, expiry step
+- AC-15 recovery grant and reset: forgot password step
+- AC-16 change password: change password step
