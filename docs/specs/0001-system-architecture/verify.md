@@ -73,25 +73,25 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 _Steps derived from the child spec's acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
 ## Commands
-- [ ] `npm run db:push` after `npx supabase link` → all 8 migrations apply with no error; `npx supabase migration list` shows 0001 to 0008 as applied remotely → AC-1, AC-2
-- [ ] `npm run db:test` (local stack, Docker) → `0001_isolation.test.sql` 23 tests and `0002_triggers.test.sql` 10 tests pass → AC-4, AC-5, AC-6, AC-7
-- [ ] `npm run db:types` → `src/types/database.types.ts` is rewritten by the generator and `npm run typecheck` still passes → AC-9
-- [ ] `npm test -- src/services` → 4 tests pass: no header before a token, header set after `setDeviceToken`, token persisted in SecureStore, `rpc('health')` carries the header → AC-9
-- [ ] `npm run bootstrap:admin -- <email> --password '<pw>'` twice → second run prints "auth user exists" and every step "ok"; `profiles` has one admin row, `allowed_members` one admin row, `family_config.admin_user_id` set → AC-10
-- [ ] `grep -n "enable_signup\|enable_confirmations" supabase/config.toml` → every `enable_signup = false`, `enable_confirmations = false` → AC-3
+- [x] `npm run db:push` after _(verified 2026-10-07: migration list shows 0001 to 0008 local = remote)_ `npx supabase link` → all 8 migrations apply with no error; `npx supabase migration list` shows 0001 to 0008 as applied remotely → AC-1, AC-2
+- [x] `npm run db:test` (local stack, Docker) _(verified 2026-10-07: no Docker here; both files run on the hosted project through supabase db query, 0 failed of 23 and 0 failed of 10, transactions rolled back)_ → `0001_isolation.test.sql` 23 tests and `0002_triggers.test.sql` 10 tests pass → AC-4, AC-5, AC-6, AC-7
+- [x] `npm run db:types` _(verified 2026-10-07: regenerated output identical to the committed file, typecheck clean)_ → `src/types/database.types.ts` is rewritten by the generator and `npm run typecheck` still passes → AC-9
+- [x] `npm test -- src/services` _(verified 2026-10-07: 4 passed)_ → 4 tests pass: no header before a token, header set after `setDeviceToken`, token persisted in SecureStore, `rpc('health')` carries the header → AC-9
+- [x] `npm run bootstrap:admin -- <email> --password '<pw>'` twice → second run prints "auth user exists" and every step "ok"; `profiles` has one admin row, `allowed_members` one admin row, `family_config.admin_user_id` set → AC-10 _(verified 2026-10-07: run twice earlier this session, second run printed auth user exists; rows confirmed over REST)_
+- [x] `grep -n "enable_signup _(verified 2026-10-07: all false)_\|enable_confirmations" supabase/config.toml` → every `enable_signup = false`, `enable_confirmations = false` → AC-3
 - [ ] GitHub → Actions → "Supabase keep alive" → Run workflow → the step prints `health: "ok"`; remove the secret and rerun → the job fails → AC-11
 
 ## Dashboard / manual
-- [ ] Table editor shows the 11 tables, `drive_status_view`, and the enums `member_label`, `member_role`, `profile_status`, `device_status`, `item_kind`, `blob_state`, `drive_status` → AC-2
-- [ ] Database → Publications → `supabase_realtime` lists `devices` only → AC-7
-- [ ] Integrations → Cron shows `expire-requests`, `reconcile-blobs`, `backup-metadata` → AC-11 precondition
+- [x] Table editor shows the 11 tables _(verified 2026-10-07: all 12 relations answer 200 over REST; 7 enums in the generated types)_, `drive_status_view`, and the enums `member_label`, `member_role`, `profile_status`, `device_status`, `item_kind`, `blob_state`, `drive_status` → AC-2
+- [x] Database → Publications _(verified 2026-10-07: pg_publication_tables lists devices only)_ → `supabase_realtime` lists `devices` only → AC-7
+- [x] Integrations → Cron shows _(verified 2026-10-07: cron.job lists the three jobs)_ `expire-requests`, `reconcile-blobs`, `backup-metadata` → AC-11 precondition
 - [ ] Authentication → Providers → Email: sign ups off, confirmations off (hosted settings are not controlled by `config.toml`) → AC-3
-- [ ] SQL editor as the service role: `select public.is_approved_device()` → false (no header in the editor) → AC-4
+- [x] SQL editor as the service role _(verified 2026-10-07: rpc/is_approved_device with the service key returns false)_: `select public.is_approved_device()` → false (no header in the editor) → AC-4
 
 ## Value sourcing checks
 - [ ] Device header: with the anon key and a member JWT, `GET /rest/v1/key_material` without `x-f2h-device` → `[]`; with the approved device's base64 token → one row; with the same token base64 of different bytes → `[]` → header is the only source of the device identity
-- [ ] Audit actor device: update `key_material` from an approved device → the new `audit_log` row's `actor_device_id` equals that device's id (resolved from the same header, pgTAP test "audit row names the calling device")
-- [ ] Version guard: `PATCH /rest/v1/vault_items?id=eq.<id>` with `{"ciphertext":"x","version":1}` → version 2; repeat with `version: 1` → 400 `P0001 stale_version` → the client supplied version is the guard input
+- [x] Audit actor device _(verified 2026-10-07: pgTAP 0002 test 4 passed remotely)_: update `key_material` from an approved device → the new `audit_log` row's `actor_device_id` equals that device's id (resolved from the same header, pgTAP test "audit row names the calling device")
+- [x] Version guard _(verified 2026-10-07: pgTAP 0002 tests 6 and 7 passed remotely; REST variant not run)_: `PATCH /rest/v1/vault_items?id=eq.<id>` with `{"ciphertext":"x","version":1}` → version 2; repeat with `version: 1` → 400 `P0001 stale_version` → the client supplied version is the guard input
 
 ## Acceptance-criteria coverage
 - AC-1 migrations apply: db:push step
