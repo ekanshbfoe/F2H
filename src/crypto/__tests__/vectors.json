@@ -1,0 +1,123 @@
+{
+  "scrypt": [
+    {
+      "name": "rfc7914-2",
+      "password": "password",
+      "salt": "NaCl",
+      "N": 1024,
+      "r": 8,
+      "p": 16,
+      "dkLen": 64,
+      "dk": "fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640"
+    },
+    {
+      "name": "f2h-default",
+      "password": "correct horse battery staple",
+      "salt": "f2h:pw:v1:father@example.com",
+      "N": 16384,
+      "r": 8,
+      "p": 1,
+      "dkLen": 32,
+      "dk": "184f5762352fc86bf4f602bffa399607428f0605a9583a3e347c41d46d5820ba"
+    }
+  ],
+  "hkdf": [
+    {
+      "name": "rfc5869-1",
+      "ikm": "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
+      "salt": "000102030405060708090a0b0c",
+      "info": "f0f1f2f3f4f5f6f7f8f9",
+      "length": 42,
+      "okm": "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
+    },
+    {
+      "name": "f2h-string-salt",
+      "ikm": "0708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223242526",
+      "saltText": "f2h:kek",
+      "infoText": "kek:v1",
+      "length": 32,
+      "okm": "a1464597f701d1a044ef05b907b5f98d97d80d758b0d17d28c678a789c227236"
+    }
+  ],
+  "aead": {
+    "raw": {
+      "key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+      "nonce": "404142434445464748494a4b4c4d4e4f5051525354555657",
+      "aad": "50515253c0c1c2c3c4c5c6c7",
+      "plaintext": "4c616469657320616e642047656e746c656d656e206f662074686520636c617373206f66202739393a204966204920636f756c64206f6666657220796f75206f6e6c79206f6e652074697020666f7220746865206675747572652c2073756e73637265656e20776f756c642062652069742e",
+      "ciphertext": "bd6d179d3e83d43b9576579493c0e939572a1700252bfaccbed2902c21396cbb731c7f1b0b4aa6440bf3a82f4eda7e39ae64c6708c54c216cb96b72e1213b4522f8c9ba40db5d945b11b69b982c1bb9e3f3fac2bc369488f76b2383565d3fff921f9664c97637da9768812f615c68b13b52ec0875924c1c7987947deafd8780acf49"
+    },
+    "wire": {
+      "key": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+      "nonce": "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7",
+      "aad": "item-0001",
+      "plaintext": "7b226b696e64223a22636f6e74616374222c226e616d65223a224d6f74686572227d",
+      "wire": "01a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7ff10ee76cd96a51b826f64965a0ee140892748ed43567ce098158b6e9b49c6ae7def4bc7b67503022dbb405c9aceced03b5c"
+    }
+  },
+  "box": {
+    "recipientSecret": "1112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f30",
+    "recipientPub": "4d27bcee3135c4944b28d27dd809b07be10c35160d20131caa7e85575498d07c",
+    "ephSecret": "22232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4041",
+    "nonce": "333435363738393a3b3c3d3e3f404142434445464748494a",
+    "plaintext": "c0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf",
+    "wire": "0186c15a1119201d2a9a6023aceeaf49664a54186ad2db465845331707b6da2b0d333435363738393a3b3c3d3e3f404142434445464748494ad945d1133c0968afcf1cf78e6191d01313ed4fdad3459d8ae44c730d1d5ce55c87ad4fb60514d63d76c1a1c846f98116"
+  },
+  "envelope": {
+    "mk": "505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f",
+    "dek": "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+    "itemId": "7f9c2a1e-4b3d-4c5e-8f6a-1b2c3d4e5f60",
+    "nonce": "707172737475767778797a7b7c7d7e7f8081828384858687",
+    "wrapped": "01707172737475767778797a7b7c7d7e7f80818283848586878d757ebd74a278cd5f3be8e04961147c6de3e6db13b2732ba2fcd023ca076271cc91d4b202f177d6d12f922d940462e4"
+  },
+  "passwordSplit": {
+    "email": "Father@Example.COM",
+    "password": "correct horse battery staple",
+    "authSecret": "45g7s7J1ThN4P5_L_PoOD5jVmgvyMorNelPD6OKkVQc",
+    "kek": "e0b58b63ad0ae1af67d42641203b22fda10183e932e122288a99a9631a42706f"
+  },
+  "verifier": {
+    "mk": "505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f",
+    "userId": "0b9d2c4e-6f1a-4d2b-9c3e-5a6b7c8d9e0f",
+    "nonce": "909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7",
+    "wire": "01909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7d6e22a2b5ea3635cb1314905a254f412b24e58fa483271a7e9ebf6c0"
+  },
+  "chunked": {
+    "dek": "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+    "blobId": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+    "version": 3,
+    "chunkSize": 16,
+    "totalChunks": 3,
+    "plaintext": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021222324",
+    "nonces": [
+      "d0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7",
+      "d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8",
+      "d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9"
+    ],
+    "file": "46324831b0b1b2b3b4b5b6b7b8b9babbbcbdbebf0000000300000010000000030000000000000000000000000000000000000000000000000000000000000000d0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e70fe9913c4495e0381ab1e3438221d89b76f3e69e6149358fdaeb4af3fafd062ad1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e86544630e9f49d83806824e7a33c262c926d5af7554e53673c30122e0211ba7e7d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9e126cc46ed084d9045e01a7d44be38e4b3efc4455a",
+    "sha256Ct": "260a29e5c0909a9a0a7ec77fb0a5e39c7ff810a9904f2d590ca098ee4705446f"
+  },
+  "mnemonic": [
+    {
+      "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+      "words": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+    },
+    {
+      "seed": "e0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+      "words": "thought audit rib six fury initial photo diary typical guess knife that audit west sound pact want save dinosaur vote save leave winner verb"
+    }
+  ],
+  "recovery": {
+    "seed": "42434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f6061",
+    "secretKey": "6ca6a3efe47020c49e090301a5beb4f6920735a906acbf046d2b97993927b4a6",
+    "publicKey": "3cb8a0649a0c06a88d256332bf5e15bbc24a4d365ec3e9e49ba1994d69e0470a",
+    "fingerprint": "bad5 168b 79a1 7775"
+  },
+  "localWrap": {
+    "pin": "482913",
+    "deviceSalt": "05060708090a0b0c0d0e0f1011121314",
+    "deviceSecret": "999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8",
+    "wrapKey": "862c51e2fa410679c4d77571fcec71177843cbf334c4a06a40e33918f8f0d503",
+    "bioKey": "827a8d266cda5e1455301e59e02fd3d9089a9b6f72737f1619c8d7935739cfaa"
+  }
+}

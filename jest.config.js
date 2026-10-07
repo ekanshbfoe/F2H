@@ -2,6 +2,7 @@
 module.exports = {
   preset: 'jest-expo',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  testMatch: ['**/__tests__/**/*.test.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
   resolver: '<rootDir>/jest.resolver.js',
   testPathIgnorePatterns: ['/node_modules/', '/.expo/', '/supabase/', '/scripts/'],
   transformIgnorePatterns: [
