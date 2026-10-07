@@ -1,0 +1,7 @@
+node_modules
+.expo
+dist
+supabase/.temp
+package-lock.json
+docs
+*.md
