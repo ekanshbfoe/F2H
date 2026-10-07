@@ -33,12 +33,12 @@ Decide the stack, the cryptographic design, the device approval relay and the Dr
 **Done when:** the stack is recorded in spec 0001, the scaffold boots in Expo Go, lint, typecheck and tests pass on CI, and the first push to GitHub contains no `doc/` folder.
 - [x] Decide the stack (spec): `/architect stack & architecture`
 - [ ] Scaffold from the decision: `/develop stack & architecture`
-   - [ ] Repo, ignore rules, Expo scaffold, path alias, strict TypeScript
-   - [ ] Jest, CI workflow, app icon from the logo
+   - [x] Repo, ignore rules, Expo scaffold, path alias, strict TypeScript
+   - [x] Jest, CI workflow, app icon from the logo
    - [ ] Drive resumable upload spike recorded in the spec rationale
 - [ ] Verify it: `/check verify stack & architecture`
 - [ ] Test it: `/test stack & architecture`
-Spec [0001](../specs/0001-system-architecture/index.md)
+Spec [0001](../specs/0001-system-architecture/index.md) · code in `./`
 
 ### 2. Coding standards & tooling
 Capture conventions, then install lint, format and commit hooks so every commit is a Conventional Commit.
