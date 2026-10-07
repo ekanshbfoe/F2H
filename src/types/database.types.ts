@@ -335,6 +335,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'key_material_updated_by_device_fkey';
+            columns: ['updated_by_device'];
+            isOneToOne: false;
+            referencedRelation: 'member_devices_view';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'key_material_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: true;
@@ -419,6 +426,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'recovery_grants_device_id_fkey';
+            columns: ['device_id'];
+            isOneToOne: false;
+            referencedRelation: 'member_devices_view';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'recovery_grants_member_id_fkey';
             columns: ['member_id'];
             isOneToOne: false;
@@ -497,8 +511,47 @@ export type Database = {
         };
         Relationships: [];
       };
+      member_devices_view: {
+        Row: {
+          app_version: string | null;
+          decided_at: string | null;
+          display_name: string | null;
+          email: string | null;
+          id: string | null;
+          last_geo: Json | null;
+          last_seen_at: string | null;
+          model: string | null;
+          name: string | null;
+          os: string | null;
+          profile_status: Database['public']['Enums']['profile_status'] | null;
+          pubkey: string | null;
+          requested_at: string | null;
+          role: Database['public']['Enums']['member_role'] | null;
+          status: Database['public']['Enums']['device_status'] | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
+      admin_first_run: {
+        Args: {
+          p_fingerprint: string;
+          p_mk_verifier: string;
+          p_mk_wrapped_admin: string;
+          p_mk_wrapped_pw: string;
+          p_recovery_pub: string;
+        };
+        Returns: undefined;
+      };
       admin_key_material_for_approval: {
         Args: { p_user_id: string };
         Returns: {
@@ -529,10 +582,31 @@ export type Database = {
         Returns: string;
       };
       current_device_id: { Args: never; Returns: string };
+      decide_device: {
+        Args: {
+          p_admin_device_id: string;
+          p_admin_id: string;
+          p_decision: string;
+          p_device_id: string;
+        };
+        Returns: {
+          display_name: string;
+          push_token: string;
+          status: Database['public']['Enums']['device_status'];
+          user_id: string;
+        }[];
+      };
       health: { Args: never; Returns: string };
       is_active_member: { Args: never; Returns: boolean };
       is_admin: { Args: never; Returns: boolean };
       is_approved_device: { Args: never; Returns: boolean };
+      recovery_pubkey: {
+        Args: never;
+        Returns: {
+          fingerprint: string;
+          recovery_pub: string;
+        }[];
+      };
       request_device_token_hash: { Args: never; Returns: string };
     };
     Enums: {
