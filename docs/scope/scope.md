@@ -79,14 +79,14 @@ Spec [0001-crypto-envelope](../specs/0001-system-architecture/0001-crypto-envelo
 Supabase project, migrations for every table, the approved device RLS helper, audit triggers, cron and webhook wiring, generated types, the Admin bootstrap script and the free tier keep alive.
 **Done when:** migrations apply on a fresh local Supabase, RLS tests prove isolation (a member cannot read another member, a pending device cannot read key material), and the bootstrap script seeds the Admin.
 - [x] Design it (spec): `/architect backend foundation`
-- [ ] Build it: `/develop backend foundation`
-   - [ ] Config, extensions, tables and enums (AC-1..3)
-   - [ ] RLS helper, policies, audit triggers, publication (AC-4..7)
+- [x] Build it: `/develop backend foundation`
+   - [x] Config, extensions, tables and enums (AC-1..3)
+   - [x] RLS helper, policies, audit triggers, publication (AC-4..7)
    - [x] Shared function helpers, generated types, client with device header (AC-8..9)
-   - [ ] Bootstrap script and keepalive workflow (AC-10..11)
+   - [x] Bootstrap script and keepalive workflow (AC-10..11)
 - [ ] Verify it: `/check verify backend foundation`
 - [ ] Test it: `/test backend foundation`
-Spec [0001-data-model-rls](../specs/0001-system-architecture/0001-data-model-rls.md) · code in `supabase/`, `src/services/`, `src/types/`, `scripts/bootstrap-admin.ts`, `.github/workflows/keepalive.yml` · migrations written, apply pending (`npm run db:push` after `supabase link`)
+Spec [0001-data-model-rls](../specs/0001-system-architecture/0001-data-model-rls.md) · code in `supabase/`, `src/services/`, `src/types/`, `scripts/bootstrap-admin.ts`, `.github/workflows/keepalive.yml` · migrations applied to the hosted project 2026-10-07; pgTAP not yet run (needs Docker)
 
 ## Slice 1: Get in safely
 
