@@ -15,7 +15,7 @@ insert into fx values
 insert into auth.users (id, email) select uid, name || '@example.com' from fx where uid is not null;
 insert into public.profiles (id, email, display_name, role, status, kdf_params)
 select uid, name || '@example.com', name, case when name = 'admin' then 'admin' else 'member' end::public.member_role,
-       'active', '{"N":1024,"r":8,"p":1,"dkLen":32}'::jsonb
+       'active', '{"N":128,"r":8,"p":1,"dkLen":32}'::jsonb
 from fx where uid is not null;
 insert into public.key_material (user_id, mk_wrapped_pw, mk_wrapped_admin, mk_verifier)
 select uid, 'pw-' || name, 'admin-' || name, 'ver-' || name from fx where uid is not null;

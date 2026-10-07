@@ -15,7 +15,7 @@ import { scrypt } from '@noble/hashes/scrypt.js';
 
 const password = new TextEncoder().encode('bench-password');
 const salt = new TextEncoder().encode('f2h:bench:salt');
-const costs = [2 ** 9, 2 ** 10, 2 ** 11, 2 ** 12, 2 ** 14];
+const costs = [2 ** 7, 2 ** 8, 2 ** 9, 2 ** 10, 2 ** 14];
 
 console.log(`scrypt r=8 p=1 dkLen=32 on Node ${process.version}`);
 for (const N of costs) {

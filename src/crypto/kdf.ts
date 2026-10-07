@@ -16,20 +16,26 @@ export interface ScryptParams {
  * Default scrypt parameters for the password split and the local PIN wrap.
  *
  * Target hardware is an 8 year old budget Android phone with 1 GB of RAM running Hermes in
- * Expo Go. N=2^14 (16 MiB) froze that device, so the default is N=2^10 (1 MiB), chosen on
- * 2026-10-07 to keep one derivation under a second there. That is 16 times cheaper for an
- * offline password guess than 2^14; the device approval gate, the Supabase bcrypt of the auth
- * secret and long passphrases carry the rest. Raise N again when a dev build adopts native crypto.
+ * Expo Go. Pure JS scrypt there is about 60 times slower than Node, so the default is N=2^7
+ * (128 KiB), set on 2026-10-07 to keep the daily PIN unlock near 1.3 s on that phone.
+ *
+ * Security note: at 2^7 the stretch is cheap for an offline guess, so the real protection of
+ * the cloud copy is the device approval gate (key material is unreadable without an approved
+ * device), the Supabase bcrypt of the auth secret, and a long passphrase. The local PIN wrap
+ * additionally needs the 256 bit device secret from the hardware keystore. Raise N again when
+ * a dev build adopts native crypto. Follow up for /architect: a stronger separate parameter set
+ * for the rare password login, keeping this one for the daily PIN.
  *
  * Recorded timings (`scripts/bench-kdf.ts`, and the "Crypto bench" card in the dev gallery):
- * - Node 24 on the dev machine (2026-10-07): N=2^10 about 9 ms, N=2^12 about 40 ms, N=2^14 137 ms.
- * - 1 GB budget Android phone, Hermes, Expo Go: fill in from the gallery bench (AC-12).
+ * - Node 24 on the dev machine (2026-10-07): N=2^10 about 9 ms, N=2^14 about 137 ms.
+ * - 8 year old 1 GB Android phone, Hermes, Expo Go (2026-10-07): N=2^9 5206 ms, N=2^10 7965 ms,
+ *   N=2^11 15689 ms, N=2^12 30743 ms; so N=2^7 is about 1.3 s and N=2^8 about 2.5 s.
  *
  * Argon2id is not used because pure JS argon2 is too slow on Hermes; this module is the only
  * place to change if a native build adopts it.
  */
 export const SCRYPT_DEFAULT: Readonly<ScryptParams> = Object.freeze({
-  N: 2 ** 10,
+  N: 2 ** 7,
   r: 8,
   p: 1,
   dkLen: 32,

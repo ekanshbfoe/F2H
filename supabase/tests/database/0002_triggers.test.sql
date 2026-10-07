@@ -7,7 +7,7 @@ insert into fx values
   ('a', '11111111-1111-4111-8111-111111111111', encode(decode(repeat('01', 32), 'hex'), 'base64'));
 insert into auth.users (id, email) select uid, 'a@example.com' from fx;
 insert into public.profiles (id, email, display_name, status, kdf_params)
-select uid, 'a@example.com', 'a', 'active', '{"N":1024,"r":8,"p":1,"dkLen":32}'::jsonb from fx;
+select uid, 'a@example.com', 'a', 'active', '{"N":128,"r":8,"p":1,"dkLen":32}'::jsonb from fx;
 insert into public.key_material (user_id, mk_wrapped_pw, mk_wrapped_admin, mk_verifier)
 select uid, 'pw', 'admin', 'ver' from fx;
 insert into public.devices (id, user_id, token_hash, registration_nonce, status)

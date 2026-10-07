@@ -4,21 +4,21 @@
       "name": "rfc7914-2",
       "password": "password",
       "salt": "NaCl",
-      "N": 1024,
+      "N": 128,
       "r": 8,
       "p": 16,
       "dkLen": 64,
-      "dk": "fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640"
+      "dk": "4455af19ffd29058a90d83f21cfa66ea51876d95c6302a178b47820b42561e7e2341d0d44d2e7ba3490c07ed1d3d0fafce321fae588fec428a9394e58ae699ca"
     },
     {
       "name": "f2h-default",
       "password": "correct horse battery staple",
       "salt": "f2h:pw:v1:father@example.com",
-      "N": 1024,
+      "N": 128,
       "r": 8,
       "p": 1,
       "dkLen": 32,
-      "dk": "a8969d7e245d15a2082f4cf4d4eb71cc1b96e885841376fc5621c6436b816945"
+      "dk": "14c4b215605a4830c12705a951a37e9925e5dc7836b16eefc0b6a9b6937b92bc"
     }
   ],
   "hkdf": [
@@ -73,8 +73,8 @@
   "passwordSplit": {
     "email": "Father@Example.COM",
     "password": "correct horse battery staple",
-    "authSecret": "SshhOrSLOhYCFLxDLAYHJ3fpLOC_nnCK48BoZsWOlqw",
-    "kek": "ceba9e2c0363ac4385ab491c2ecb185e8c4916ec117c730bc4934020e13b9095"
+    "authSecret": "QhbkUJDHp5eWAIEv62dbLrKrFmqeiu9fLAh_V-IS6H8",
+    "kek": "0fc70050929ca03d9ec8b6678f3d8f830162cd17aa87ec780a80d3afbc5d6c7f"
   },
   "verifier": {
     "mk": "505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f",
@@ -117,7 +117,7 @@
     "pin": "482913",
     "deviceSalt": "05060708090a0b0c0d0e0f1011121314",
     "deviceSecret": "999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8",
-    "wrapKey": "178835606a59400f06ca04885da80bc94db704643723df429a2414f664ba84ae",
+    "wrapKey": "b89ac98998bfd940be1d4e64f195996e067b6749465d4915ce88f89d392dff9c",
     "bioKey": "827a8d266cda5e1455301e59e02fd3d9089a9b6f72737f1619c8d7935739cfaa"
   }
 }

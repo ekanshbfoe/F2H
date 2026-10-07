@@ -12,10 +12,10 @@ const SALT = utf8ToBytes('f2h:bench:salt');
 /**
  * Times scrypt at a few cost values on the current device (AC-12). Run from the dev gallery
  * on a phone and copy the numbers into the comment on `SCRYPT_DEFAULT` in `kdf.ts`.
- * The largest cost, 2^12, allocates 4 MiB, safe on a 1 GB phone; it yields to the UI between runs.
+ * The largest cost, 2^9, takes about 5 s on the 1 GB reference phone; it yields to the UI between runs.
  */
 export async function benchScrypt(
-  costs: number[] = [2 ** 9, 2 ** 10, 2 ** 11, 2 ** 12],
+  costs: number[] = [2 ** 6, 2 ** 7, 2 ** 8, 2 ** 9],
   base: Omit<ScryptParams, 'N'> = { r: 8, p: 1, dkLen: 32 },
 ): Promise<KdfBenchResult[]> {
   const results: KdfBenchResult[] = [];

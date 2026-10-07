@@ -6,7 +6,7 @@
  *
  * Reads SUPABASE_URL (or EXPO_PUBLIC_SUPABASE_URL from .env) and SUPABASE_SERVICE_ROLE_KEY
  * (from supabase/.env). With `--password` the auth secret is derived here with the same split
- * the phone uses (scrypt N=2^10, HKDF "f2h:auth"), so the Admin can log in on the phone with
+ * the phone uses (scrypt N=2^7, HKDF "f2h:auth"), so the Admin can log in on the phone with
  * that password. Safe to rerun: existing rows are updated, never duplicated.
  */
 import { createClient } from '@supabase/supabase-js';
@@ -15,7 +15,7 @@ import { scrypt } from '@noble/hashes/scrypt.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { base64urlnopad } from '@scure/base';
 
-const KDF = { N: 2 ** 10, r: 8, p: 1, dkLen: 32 } as const;
+const KDF = { N: 2 ** 7, r: 8, p: 1, dkLen: 32 } as const;
 
 function loadEnv(path: string) {
   try {
