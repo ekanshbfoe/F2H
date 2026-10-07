@@ -12,6 +12,10 @@ export const SecureKeys = {
   mkWrappedLocal: 'f2h.mk_wrapped_local',
   mkWrappedBio: 'f2h.mk_wrapped_bio',
   pinFailures: 'f2h.pin_failures',
+  /** X25519 secret of this device (recovery grants are sealed to its public key). */
+  deviceKey: 'f2h.device_key',
+  registrationNonce: 'f2h.registration_nonce',
+  recoveryItemId: 'f2h.recovery_item_id',
 } as const;
 
 export type SecureKey = (typeof SecureKeys)[keyof typeof SecureKeys];
