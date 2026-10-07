@@ -1,0 +1,10 @@
+{
+  "tool": "jest",
+  "gate": null,
+  "additionalTools": ["@testing-library/react-native", "react-native-gesture-handler/jestSetup"],
+  "e2eTool": "none",
+  "testDir": "__tests__ folders beside the source",
+  "filePattern": "*.test.ts, *.test.tsx",
+  "packageManager": "npm",
+  "stack": "expo sdk 57 (jest-expo preset), supabase migrations tested with pgTAP under supabase/tests/database"
+}
