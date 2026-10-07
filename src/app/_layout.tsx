@@ -7,11 +7,18 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { usePushNavigation } from '@/services/push';
 import { ThemeProvider, colors, useAppFonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   /* already hidden (fast refresh); nothing to do */
 });
+
+/** Opens the screen a tapped push names. Rendered inside the providers so the router exists. */
+function PushNavigation() {
+  usePushNavigation();
+  return null;
+}
 
 export default function RootLayout() {
   const { ready } = useAppFonts();
@@ -27,6 +34,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <StatusBar style="dark" />
+          <PushNavigation />
           <Stack
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
           />
