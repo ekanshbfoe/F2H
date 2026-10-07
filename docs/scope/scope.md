@@ -32,10 +32,10 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 Decide the stack, the cryptographic design, the device approval relay and the Drive redundancy model, then scaffold a runnable Expo project on real structure.
 **Done when:** the stack is recorded in spec 0001, the scaffold boots in Expo Go, lint, typecheck and tests pass on CI, and the first push to GitHub contains no `doc/` folder.
 - [x] Decide the stack (spec): `/architect stack & architecture`
-- [ ] Scaffold from the decision: `/develop stack & architecture`
+- [x] Scaffold from the decision: `/develop stack & architecture`
    - [x] Repo, ignore rules, Expo scaffold, path alias, strict TypeScript
    - [x] Jest, CI workflow, app icon from the logo
-   - [ ] Drive resumable upload spike recorded in the spec rationale
+   - [x] Drive resumable upload spike recorded in the spec rationale
 - [ ] Verify it: `/check verify stack & architecture`
 - [ ] Test it: `/test stack & architecture`
 Spec [0001](../specs/0001-system-architecture/index.md) · code in `./`
