@@ -6,7 +6,6 @@ import { randomBytes } from './random';
 
 export const DEVICE_SECRET_LEN = 32;
 export const DEVICE_SALT_LEN = 16;
-const LOCAL_AAD = 'local';
 const BIO_AAD = 'bio';
 
 /** Generated once per install and kept in SecureStore by the lock feature. */
@@ -34,11 +33,15 @@ export async function deriveLocalWrapKey(
   return wrapKey;
 }
 
-/** `mk_wrapped_local = aead(wrapKey, MK, aad "local")`, stored in SecureStore. */
-export const wrapMkLocal = (wrapKey: Uint8Array, mk: Uint8Array): Uint8Array =>
-  aead.seal(wrapKey, mk, LOCAL_AAD);
-export const unwrapMkLocal = (wrapKey: Uint8Array, wire: Uint8Array): Uint8Array =>
-  aead.open(wrapKey, wire, LOCAL_AAD);
+/**
+ * `mk_wrapped_local = aead(wrapKey, MK, aad = owner user id)`, stored in SecureStore. The owner
+ * binding (spec 0002) means a wrap left by one family member never opens for another on a
+ * shared phone, even with the same PIN.
+ */
+export const wrapMkLocal = (wrapKey: Uint8Array, mk: Uint8Array, ownerId: string): Uint8Array =>
+  aead.seal(wrapKey, mk, ownerId);
+export const unwrapMkLocal = (wrapKey: Uint8Array, wire: Uint8Array, ownerId: string): Uint8Array =>
+  aead.open(wrapKey, wire, ownerId);
 
 /** Biometric path (Expo Go fallback): `hkdf(device_secret, salt "f2h:bio", info "f2h:bio-wrap:v1")`. */
 export function deriveBioWrapKey(deviceSecret: Uint8Array): Uint8Array {

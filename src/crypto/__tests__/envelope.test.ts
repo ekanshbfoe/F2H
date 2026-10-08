@@ -55,14 +55,16 @@ describe('local and biometric wrap', () => {
   it('derives the PIN wrap key from PIN, device salt and device secret (vector)', async () => {
     const wrapKey = await deriveLocalWrapKey(lw.pin, bytes(lw.deviceSalt), bytes(lw.deviceSecret));
     expect(hex(wrapKey)).toBe(lw.wrapKey);
-    const wrapped = wrapMkLocal(wrapKey, mk);
-    expect(unwrapMkLocal(wrapKey, wrapped)).toEqual(mk);
+    const owner = vectors.verifier.userId;
+    const wrapped = wrapMkLocal(wrapKey, mk, owner);
+    expect(unwrapMkLocal(wrapKey, wrapped, owner)).toEqual(mk);
+    expect(() => unwrapMkLocal(wrapKey, wrapped, 'other-user')).toThrow(CryptoError);
     const wrongPin = await deriveLocalWrapKey(
       '000000',
       bytes(lw.deviceSalt),
       bytes(lw.deviceSecret),
     );
-    expect(() => unwrapMkLocal(wrongPin, wrapped)).toThrow(CryptoError);
+    expect(() => unwrapMkLocal(wrongPin, wrapped, owner)).toThrow(CryptoError);
   });
 
   it('derives the biometric wrap key from the device secret alone (vector)', () => {
