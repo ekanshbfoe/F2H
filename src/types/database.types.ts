@@ -107,6 +107,10 @@ export type Database = {
       devices: {
         Row: {
           app_version: string;
+          challenge_attempts: number;
+          challenge_count: number;
+          challenge_expires_at: string | null;
+          challenge_hash: string | null;
           created_at: string;
           decided_at: string | null;
           decided_by: string | null;
@@ -127,6 +131,10 @@ export type Database = {
         };
         Insert: {
           app_version?: string;
+          challenge_attempts?: number;
+          challenge_count?: number;
+          challenge_expires_at?: string | null;
+          challenge_hash?: string | null;
           created_at?: string;
           decided_at?: string | null;
           decided_by?: string | null;
@@ -147,6 +155,10 @@ export type Database = {
         };
         Update: {
           app_version?: string;
+          challenge_attempts?: number;
+          challenge_count?: number;
+          challenge_expires_at?: string | null;
+          challenge_hash?: string | null;
           created_at?: string;
           decided_at?: string | null;
           decided_by?: string | null;
@@ -558,6 +570,21 @@ export type Database = {
           mk_verifier: string;
           mk_wrapped_admin: string;
           user_id: string;
+        }[];
+      };
+      admin_revoke_device: {
+        Args: { p_device_id: string };
+        Returns: Database['public']['Enums']['device_status'];
+      };
+      answer_admin_challenge: {
+        Args: {
+          p_device_id: string;
+          p_revoke_others: boolean;
+          p_tag_hash: string;
+        };
+        Returns: {
+          attempts_left: number;
+          outcome: string;
         }[];
       };
       assert_admin_device: { Args: never; Returns: undefined };
