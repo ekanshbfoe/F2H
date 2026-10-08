@@ -13,6 +13,7 @@ F2H is a family vault for four people where every secret is encrypted on the pho
 - [0001-account-and-device-gate](0001-account-and-device-gate.md): invite code signup, Admin bootstrap, device registration, approval relay, post approval key release, password reset. Supports Auth & device gate.
 - [0001-data-model-rls](0001-data-model-rls.md): every table, the approved device RLS helper, policies, triggers, cron and webhooks, bootstrap script, keep alive. Supports Backend foundation.
 - [0001-drive-redundancy](0001-drive-redundancy.md): Google account linking, dual resumable uploads, verified completion, downloads, delete, reconcile. Supports Files & Drive redundancy.
+- [0001-admin-device-self-approval](0001-admin-device-self-approval.md): the Admin approves their own new phone with the paper recovery kit when no admin phone can tap Approve, plus a revoke of other admin phones and the last admin phone warning. Extends the device gate.
 - [0001-design-system-motion](0001-design-system-motion.md): tokens, base components and the motion primitives reverse engineered from `doc/ui`. Supports Design system & motion and every screen.
 
 ## Requirements
