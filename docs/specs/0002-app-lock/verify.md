@@ -25,9 +25,9 @@ _Steps derived from spec 0002 acceptance criteria. `/check verify` runs these; `
 - [ ] Dev gallery → "Time one PIN unlock" on the LAVA LXX503 → record the ms in the spec Follow-up → AC-13
 
 ## Commands
-- [ ] `npm test -- src/features/lock src/components/lock src/app` → lock model, api, Unlock screen, PinEntry and boot suites green → AC-12, AC-16
-- [ ] `npx supabase db query --linked -f supabase/tests/database/0003_app_lock.test.sql` (pgTAP enabled, the file ending with `select num_failed()`) → 0 failed → AC-5 (server part)
-- [ ] `npm run typecheck && npm run lint` → clean
+- [x] `npm test -- src/features/lock src/components/lock src/app` → lock model, api, Unlock screen, PinEntry and boot suites green → AC-12, AC-16
+- [x] `npx supabase db query --linked -f supabase/tests/database/0003_app_lock.test.sql` (pgTAP enabled, the file ending with `select num_failed()`) → 0 failed → AC-5 (server part)
+- [x] `npm run typecheck && npm run lint` → clean
 
 ## Value sourcing checks
 - [ ] PIN never leaves the phone: watch the network tab or function logs while setting and unlocking → no request carries digits → invariant
