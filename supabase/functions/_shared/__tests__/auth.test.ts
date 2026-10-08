@@ -3,6 +3,7 @@ import {
   findDevice,
   requireAdmin,
   requireApprovedDevice,
+  requirePendingAdmin,
   requireServiceCall,
   requireUser,
 } from '../auth.ts';
@@ -18,7 +19,11 @@ const USER = { id: '11111111-1111-4111-8111-111111111111', email: 'a@example.com
 const TOKEN = 'AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=';
 const TOKEN_HASH = '72cd6e8422c407fb6d098690f1130b7ded7ec2f7f5e1d30bd9d521f015363793';
 
-type Rows = { devices?: Record<string, unknown> | null; profiles?: Record<string, unknown> | null };
+type Rows = {
+  devices?: Record<string, unknown> | null;
+  profiles?: Record<string, unknown> | null;
+  family_config?: Record<string, unknown> | null;
+};
 
 /** A tiny stand in for the PostgREST query builder: every filter returns itself, maybeSingle yields the row. */
 function fakeDb(rows: Rows) {
@@ -174,6 +179,67 @@ describe('requireAdmin', () => {
     );
     await expect(requireAdmin(request({ 'x-f2h-device': TOKEN }))).rejects.toMatchObject({
       code: 'device_not_approved',
+    });
+  });
+});
+
+describe('requirePendingAdmin (self approval, AC-2)', () => {
+  const pendingDevice = { id: 'd1', user_id: USER.id, status: 'pending', push_token: null };
+  const adminProfile = { status: 'active', role: 'admin' };
+  const RECOVERY_PUB_HEX = '3cb8a0649a0c06a88d256332bf5e15bbc24a4d365ec3e9e49ba1994d69e0470a';
+  const config = { admin_user_id: USER.id, admin_recovery_pubkey: `\\x${RECOVERY_PUB_HEX}` };
+
+  it('passes for the Admin on their own pending phone and decodes the published key', async () => {
+    serviceClientMock.mockReturnValue(
+      fakeDb({ devices: pendingDevice, profiles: adminProfile, family_config: config }),
+    );
+    const caller = await requirePendingAdmin(request({ 'x-f2h-device': TOKEN }));
+    expect(caller.device).toEqual(pendingDevice);
+    expect(Array.from(caller.recoveryPub.slice(0, 2))).toEqual([0x3c, 0xb8]);
+    expect(caller.recoveryPub).toHaveLength(32);
+  });
+
+  it('throws 403 admin_required for a member, even on a pending phone', async () => {
+    serviceClientMock.mockReturnValue(
+      fakeDb({
+        devices: pendingDevice,
+        profiles: { status: 'active', role: 'member' },
+        family_config: config,
+      }),
+    );
+    await expect(requirePendingAdmin(request({ 'x-f2h-device': TOKEN }))).rejects.toMatchObject({
+      status: 403,
+      code: 'admin_required',
+    });
+  });
+
+  it('throws 403 device_not_pending from an approved phone or without a header', async () => {
+    serviceClientMock.mockReturnValue(
+      fakeDb({
+        devices: { ...pendingDevice, status: 'approved' },
+        profiles: adminProfile,
+        family_config: config,
+      }),
+    );
+    await expect(requirePendingAdmin(request({ 'x-f2h-device': TOKEN }))).rejects.toMatchObject({
+      code: 'device_not_pending',
+    });
+    await expect(requirePendingAdmin(request())).rejects.toMatchObject({
+      code: 'device_not_pending',
+    });
+  });
+
+  it('throws 403 recovery_not_published before the first run', async () => {
+    serviceClientMock.mockReturnValue(
+      fakeDb({
+        devices: pendingDevice,
+        profiles: adminProfile,
+        family_config: { admin_user_id: USER.id, admin_recovery_pubkey: null },
+      }),
+    );
+    await expect(requirePendingAdmin(request({ 'x-f2h-device': TOKEN }))).rejects.toMatchObject({
+      status: 403,
+      code: 'recovery_not_published',
     });
   });
 });

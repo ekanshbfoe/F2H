@@ -63,7 +63,7 @@ export function MnemonicEntry({
         onChange(parts);
         setPasteNote('All 24 words filled from the paste.');
         void Clipboard.setStringAsync('').catch(() => undefined);
-        inputs.current[MNEMONIC_WORDS - 1]?.blur();
+        inputs.current[MNEMONIC_WORDS - 1]?.blur?.();
         return;
       }
       const next = value.slice();
@@ -77,8 +77,8 @@ export function MnemonicEntry({
     const next = value.slice();
     next[index] = word;
     onChange(next);
-    if (index < MNEMONIC_WORDS - 1) inputs.current[index + 1]?.focus();
-    else inputs.current[index]?.blur();
+    if (index < MNEMONIC_WORDS - 1) inputs.current[index + 1]?.focus?.();
+    else inputs.current[index]?.blur?.();
   };
 
   const pasteAll = async () => {
@@ -140,7 +140,7 @@ export function MnemonicEntry({
                 onFocus={() => setFocused(i)}
                 onBlur={() => setFocused((f) => (f === i ? null : f))}
                 onSubmitEditing={() => {
-                  if (i < MNEMONIC_WORDS - 1) inputs.current[i + 1]?.focus();
+                  if (i < MNEMONIC_WORDS - 1) inputs.current[i + 1]?.focus?.();
                 }}
                 returnKeyType={i < MNEMONIC_WORDS - 1 ? 'next' : 'done'}
                 blurOnSubmit={i === MNEMONIC_WORDS - 1}
