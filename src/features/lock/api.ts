@@ -1,5 +1,6 @@
 import { CryptoError, fromBase64, localWrap, toBase64, zero } from '@/crypto';
 import { wipeLocalState } from '@/features/auth/session';
+import { cacheAdminApprovedCount, countMyApprovedDevices } from '@/features/device/approved-count';
 import { SecureKeys, secureGet, secureSet } from '@/services/secure-store';
 import { supabase } from '@/services/supabase';
 import { useSession } from '@/state/session.store';
@@ -292,5 +293,11 @@ export async function checkDeviceStatus(): Promise<void> {
   s.setDevice(deviceId, data.status);
   if (data.status === 'revoked' || data.status === 'rejected' || data.status === 'expired') {
     await wipe('revoked');
+    return;
+  }
+  // The last admin phone warning (self approval spec, AC-7) reads this cache offline.
+  if (s.profile?.role === 'admin') {
+    const n = await countMyApprovedDevices().catch(() => null);
+    if (n !== null) await cacheAdminApprovedCount(n).catch(() => undefined);
   }
 }

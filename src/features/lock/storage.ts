@@ -59,6 +59,24 @@ export async function forgetPin(): Promise<void> {
   ]);
 }
 
+/**
+ * True when wiping this phone would leave the Admin with no approved phone (self approval spec,
+ * AC-7): the cached profile says admin and the cached approved count is missing or 1 or lower.
+ * Members never see the warning.
+ */
+export async function isLastAdminPhone(): Promise<boolean> {
+  const raw = await appGet(AppKeys.profile);
+  if (!raw) return false;
+  try {
+    if ((JSON.parse(raw) as { role?: string }).role !== 'admin') return false;
+  } catch {
+    return false;
+  }
+  const count = await appGet(AppKeys.adminApprovedCount);
+  const n = count === null ? NaN : Number(count);
+  return !Number.isFinite(n) || n <= 1;
+}
+
 export async function readTimeoutMs(): Promise<number> {
   const raw = await appGet(AppKeys.lockTimeoutMs);
   const ms = raw === null ? NaN : Number(raw);

@@ -52,7 +52,11 @@ export async function wipeLocalState(phase: SessionPhase = 'signed_out'): Promis
   useLock.getState().bumpGeneration();
   await secureWipe();
   await setDeviceToken(null);
-  await Promise.all([appDelete(AppKeys.backgroundAt), appDelete(AppKeys.profile)]);
+  await Promise.all([
+    appDelete(AppKeys.backgroundAt),
+    appDelete(AppKeys.profile),
+    appDelete(AppKeys.adminApprovedCount),
+  ]);
   await supabase.auth.signOut().catch(() => undefined);
   s.reset(phase);
   useLock.getState().set({ state: 'no_pin', failures: 0, cooldownMs: 0, busy: false });

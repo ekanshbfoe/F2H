@@ -10,6 +10,7 @@ import { unlock, wipe } from '../api';
 import { useLock } from '../lock.store';
 import { formatCountdown, useCooldown } from '../hooks';
 import { MAX_FAILURES } from '../model';
+import { isLastAdminPhone } from '../storage';
 
 /**
  * The Unlock gate (AC-2, AC-4, AC-6): rendered by the root layout as an overlay whenever the lock
@@ -64,14 +65,18 @@ export function UnlockScreen() {
   };
 
   const forgot = () => {
-    Alert.alert(
-      'Forgot your PIN?',
-      'This phone will wipe its vault keys and leave the family vault. You log in with your password again and the Admin approves this phone once more.',
-      [
-        { text: 'Keep trying', style: 'cancel' },
-        { text: 'Wipe this phone', style: 'destructive', onPress: () => void wipe('forgot') },
-      ],
-    );
+    void isLastAdminPhone().then((last) => {
+      Alert.alert(
+        'Forgot your PIN?',
+        last
+          ? 'This is the only approved Admin phone. Wiping it means you get back in only with your password and the 24 words of your paper recovery kit. Make sure you have the kit before you continue.'
+          : 'This phone will wipe its vault keys and leave the family vault. You log in with your password again and the Admin approves this phone once more.',
+        [
+          { text: 'Keep trying', style: 'cancel' },
+          { text: 'Wipe this phone', style: 'destructive', onPress: () => void wipe('forgot') },
+        ],
+      );
+    });
   };
 
   return (
