@@ -109,14 +109,14 @@ Spec [0001-account-and-device-gate](../specs/0001-system-architecture/0001-accou
 Six digit PIN set and unlock screens with the glow box motion, master key wrapped by PIN plus device secret, failure backoff and wipe, auto lock, optional biometrics.
 **Done when:** the vault needs the PIN after 60 s in the background or a cold start, ten failures wipe the local key, and biometrics unlock on supported phones.
 - [x] Design it (spec): `/architect app lock`
-- [ ] Build it: `/develop app lock`
-   - [ ] Self revoke RPC, lock store with the attempt gate, generation guard and wipe reasons (AC-5, AC-12, AC-13, AC-14, AC-16)
-   - [ ] PIN pad and boxes, Set PIN handoff and sign out forgetting the PIN (AC-1, AC-11, AC-14, AC-15)
-   - [ ] Unlock modal, boot order, backoff, countdown, tenth miss wipe and Forgot PIN (AC-2, AC-4, AC-5, AC-6)
-   - [ ] Auto lock, Lock now, timeout setting, Change PIN, privacy overlay and the revoke guard (AC-3, AC-7, AC-8, AC-9, AC-10)
+- [x] Build it: `/develop app lock`
+   - [x] Self revoke RPC, lock store with the attempt gate, generation guard and wipe reasons (AC-5, AC-12, AC-13, AC-14, AC-16)
+   - [x] PIN pad and boxes, Set PIN handoff and sign out forgetting the PIN (AC-1, AC-11, AC-14, AC-15)
+   - [x] Unlock modal, boot order, backoff, countdown, tenth miss wipe and Forgot PIN (AC-2, AC-4, AC-5, AC-6)
+   - [x] Auto lock, Lock now, timeout setting, Change PIN, privacy overlay and the revoke guard (AC-3, AC-7, AC-8, AC-9, AC-10)
 - [ ] Verify it: `/check verify app lock`
 - [ ] Test it: `/test app lock`
-Spec [0002-app-lock](../specs/0002-app-lock.md)
+Spec [0002-app-lock](../specs/0002-app-lock.md) · code in `src/features/lock/`, `src/components/lock/`, `src/app/(lock)/`, `src/features/auth/{api,session}.ts`, `src/services/{app-storage,secure-store,supabase}.ts`, migration 0011
 
 ## Slice 2: Contacts
 

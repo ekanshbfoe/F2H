@@ -174,16 +174,16 @@ Server addition: `revoke_my_device(p_device_id)` RPC (migration 0011): the owner
 Tracer bullet: the thin thread (set a PIN, lock, unlock) lands first through store, crypto and screens, then the brakes (backoff, wipe), then the triggers and the privacy layer. Screens live under `src/features/lock/screens/` with one line route files, which also starts paying down the review finding on spec 0001.
 
 1. [x] Migration 0011 `revoke_my_device` with a pgTAP case; regenerate types, satisfies **AC-5** (server part).
-2. Lock store with the generation counter, the attempt gate entry, `setPin`, `unlock`, `lockNow`, `forgetPin`, `withKey` and `wipe` with reasons; the new `SecureKeys`; keychain accessibility; round trip tests against the `src/crypto` vectors, satisfies **AC-12**, **AC-13**, **AC-14**, **AC-16**.
-3. `PinPad` and `PinBoxes` on `GlowBox` with the hidden input, labels and the AC-15 rules, satisfies **AC-11**, **AC-15**.
-4. Set PIN screen and the handoff: approval, recovery kit and a PIN less approved login route there before Home; sign out calls `forgetPin`, satisfies **AC-1**, **AC-14**.
-5. Unlock screen as a modal with the Reanimated progress state; boot routing goes to Unlock first when a wrap exists and checks session and status after, satisfies **AC-2**.
-6. Backoff schedule, countdown, restart resume, the wipe on the tenth miss with the Wiped screen and its three copies, Forgot PIN, satisfies **AC-4**, **AC-5**, **AC-6**.
-7. Auto lock on app state with decrypted cache clearing, the timeout setting, Lock now, and the status read on foreground and unlock, satisfies **AC-3**, **AC-8**, **AC-10** (status part).
-8. Change PIN screen through the shared gate, satisfies **AC-7**.
-9. Privacy overlay from boot and the Android screenshot block, satisfies **AC-9**.
-10. Revoke guard on the shared fetch wrapper (403 `device_not_approved`, ready phase only), satisfies **AC-10**.
-11. Jest for the state machine, schedule, resume, owner binding, timeout and generation guard; a gallery bench entry for the unlock time, satisfies **AC-12**, **AC-13**.
+2. [x] Lock store with the generation counter, the attempt gate entry, `setPin`, `unlock`, `lockNow`, `forgetPin`, `withKey` and `wipe` with reasons; the new `SecureKeys`; keychain accessibility; round trip tests against the `src/crypto` vectors, satisfies **AC-12**, **AC-13**, **AC-14**, **AC-16**.
+3. [x] `PinPad` and `PinBoxes` on `GlowBox` with the hidden input, labels and the AC-15 rules, satisfies **AC-11**, **AC-15**.
+4. [x] Set PIN screen and the handoff: approval, recovery kit and a PIN less approved login route there before Home; sign out calls `forgetPin`, satisfies **AC-1**, **AC-14**.
+5. [x] Unlock screen as a modal with the Reanimated progress state; boot routing goes to Unlock first when a wrap exists and checks session and status after, satisfies **AC-2**.
+6. [x] Backoff schedule, countdown, restart resume, the wipe on the tenth miss with the Wiped screen and its three copies, Forgot PIN, satisfies **AC-4**, **AC-5**, **AC-6**.
+7. [x] Auto lock on app state with decrypted cache clearing, the timeout setting, Lock now, and the status read on foreground and unlock, satisfies **AC-3**, **AC-8**, **AC-10** (status part).
+8. [x] Change PIN screen through the shared gate, satisfies **AC-7**.
+9. [x] Privacy overlay from boot and the Android screenshot block, satisfies **AC-9**.
+10. [x] Revoke guard on the shared fetch wrapper (403 `device_not_approved`, ready phase only), satisfies **AC-10**.
+11. [x] Jest for the state machine, schedule, resume, owner binding, timeout and generation guard; a gallery bench entry for the unlock time, satisfies **AC-12**, **AC-13**.
 
 ## Consequences
 
