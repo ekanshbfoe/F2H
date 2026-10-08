@@ -11,7 +11,10 @@ export const SecureKeys = {
   deviceSalt: 'f2h.device_salt',
   mkWrappedLocal: 'f2h.mk_wrapped_local',
   mkWrappedBio: 'f2h.mk_wrapped_bio',
-  pinFailures: 'f2h.pin_failures',
+  /** The user id `mk_wrapped_local` belongs to (spec 0002). */
+  lockOwner: 'f2h.lock_owner',
+  /** JSON `{ failures, remainingMs }`, written before every PIN derivation (spec 0002). */
+  lockAttempts: 'f2h.lock_attempts',
   /** X25519 secret of this device (recovery grants are sealed to its public key). */
   deviceKey: 'f2h.device_key',
   registrationNonce: 'f2h.registration_nonce',
@@ -20,12 +23,29 @@ export const SecureKeys = {
 
 export type SecureKey = (typeof SecureKeys)[keyof typeof SecureKeys];
 
+/**
+ * Lock material is only readable while the phone is unlocked and never migrates to another
+ * device (iOS keychain accessibility; Android ignores the option).
+ */
+const lockOptions: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+};
+const LOCK_KEYS: ReadonlySet<string> = new Set([
+  SecureKeys.deviceSecret,
+  SecureKeys.deviceSalt,
+  SecureKeys.mkWrappedLocal,
+  SecureKeys.mkWrappedBio,
+  SecureKeys.lockOwner,
+  SecureKeys.lockAttempts,
+]);
+const optionsFor = (key: SecureKey) => (LOCK_KEYS.has(key) ? lockOptions : undefined);
+
 export async function secureGet(key: SecureKey): Promise<string | null> {
-  return SecureStore.getItemAsync(key);
+  return SecureStore.getItemAsync(key, optionsFor(key));
 }
 
 export async function secureSet(key: SecureKey, value: string): Promise<void> {
-  await SecureStore.setItemAsync(key, value);
+  await SecureStore.setItemAsync(key, value, optionsFor(key));
 }
 
 export async function secureDelete(key: SecureKey): Promise<void> {
