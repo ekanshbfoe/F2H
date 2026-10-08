@@ -4,8 +4,9 @@ import { ActivityIndicator, Image, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Callout, Card, Text } from '@/components/ui';
-import { resolveBootRoute } from '@/features/auth/api';
+import { resolveAfterUnlock, resolveBootRoute } from '@/features/auth/api';
 import { pathFor } from '@/features/auth/routes';
+import { useLock } from '@/features/lock/lock.store';
 import { useTheme } from '@/theme';
 
 /** Boot: decides the first screen from the session, the device status and what is in memory. */
@@ -18,15 +19,32 @@ export default function BootScreen() {
 
   useEffect(() => {
     let active = true;
+    let unsubscribe: (() => void) | undefined;
+    const fail = (e: unknown) => {
+      if (active) setError(e instanceof Error ? e.message : 'Could not start');
+    };
     resolveBootRoute()
       .then((route) => {
-        if (active) router.replace(pathFor(route));
+        if (!active) return;
+        if (route !== 'unlock') {
+          router.replace(pathFor(route));
+          return;
+        }
+        // The Unlock overlay sits over this screen; the session is checked once the PIN opens it.
+        unsubscribe = useLock.subscribe((s) => {
+          if (s.state !== 'unlocked') return;
+          unsubscribe?.();
+          resolveAfterUnlock()
+            .then((next) => {
+              if (active) router.replace(pathFor(next));
+            })
+            .catch(fail);
+        });
       })
-      .catch((e: unknown) => {
-        if (active) setError(e instanceof Error ? e.message : 'Could not start');
-      });
+      .catch(fail);
     return () => {
       active = false;
+      unsubscribe?.();
     };
   }, [router, attempt]);
 

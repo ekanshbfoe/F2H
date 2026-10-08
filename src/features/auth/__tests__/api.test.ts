@@ -88,7 +88,13 @@ jest.mock('@/features/device/register', () => ({
   deviceSecretKey: () => mockDeviceSecret(),
 }));
 jest.mock('@/services/secure-store', () => ({
-  SecureKeys: { deviceId: 'f2h.device_id', deviceToken: 'f2h.device_token' },
+  SecureKeys: {
+    deviceId: 'f2h.device_id',
+    deviceToken: 'f2h.device_token',
+    lockOwner: 'f2h.lock_owner',
+    mkWrappedLocal: 'f2h.mk_wrapped_local',
+    lockAttempts: 'f2h.lock_attempts',
+  },
   secureGet: jest.fn(async (k: string) => mockStore.get(k) ?? null),
   secureSet: jest.fn(async (k: string, v: string) => {
     mockStore.set(k, v);
@@ -139,7 +145,7 @@ describe('signIn', () => {
     seedKeyMaterial(mk, split.kek);
     mockRegister.mockResolvedValue({ deviceId: 'dev-1', status: 'approved' });
 
-    await expect(signIn({ email: EMAIL, password: PASSWORD })).resolves.toBe('home');
+    await expect(signIn({ email: EMAIL, password: PASSWORD })).resolves.toBe('set-pin');
     const sent = mockAuth.signInWithPassword.mock.calls[0]?.[0] as { password: string };
     expect(sent.password).toBe(split.authSecret);
     expect(sent.password).not.toBe(PASSWORD);
@@ -156,6 +162,9 @@ describe('signIn', () => {
     mockStore.set('f2h.device_id', 'dev-1');
     mockStore.set('f2h.device_token', 'dG9r');
     mockTables.devices = [{ id: 'dev-1', status: 'approved' }];
+    // A PIN wrap for this account already exists: straight home (spec 0002, AC-1).
+    mockStore.set('f2h.lock_owner', USER.id);
+    mockStore.set('f2h.mk_wrapped_local', 'd3JhcA==');
     await expect(signIn({ email: EMAIL, password: PASSWORD })).resolves.toBe('home');
     expect(mockRegister).not.toHaveBeenCalled();
     expect(useSession.getState().deviceId).toBe('dev-1');
@@ -177,11 +186,18 @@ describe('signIn', () => {
     mockStore.set('f2h.device_id', 'dev-1');
     mockStore.set('f2h.device_token', 'dG9r');
     mockStore.set('f2h.registration_nonce', 'n-1');
+    mockStore.set('f2h.lock_owner', USER.id);
+    mockStore.set('f2h.mk_wrapped_local', 'd3JhcA==');
+    mockStore.set('f2h.lock_attempts', '{"failures":3,"remainingMs":0}');
     useSession.getState().setMk(envelope.generateMasterKey());
     await signOut();
     expect(mockStore.get('f2h.device_id')).toBe('dev-1');
     expect(mockStore.get('f2h.device_token')).toBe('dG9r');
     expect(mockStore.get('f2h.registration_nonce')).toBe('n-1');
+    // The PIN is forgotten so the next account on this phone starts clean (spec 0002, AC-14).
+    expect(mockStore.has('f2h.lock_owner')).toBe(false);
+    expect(mockStore.has('f2h.mk_wrapped_local')).toBe(false);
+    expect(mockStore.has('f2h.lock_attempts')).toBe(false);
     expect(useSession.getState().mk).toBeNull();
     expect(useSession.getState().phase).toBe('signed_out');
   });
@@ -314,7 +330,7 @@ describe('redeemGrant (AC-15)', () => {
       mk_sealed_for_device: toBase64(box.seal(device.publicKey, mk)),
     };
 
-    await expect(redeemGrant(grant, 'my replacement passphrase')).resolves.toBe('home');
+    await expect(redeemGrant(grant, 'my replacement passphrase')).resolves.toBe('set-pin');
 
     const [name, body] = mockCall.mock.calls[0] as [string, Record<string, string>];
     const next = passwordSplitSync(EMAIL, 'my replacement passphrase');

@@ -1,7 +1,7 @@
 # 0002. App lock: six digit PIN with device secret, backoff and wipe
 
 **Date**: 2026-10-08
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
@@ -173,7 +173,7 @@ Server addition: `revoke_my_device(p_device_id)` RPC (migration 0011): the owner
 
 Tracer bullet: the thin thread (set a PIN, lock, unlock) lands first through store, crypto and screens, then the brakes (backoff, wipe), then the triggers and the privacy layer. Screens live under `src/features/lock/screens/` with one line route files, which also starts paying down the review finding on spec 0001.
 
-1. Migration 0011 `revoke_my_device` with a pgTAP case; regenerate types, satisfies **AC-5** (server part).
+1. [x] Migration 0011 `revoke_my_device` with a pgTAP case; regenerate types, satisfies **AC-5** (server part).
 2. Lock store with the generation counter, the attempt gate entry, `setPin`, `unlock`, `lockNow`, `forgetPin`, `withKey` and `wipe` with reasons; the new `SecureKeys`; keychain accessibility; round trip tests against the `src/crypto` vectors, satisfies **AC-12**, **AC-13**, **AC-14**, **AC-16**.
 3. `PinPad` and `PinBoxes` on `GlowBox` with the hidden input, labels and the AC-15 rules, satisfies **AC-11**, **AC-15**.
 4. Set PIN screen and the handoff: approval, recovery kit and a PIN less approved login route there before Home; sign out calls `forgetPin`, satisfies **AC-1**, **AC-14**.

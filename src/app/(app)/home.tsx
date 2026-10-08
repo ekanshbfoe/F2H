@@ -3,10 +3,14 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Avatar, Badge, Button, Callout, Card, Row, Screen, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Row, Screen, Text } from '@/components/ui';
 import { listPendingDevices, subscribePendingDevices } from '@/features/admin/api';
 import { signOut } from '@/features/auth/api';
 import { pathFor } from '@/features/auth/routes';
+import { lockNow } from '@/features/lock/api';
+import { useLock } from '@/features/lock/lock.store';
+import { DEFAULT_TIMEOUT_MS, TIMEOUT_OPTIONS } from '@/features/lock/model';
+import { readTimeoutMs, writeTimeoutMs } from '@/features/lock/storage';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
 
@@ -20,7 +24,20 @@ export default function HomeScreen() {
   const profile = useSession((s) => s.profile);
   const unlocked = useSession((s) => s.mk !== null);
   const [pending, setPending] = useState<number | null>(null);
+  const [timeoutMs, setTimeoutMs] = useState<number>(DEFAULT_TIMEOUT_MS);
+  const hasPin = useLock((s) => s.state === 'unlocked');
   const isAdmin = profile?.role === 'admin';
+
+  useEffect(() => {
+    readTimeoutMs()
+      .then(setTimeoutMs)
+      .catch(() => undefined);
+  }, []);
+
+  const pickTimeout = (ms: number) => {
+    setTimeoutMs(ms);
+    writeTimeoutMs(ms).catch(() => undefined);
+  };
 
   useEffect(() => {
     if (!isAdmin) return undefined;
@@ -95,10 +112,64 @@ export default function HomeScreen() {
           <Row dashed label="Files" value="coming next" />
         </Card>
 
-        <Callout>
-          A daily PIN lock arrives with the next feature. Until then the vault key lives in memory
-          only; closing the app means logging in again.
-        </Callout>
+        <Card style={{ gap: t.spacing.sm }}>
+          <Text variant="heading">Security</Text>
+          <Text variant="caption" color="muted">
+            Lock after being away for
+          </Text>
+          <View
+            accessibilityRole="radiogroup"
+            style={{ flexDirection: 'row', gap: t.spacing.sm, flexWrap: 'wrap' }}
+          >
+            {TIMEOUT_OPTIONS.map((o) => {
+              const selected = o.ms === timeoutMs;
+              return (
+                <Pressable
+                  key={o.ms}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected, checked: selected }}
+                  accessibilityLabel={`Lock after ${o.label}`}
+                  onPress={() => pickTimeout(o.ms)}
+                  testID={`timeout-${o.ms}`}
+                  style={{
+                    minHeight: t.sizes.touch,
+                    paddingHorizontal: t.spacing.lg,
+                    borderRadius: t.radii.pill,
+                    justifyContent: 'center',
+                    backgroundColor: selected ? t.colors.primary : t.colors.canvas,
+                    borderWidth: t.sizes.hairline,
+                    borderColor: selected ? t.colors.primary : t.colors.line,
+                  }}
+                >
+                  <Text variant="label" color={selected ? 'onPrimary' : 'ink'}>
+                    {o.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/(lock)/change-pin')}
+            testID="home-change-pin"
+          >
+            <Row
+              label="Change PIN"
+              trailing={
+                <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
+              }
+            />
+          </Pressable>
+          <Button
+            variant="secondary"
+            onPress={lockNow}
+            disabled={!hasPin}
+            testID="home-lock-now"
+            leading={<Ionicons name="lock-closed" size={t.sizes.icon} color={t.colors.primary} />}
+          >
+            Lock now
+          </Button>
+        </Card>
 
         <Card style={{ gap: t.spacing.sm }}>
           <Text variant="heading">Account</Text>

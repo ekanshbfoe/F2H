@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import { CascadeList } from '@/components/motion';
 import { Badge, Button, Callout, Card, Screen, Text, TextField } from '@/components/ui';
+import { routeWithKey } from '@/features/auth/api';
 import { pathFor } from '@/features/auth/routes';
 import {
   finishRecoveryKit,
@@ -79,7 +80,14 @@ export default function RecoveryKitScreen() {
             Confirm and finish
           </Button>
         ) : step === 'done' ? (
-          <Button onPress={() => router.replace(pathFor('home'))} testID="kit-done">
+          <Button
+            onPress={() =>
+              (profile ? routeWithKey(profile) : Promise.resolve('home' as const)).then((r) =>
+                router.replace(pathFor(r)),
+              )
+            }
+            testID="kit-done"
+          >
             Open my vault
           </Button>
         ) : (

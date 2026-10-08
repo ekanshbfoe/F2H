@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { LockRuntime } from '@/features/lock/LockRuntime';
 import { usePushNavigation } from '@/services/push';
 import { ThemeProvider, colors, useAppFonts } from '@/theme';
 
@@ -38,6 +39,7 @@ export default function RootLayout() {
           <Stack
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
           />
+          <LockRuntime />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

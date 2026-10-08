@@ -8,6 +8,10 @@ export const AUTH_ROUTES = {
   expired: '/(auth)/denied?reason=expired',
   'recovery-kit': '/(admin)/recovery-kit',
   home: '/(app)/home',
+  /** The Unlock gate is an overlay over the boot screen, not a route: stay where we are. */
+  unlock: '/',
+  'set-pin': '/(lock)/set-pin',
+  wiped: '/(lock)/wiped',
 } as const satisfies Record<AuthRoute, string>;
 
 export function pathFor(route: AuthRoute): (typeof AUTH_ROUTES)[AuthRoute] {

@@ -16,20 +16,30 @@ import {
 } from '@/features/device/register';
 import { createMemberKeys } from '@/features/keyring/bootstrap';
 import { unlockWithKek } from '@/features/keyring/unlock';
+import { checkDeviceStatus, loadLockState } from '@/features/lock/api';
+import { useLock } from '@/features/lock/lock.store';
+import { forgetPin, hasPinFor } from '@/features/lock/storage';
+import { AppKeys, appDelete } from '@/services/app-storage';
 import { callFunction, FunctionError } from '@/services/functions';
-import {
-  SecureKeys,
-  secureDelete,
-  secureGet,
-  secureSet,
-  secureWipe,
-} from '@/services/secure-store';
+import { SecureKeys, secureDelete, secureGet, secureSet } from '@/services/secure-store';
 import { getDeviceToken, loadDeviceToken, setDeviceToken, supabase } from '@/services/supabase';
 import { useSession, type SessionProfile } from '@/state/session.store';
 
 import type { LoginForm, SignupForm } from './model';
+import { adminNeedsFirstRun, loadProfile, readCachedProfile, wipeLocalState } from './session';
 
-export type AuthRoute = 'login' | 'waiting' | 'rejected' | 'expired' | 'recovery-kit' | 'home';
+export { wipeLocalState } from './session';
+
+export type AuthRoute =
+  | 'login'
+  | 'waiting'
+  | 'rejected'
+  | 'expired'
+  | 'recovery-kit'
+  | 'home'
+  | 'unlock'
+  | 'set-pin'
+  | 'wiped';
 
 /** The Admin recovery public key the signup screen seals the new MK to, plus its fingerprint. */
 export async function fetchRecoveryPubkey(): Promise<{
@@ -43,32 +53,17 @@ export async function fetchRecoveryPubkey(): Promise<{
   return row ?? null;
 }
 
-async function loadProfile(userId: string): Promise<SessionProfile | null> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('id, email, display_name, role, status')
-    .eq('id', userId)
-    .maybeSingle();
-  return data ?? null;
-}
-
-async function adminNeedsFirstRun(profile: SessionProfile): Promise<boolean> {
-  if (profile.role !== 'admin') return false;
-  const { data } = await supabase
-    .from('family_config')
-    .select('admin_recovery_pubkey')
-    .eq('id', 1)
-    .maybeSingle();
-  return !data?.admin_recovery_pubkey;
-}
-
 /**
- * Decides the first screen on boot. Secrets never survive a cold start (the App lock feature adds
- * the PIN path), so an approved device without a Master Key in memory goes back to login.
+ * Decides the first screen on boot. A phone with a PIN wrap shows the Unlock gate before anything
+ * touches the network (AC-2 of spec 0002); without one, secrets never survive a cold start, so an
+ * approved device goes back to login.
  */
 export async function resolveBootRoute(): Promise<AuthRoute> {
   const s = useSession.getState();
   await loadDeviceToken();
+  const lock = await loadLockState();
+  if (lock === 'wiped') return 'wiped';
+  if (lock === 'locked') return 'unlock';
   const { data } = await supabase.auth.getSession();
   const session = data.session;
   if (!session) {
@@ -113,7 +108,40 @@ export async function resolveBootRoute(): Promise<AuthRoute> {
   return 'login';
 }
 
-/** Continues after a password login or an approval: unwrap, then first run or home (AC-12). */
+/**
+ * After the PIN opened the vault on a cold start: now the session and the device status are
+ * checked (AC-2, AC-10 of spec 0002). No session, or a session for another account than the
+ * wrap's owner, forgets the PIN and goes to login; a closed device status wipes.
+ */
+export async function resolveAfterUnlock(): Promise<AuthRoute> {
+  const s = useSession.getState();
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+  const owner = await secureGet(SecureKeys.lockOwner);
+  const profile = session
+    ? ((await loadProfile(session.user.id)) ?? (await readCachedProfile(session.user.id)))
+    : null;
+  if (!session || session.user.id !== owner || !profile) {
+    await forgetPin();
+    useLock.getState().set({ state: 'no_pin' });
+    s.reset('signed_out');
+    return 'login';
+  }
+  s.setProfile(profile);
+  s.setDevice(await secureGet(SecureKeys.deviceId), null);
+  s.setPhase('ready');
+  await checkDeviceStatus().catch(() => undefined);
+  return useLock.getState().state === 'wiped' ? 'wiped' : 'home';
+}
+
+/** After the Master Key is in memory: a phone without a PIN for this account sets one first (AC-1). */
+export async function routeWithKey(profile: SessionProfile): Promise<AuthRoute> {
+  const pinned = await hasPinFor(profile.id);
+  useLock.getState().set({ state: pinned ? 'unlocked' : 'no_pin', failures: 0, cooldownMs: 0 });
+  return pinned ? 'home' : 'set-pin';
+}
+
+/** Continues after a password login or an approval: unwrap, then first run, Set PIN or home (AC-12). */
 async function continueApproved(kek: Uint8Array, profile: SessionProfile): Promise<AuthRoute> {
   const s = useSession.getState();
   if (await adminNeedsFirstRun(profile)) {
@@ -125,7 +153,7 @@ async function continueApproved(kek: Uint8Array, profile: SessionProfile): Promi
   s.setMk(mk);
   s.setKek(null);
   s.setPhase('ready');
-  return 'home';
+  return routeWithKey(profile);
 }
 
 /** Names the exact call and status so a red banner says which hop failed. */
@@ -301,25 +329,20 @@ export async function completeApproval(): Promise<AuthRoute> {
   return continueApproved(kek, fresh);
 }
 
-/** Rejected, expired or revoked: wipe local key material and the token (AC-13). */
-export async function wipeLocalState(phase: 'rejected' | 'expired' | 'signed_out' = 'signed_out') {
-  const s = useSession.getState();
-  await secureWipe();
-  await setDeviceToken(null);
-  await supabase.auth.signOut().catch(() => undefined);
-  s.reset(phase);
-}
-
 /**
- * Ends the session and drops every secret from memory. The device token, id and nonce stay: this
- * phone remains an approved device until the Admin revokes it or a rejection wipes it, so the
- * next login resumes it instead of registering again.
+ * Ends the session, drops every secret from memory and forgets the PIN (AC-14 of spec 0002). The
+ * device token, id and nonce stay: this phone remains an approved device until the Admin revokes
+ * it or a rejection wipes it, so the next login resumes it instead of registering again.
  */
 export async function signOut(): Promise<void> {
   const s = useSession.getState();
   s.clearSecrets();
+  useLock.getState().bumpGeneration();
+  await forgetPin();
+  await Promise.all([appDelete(AppKeys.backgroundAt), appDelete(AppKeys.profile)]);
   await supabase.auth.signOut().catch(() => undefined);
   s.reset('signed_out');
+  useLock.getState().set({ state: 'no_pin', failures: 0, cooldownMs: 0, busy: false });
 }
 
 /** Change password while unlocked (AC-16): new split, new auth password, new password wrap. */
@@ -418,5 +441,5 @@ export async function redeemGrant(grant: MyGrant, newPassword: string): Promise<
   if (profile) s.setProfile(profile);
   s.setMk(mk);
   s.setPhase('ready');
-  return 'home';
+  return profile ? routeWithKey(profile) : 'home';
 }

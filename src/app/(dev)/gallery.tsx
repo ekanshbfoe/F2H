@@ -12,8 +12,9 @@ import {
   type GlowState,
   type MorphState,
 } from '@/components/motion';
+import { PinEntry, PinProgress } from '@/components/lock';
 import { Avatar, Badge, Button, Callout, Card, Row, Sheet, Text, TextField } from '@/components/ui';
-import { benchScrypt, type KdfBenchResult } from '@/crypto';
+import { benchScrypt, localWrap, type KdfBenchResult } from '@/crypto';
 import { useTheme } from '@/theme';
 
 /** Dev only gallery of every primitive and motion. Not reachable in production. */
@@ -27,6 +28,8 @@ export default function GalleryScreen() {
   const [deckKey, setDeckKey] = useState(0);
   const [email, setEmail] = useState('');
   const [bench, setBench] = useState<KdfBenchResult[] | 'running' | null>(null);
+  const [pin, setPin] = useState('');
+  const [unlockMs, setUnlockMs] = useState<number | 'running' | null>(null);
 
   useEffect(() => {
     if (morph === 'pending') {
@@ -237,6 +240,38 @@ export default function GalleryScreen() {
           >
             Run KDF benchmark
           </Button>
+        </Card>
+        <Card>
+          <Text variant="body" color="muted">
+            One PIN unlock derivation (SCRYPT_DEFAULT plus HKDF). Record the number in the spec 0002
+            follow up.
+          </Text>
+          {typeof unlockMs === 'number' ? (
+            <Row label="Unlock derivation" value={`${unlockMs} ms`} />
+          ) : null}
+          <PinProgress visible={unlockMs === 'running'} label="Deriving" />
+          <Button
+            variant="secondary"
+            loading={unlockMs === 'running'}
+            onPress={() => {
+              setUnlockMs('running');
+              const salt = localWrap.generateDeviceSalt();
+              const secret = localWrap.generateDeviceSecret();
+              const started = Date.now();
+              localWrap
+                .deriveLocalWrapKey('482913', salt, secret)
+                .then(() => setUnlockMs(Date.now() - started))
+                .catch(() => setUnlockMs(null));
+            }}
+          >
+            Time one PIN unlock
+          </Button>
+        </Card>
+      </Section>
+
+      <Section title="PIN entry">
+        <Card style={{ alignItems: 'center' }}>
+          <PinEntry value={pin} onChange={setPin} onComplete={() => setPin('')} />
         </Card>
       </Section>
 
