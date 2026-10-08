@@ -5,10 +5,11 @@ export {
   findDevice,
   requireAdmin,
   requireApprovedDevice,
+  requirePendingAdmin,
   requireServiceCall,
   requireUser,
 } from './auth.ts';
-export type { Caller, DeviceRow } from './auth.ts';
+export type { Caller, DeviceRow, PendingAdmin } from './auth.ts';
 export { sendPush } from './push.ts';
 export type { PushMessage, PushTicket } from './push.ts';
 export { clientIp, geoLookup } from './geo.ts';

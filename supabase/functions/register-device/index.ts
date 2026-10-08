@@ -14,7 +14,9 @@ Deno.serve(
   handle(async (req) => {
     if (req.method !== 'POST') throw new HttpError(405, 'method_not_allowed');
     const user = await requireUser(req);
-    const body = await readJson<{ device?: unknown; nonce?: string }>(req);
+    const body = await readJson<{ device?: unknown; nonce?: string; replace_pending?: boolean }>(
+      req,
+    );
     const input = parseDeviceInput({ ...(body.device as object), nonce: body.nonce });
     const db = serviceClient();
 
@@ -40,32 +42,52 @@ Deno.serve(
       return json({ device_id: existing.id, device_token: token, status: 'pending' });
     }
 
-    // One pending request per user.
-    const { data: pending } = await db
-      .from('devices')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('status', 'pending')
-      .maybeSingle();
-    if (pending) {
-      return json(
-        {
-          error: { code: 'pending_exists', message: 'a request is already waiting' },
-          device_id: pending.id,
-        },
-        409,
-      );
-    }
-
-    // True first run only: this is the Admin, the recovery key was never published, and the Admin
-    // has no device row of any status. A lost Admin phone later means a fresh bootstrap, by design.
     const { data: config } = await db
       .from('family_config')
       .select('admin_user_id, admin_recovery_pubkey')
       .eq('id', 1)
       .maybeSingle();
+    const isAdmin = config?.admin_user_id === user.id;
+
+    // One pending request per user. The Admin may replace a foreign pending row of their own
+    // account (spec 0001-admin-device-self-approval, AC-8): the old row expires with an audit row
+    // so a password holder cannot hold the single pending slot against the real Admin.
+    const { data: pending } = await db
+      .from('devices')
+      .select('id, model')
+      .eq('user_id', user.id)
+      .eq('status', 'pending')
+      .maybeSingle();
+    if (pending) {
+      if (!(body.replace_pending === true && isAdmin)) {
+        return json(
+          {
+            error: { code: 'pending_exists', message: 'a request is already waiting' },
+            device_id: pending.id,
+          },
+          409,
+        );
+      }
+      const { data: replaced, error: replaceError } = await db
+        .from('devices')
+        .update({ status: 'expired', decided_at: new Date().toISOString() })
+        .eq('id', pending.id)
+        .eq('status', 'pending')
+        .select('id')
+        .maybeSingle();
+      if (replaceError || !replaced) throw new HttpError(500, 'replace_failed');
+      await writeAudit(db, {
+        actor_id: user.id,
+        action: 'device.replaced',
+        target_user_id: user.id,
+        meta: { device_id: pending.id, model: pending.model },
+      });
+    }
+
+    // True first run only: this is the Admin, the recovery key was never published, and the Admin
+    // has no device row of any status. Later, a pending Admin phone proves the paper kit instead.
     let status: 'pending' | 'approved' = 'pending';
-    if (config?.admin_user_id === user.id && !config.admin_recovery_pubkey) {
+    if (isAdmin && !config?.admin_recovery_pubkey) {
       const { count } = await db
         .from('devices')
         .select('id', { count: 'exact', head: true })
