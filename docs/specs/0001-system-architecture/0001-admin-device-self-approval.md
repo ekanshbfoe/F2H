@@ -120,12 +120,12 @@ Client api (`src/features/device/self-approve.ts`): `checkRecoveryWords(words, r
 
 Tracer Bullet: the first three tasks carry one real proof from the database through the function to the phone and back to Set PIN; the rest thickens.
 
-1. Migration 0012: the four `devices` columns, check and trigger, `answer_admin_challenge` (with `p_revoke_others`) and `admin_revoke_device` RPCs with grants, `device.replaced` support, pgTAP for both RPCs, the trigger on the expire and cancel paths, the race and the replace path; regenerate types, satisfies **AC-4**, **AC-5**, **AC-6** (server), **AC-8**, **AC-9** (pgTAP).
-2. `functions/_shared/challenge.ts` (tag construction in Deno, `npm:` pins in `deno.json`) with a Deno vectors test shared with `src/crypto/__tests__/vectors.json`; `requirePendingAdmin` in `_shared/auth.ts`; the `self-approve-device` function with both steps, the outcome mapping, the push to other admin phones; `register-device` `replace_pending`, satisfies **AC-2**, **AC-4**, **AC-5**, **AC-8**, **AC-9** (Deno).
-3. Client api `self-approve.ts` (local checks, tag, one burst, outcome handling), the `MnemonicEntry` component (24 boxes, suggestions, paste, hygiene, zeroing), the kit card on the waiting screen with the `recovery_pub` fetch and the main vs secondary placement, the `selfApproving` flag and the handoff into `completeApproval()`, satisfies **AC-1**, **AC-3**, **AC-4**.
-4. Success step reading `member_devices_view` with "Sign out that phone" over `admin_revoke_device` and the "also sign out my other phones" option on the words step, satisfies **AC-6**.
-5. `countMyApprovedDevices()` shared by the waiting screen and `checkDeviceStatus()`, the cache key and its removal in `wipeLocalState`, the Forgot PIN warning, satisfies **AC-7**.
-6. Jest for `MnemonicEntry`, the waiting card, the watcher ordering and the warning; `verify.md` for this child, satisfies **AC-9**.
+1. [x] Migration 0012: the four `devices` columns, check and trigger, `answer_admin_challenge` (with `p_revoke_others`) and `admin_revoke_device` RPCs with grants, `device.replaced` support, pgTAP for both RPCs, the trigger on the expire and cancel paths, the race and the replace path; regenerate types, satisfies **AC-4**, **AC-5**, **AC-6** (server), **AC-8**, **AC-9** (pgTAP).
+2. [x] `functions/_shared/challenge.ts` (tag construction in Deno, `npm:` pins in `deno.json`) with a Deno vectors test shared with `src/crypto/__tests__/vectors.json`; `requirePendingAdmin` in `_shared/auth.ts`; the `self-approve-device` function with both steps, the outcome mapping, the push to other admin phones; `register-device` `replace_pending`, satisfies **AC-2**, **AC-4**, **AC-5**, **AC-8**, **AC-9** (Deno).
+3. [x] Client api `self-approve.ts` (local checks, tag, one burst, outcome handling), the `MnemonicEntry` component (24 boxes, suggestions, paste, hygiene, zeroing), the kit card on the waiting screen with the `recovery_pub` fetch and the main vs secondary placement, the `selfApproving` flag and the handoff into `completeApproval()`, satisfies **AC-1**, **AC-3**, **AC-4**.
+4. [x] Success step reading `member_devices_view` with "Sign out that phone" over `admin_revoke_device` and the "also sign out my other phones" option on the words step, satisfies **AC-6**.
+5. [x] `countMyApprovedDevices()` shared by the waiting screen and `checkDeviceStatus()`, the cache key and its removal in `wipeLocalState`, the Forgot PIN warning, satisfies **AC-7**.
+6. [x] Jest for `MnemonicEntry`, the waiting card, the watcher ordering and the warning; `verify.md` for this child, satisfies **AC-9**.
 
 ## Consequences
 

@@ -157,3 +157,42 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 - AC-14 expiry cron: expire-requests command, expiry step
 - AC-15 recovery grant and reset: forgot password step
 - AC-16 change password: change password step
+
+---
+
+# Verify: admin device self approval · spec 0001 (child 0001-admin-device-self-approval) · updated 2026-10-08
+_Steps derived from the child spec's acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
+
+## UI / manual (Admin phone, after a wipe or on a second phone; the paper kit at hand)
+- [ ] Log in as the Admin on a wiped phone → the waiting screen shows "Use my recovery kit" with the primary "Enter my 24 words" when no other admin phone is approved; with one approved it shows "Can't reach your other phone?" and the secondary button → AC-1
+- [ ] Log in as a member on a pending phone → no kit card → AC-1
+- [ ] Turn Wi-Fi off before the waiting screen loads → the card says the key could not be fetched with a Retry; Wi-Fi on, Retry → the button enables → AC-1
+- [ ] Open the words screen → the family fingerprint matches the paper kit; a screenshot is blocked → AC-3
+- [ ] Type "ab" in box 3 → suggestions appear; tap one → it fills and the focus moves to box 4 → AC-3
+- [ ] Paste the whole 24 word line into box 1 → all boxes fill, the clipboard is empty afterwards (paste into Notes shows nothing) → AC-3
+- [ ] Change one word and tap Prove → "do not form a valid kit" with no network request (function logs show no call) → AC-3
+- [ ] Type a valid phrase from another seed → "not the kit this family published" with no network request → AC-3
+- [ ] Correct words, "Also sign out my other phones" on → "This phone is approved" appears first; the lost phone shows as signed out; Continue → Set PIN → Home → AC-4, AC-6
+- [ ] Dashboard: the new row is `approved` with `decided_by` = the Admin and all four challenge columns null or 0 attempts; the old row `revoked`; `audit_log` has `device.self_approve` and one `device.revoke` with reason `self_approve` → AC-4, AC-6
+- [ ] On the success step with another approved admin phone: "Sign out that phone" → the row flips to `revoked`, the badge says Signed out; that phone wipes on its next foreground → AC-6
+- [ ] The other admin phone (EAS build, not Expo Go on Android) receives "Admin account recovered" → AC-6
+- [ ] Kill the app on the words screen, reopen → waiting screen again; finish the proof → success step, then Continue goes to login; log in → straight to Set PIN → AC-4
+- [ ] Forgot PIN on the only approved admin phone → the confirm says "only approved Admin phone" and mentions the 24 words; with two approved admin phones → the plain copy → AC-7
+- [ ] A member's Forgot PIN confirm never shows the admin copy → AC-7
+- [ ] Admin phone A pending, log in as the Admin on phone B → B registers and A's row becomes `expired` with `device.replaced`; A's waiting screen wipes to the expired screen → AC-8
+
+## Commands
+- [ ] `npx supabase db query --linked -f supabase/tests/database/0004_admin_self_approval.test.sql` (pgTAP enabled, the admin uuid swapped for the real Admin's, the file ending with `select num_failed()`) → 0 failed of 33 → AC-4, AC-5, AC-6, AC-8, AC-9
+- [ ] `npm test -- challenge self-approve MnemonicEntry waiting-card storage auth` → the crypto vector, the server tag, the api mapping, the word entry, the card and the warning suites green → AC-2, AC-3, AC-5, AC-9
+- [ ] `npm run typecheck && npm run lint` → clean
+- [ ] `curl -X POST https://<ref>.supabase.co/functions/v1/self-approve-device` with the anon key as bearer → 401 `unauthenticated`; with a member JWT and device header → 403 `admin_required` → AC-2
+
+## Value sourcing checks
+- [ ] Three wrong proofs: run the words screen with a deliberately corrupted tag (dev build, or two `answer` calls with random tags through curl using the Admin JWT and pending header) → `wrong_tag` with `attempts_left` 2 then 1, the third sets `rejected` and the phone wipes as for a rejection → AC-5
+- [ ] Let a challenge sit 11 minutes (set `challenge_expires_at` back in the dashboard) then answer → `challenge_expired`, `challenge_attempts` unchanged, the phone re-issues and succeeds → AC-5
+- [ ] Six challenge calls on one pending row → the sixth answers 409 `too_many_challenges` → AC-2
+- [ ] Cancel the request from the waiting screen while a challenge is open → the row is `expired` with null challenge columns (trigger) → AC-8
+- [ ] The cached count: after Home loads on the Admin phone, AsyncStorage holds `f2h.admin_approved_count` equal to the approved admin rows; after sign out it is gone; a member phone never writes it → AC-7
+
+## Acceptance-criteria coverage
+- AC-1 kit card placement and offline · AC-2 challenge step, gate and limits · AC-3 word entry and local checks · AC-4 atomic approval, success step first, cold start · AC-5 wrong, expired, third wrong rejects · AC-6 success step revoke and push · AC-7 last admin phone warning · AC-8 trigger, race, replace · AC-9 pgTAP, vector tests, jest

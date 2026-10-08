@@ -123,16 +123,16 @@ Spec [0002-app-lock](../specs/0002-app-lock/index.md) · code in `src/features/l
 The Admin approves their own new or wiped phone by proving the paper recovery kit (an X25519 agreement tag, the phone never decrypts anything), can sign out other admin phones in the same step, and is warned before wiping the only approved admin phone.
 **Done when:** an Admin with no reachable approved phone gets back in with the password and the 24 words, a lost phone can be signed out from the success step, and the Forgot PIN confirm warns on the last approved admin phone.
 - [x] Design it (spec): `/architect admin device self approval`
-- [ ] Build it: `/develop admin device self approval`
-   - [ ] Migration 0012: challenge columns, trigger, `answer_admin_challenge` and `admin_revoke_device`, pgTAP (AC-4, AC-5, AC-6, AC-8, AC-9)
-   - [ ] `self-approve-device` function with the tag construction, `requirePendingAdmin`, `replace_pending` (AC-2, AC-4, AC-5, AC-8)
-   - [ ] Word entry, kit card on the waiting screen, one burst proof and handoff to Set PIN (AC-1, AC-3, AC-4)
-   - [ ] Success step with sign out of other phones, approved count helper and the Forgot PIN warning, jest and verify.md (AC-6, AC-7, AC-9)
+- [x] Build it: `/develop admin device self approval`
+   - [x] Migration 0012: challenge columns, trigger, `answer_admin_challenge` and `admin_revoke_device`, pgTAP (AC-4, AC-5, AC-6, AC-8, AC-9)
+   - [x] `self-approve-device` function with the tag construction, `requirePendingAdmin`, `replace_pending` (AC-2, AC-4, AC-5, AC-8)
+   - [x] Word entry, kit card on the waiting screen, one burst proof and handoff to Set PIN (AC-1, AC-3, AC-4)
+   - [x] Success step with sign out of other phones, approved count helper and the Forgot PIN warning, jest and verify.md (AC-6, AC-7, AC-9)
 - [ ] Verify it: `/check verify admin device self approval`
 - [ ] Test it: `/test admin device self approval`
 - [ ] Review it (fresh model): `/check review admin device self approval`
 - [ ] Document it: `/document admin device self approval`
-Spec [0001-admin-device-self-approval](../specs/0001-system-architecture/0001-admin-device-self-approval.md)
+Spec [0001-admin-device-self-approval](../specs/0001-system-architecture/0001-admin-device-self-approval.md) · code in migration 0012, `supabase/functions/{self-approve-device,register-device}`, `supabase/functions/_shared/{challenge,auth}.ts`, `src/crypto/challenge.ts`, `src/features/device/{self-approve,approved-count}.ts`, `src/features/device/screens/`, `src/components/mnemonic/`, `src/app/(auth)/{waiting,recovery-words,recovered}.tsx`, `src/features/lock/{api,storage}.ts` · migration applied and functions deployed to the hosted project 2026-10-08
 
 ## Slice 2: Contacts
 
