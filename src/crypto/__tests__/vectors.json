@@ -119,5 +119,15 @@
     "deviceSecret": "999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8",
     "wrapKey": "b89ac98998bfd940be1d4e64f195996e067b6749465d4915ce88f89d392dff9c",
     "bioKey": "827a8d266cda5e1455301e59e02fd3d9089a9b6f72737f1619c8d7935739cfaa"
+  },
+  "adminChallenge": {
+    "info": "f2h:admin-challenge:v1",
+    "recoverySecretKey": "6ca6a3efe47020c49e090301a5beb4f6920735a906acbf046d2b97993927b4a6",
+    "recoveryPub": "3cb8a0649a0c06a88d256332bf5e15bbc24a4d365ec3e9e49ba1994d69e0470a",
+    "ephSecretKey": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+    "ephPub": "07a37cbc142093c8b755dc1b10e86cb426374ad16aa853ed0bdfc0b2b86d1c7c",
+    "deviceId": "a2a2a2a2-a2a2-4a2a-8a2a-a2a2a2a2a2a2",
+    "tag": "febb01f859e509209d75bee870357aae9b13d430e20be012f24a455bd2b1d823",
+    "tagHash": "5fa80f544e4d15c7728be75e38f1dcf04b4fe1afef8e8c823dc2b14628c0220b"
   }
 }

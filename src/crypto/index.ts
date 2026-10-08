@@ -7,6 +7,7 @@ import './polyfill';
 
 import { open as aeadOpen, seal as aeadSeal, KEY_LEN, NONCE_LEN, TAG_LEN } from './aead';
 import { generateKeypair, open as boxOpen, publicKeyOf, seal as boxSeal } from './box';
+import * as challenge from './challenge';
 import { decryptFile, encryptFile, parseHeader } from './chunked';
 import * as envelope from './envelope';
 import * as localWrap from './local-wrap';
@@ -59,4 +60,4 @@ export const box = { seal: boxSeal, open: boxOpen, generateKeypair, publicKeyOf 
 /** Chunked file format for Drive blobs; storage is injected through a `FileAdapter`. */
 export const chunked = { encryptFile, decryptFile, parseHeader } as const;
 
-export { envelope, localWrap, mnemonic, recovery, verifier };
+export { challenge, envelope, localWrap, mnemonic, recovery, verifier };
