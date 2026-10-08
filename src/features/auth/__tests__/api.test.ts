@@ -2,7 +2,7 @@
 import { box, envelope, fromBase64, passwordSplitSync, toBase64, verifier } from '@/crypto';
 import { FunctionError } from '@/services/functions';
 import { useSession } from '@/state/session.store';
-import { changePassword, redeemGrant, signIn } from '../api';
+import { changePassword, redeemGrant, signIn, signOut } from '../api';
 
 // rewraps under the new KEK and leaves the Admin wrap alone), plus the error mapping the banner shows.
 
@@ -159,6 +159,31 @@ describe('signIn', () => {
     await expect(signIn({ email: EMAIL, password: PASSWORD })).resolves.toBe('home');
     expect(mockRegister).not.toHaveBeenCalled();
     expect(useSession.getState().deviceId).toBe('dev-1');
+  });
+
+  it('keeps the device identity on a transient status lookup failure', async () => {
+    mockStore.set('f2h.device_id', 'dev-1');
+    mockStore.set('f2h.device_token', 'dG9r');
+    mockTables.devices = []; // row not visible right now
+    mockRegister.mockResolvedValue({ deviceId: 'dev-1', status: 'approved' });
+    const split = passwordSplitSync(EMAIL, PASSWORD);
+    seedKeyMaterial(envelope.generateMasterKey(), split.kek);
+    await signIn({ email: EMAIL, password: PASSWORD });
+    expect(mockStore.get('f2h.device_id')).toBe('dev-1');
+    expect(mockStore.get('f2h.device_token')).toBe('dG9r');
+  });
+
+  it('sign out keeps the device token, id and nonce for the next login', async () => {
+    mockStore.set('f2h.device_id', 'dev-1');
+    mockStore.set('f2h.device_token', 'dG9r');
+    mockStore.set('f2h.registration_nonce', 'n-1');
+    useSession.getState().setMk(envelope.generateMasterKey());
+    await signOut();
+    expect(mockStore.get('f2h.device_id')).toBe('dev-1');
+    expect(mockStore.get('f2h.device_token')).toBe('dG9r');
+    expect(mockStore.get('f2h.registration_nonce')).toBe('n-1');
+    expect(useSession.getState().mk).toBeNull();
+    expect(useSession.getState().phase).toBe('signed_out');
   });
 
   it('forgets a closed device and registers afresh', async () => {

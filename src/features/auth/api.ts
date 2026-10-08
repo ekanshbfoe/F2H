@@ -166,10 +166,17 @@ async function resumeExistingDevice(): Promise<Registration | null> {
   const storedId = await secureGet(SecureKeys.deviceId);
   const token = getDeviceToken() ?? (await loadDeviceToken());
   if (!storedId || !token) return null;
-  const { data } = await supabase.from('devices').select('status').eq('id', storedId).maybeSingle();
-  if (data?.status === 'approved' || data?.status === 'pending') {
+  const { data, error } = await supabase
+    .from('devices')
+    .select('status')
+    .eq('id', storedId)
+    .maybeSingle();
+  // A transient error or an invisible row never wipes anything: registration's nonce guard decides.
+  if (error || !data) return null;
+  if (data.status === 'approved' || data.status === 'pending') {
     return { deviceId: storedId, status: data.status };
   }
+  // Definitively closed (rejected, expired, revoked): forget the identity so a fresh one can start.
   await setDeviceToken(null);
   await secureDelete(SecureKeys.deviceId);
   await secureDelete(SecureKeys.registrationNonce);
@@ -303,10 +310,14 @@ export async function wipeLocalState(phase: 'rejected' | 'expired' | 'signed_out
   s.reset(phase);
 }
 
+/**
+ * Ends the session and drops every secret from memory. The device token, id and nonce stay: this
+ * phone remains an approved device until the Admin revokes it or a rejection wipes it, so the
+ * next login resumes it instead of registering again.
+ */
 export async function signOut(): Promise<void> {
   const s = useSession.getState();
   s.clearSecrets();
-  await setDeviceToken(null);
   await supabase.auth.signOut().catch(() => undefined);
   s.reset('signed_out');
 }
