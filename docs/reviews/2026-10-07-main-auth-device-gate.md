@@ -2,9 +2,34 @@
 
 **Reviewed by**: claude-opus-5-5 (fresh reviewer context; author on a separate session)
 **Scope**: 56 files, branch vs base (main, merge base 3d15704, committed range); re-review of the fix range 4e84ebe..HEAD (19 files, commits 7820694, aa51fdc, 5e8bbe0, 7592370)
-**Verdict**: Blocked (re-review: the fix for Blocker 1 introduces a new Blocker)
+**Verdict**: Blocked (second re-review: the regression is fixed for cold start re-login but still happens after Sign out or a failed status read)
 
-## Re-review (fix range 4e84ebe..HEAD)
+## Re-review 2 (fix range 7592370..HEAD, commit 69cfcd6), 2026-10-08
+
+**New verdict**: Blocked.
+
+`resumeExistingDevice()` fixes the cold start path. An install holding a token and an id reads its own row and resumes an approved or pending device without calling `register-device`. `registerDevice()` keeps a stored approval on `nonce_used` with status `approved`. The first run and reset-password changes are correct. Two paths still turn an approved phone into a new pending request and drop its approval, and the Admin lockout follows from either.
+
+### 🔴 STILL OPEN (narrowed): approval lost after Sign out or a failed status read, `src/features/auth/api.ts` (`signOut`, `resumeExistingDevice`), `src/features/device/register.ts:89-101`
+**Problem**:
+1. **Sign out.** `signOut()` (Home, "Sign out") still calls `setDeviceToken(null)` but keeps the device id and the nonce. On the next login, `resumeExistingDevice()` finds no token and returns null. `registerDevice()` then gets `nonce_used` with status `approved`, but `hasToken` is false, so it deletes the nonce and the id and registers a fresh pending device. The approved row is orphaned. An Admin who taps Sign out cannot approve their own new phone, and nobody else can.
+2. **Failed status read.** `resumeExistingDevice()` ignores the `error` of the `devices` select. A transient network or PostgREST failure gives `data === null` and is treated as "closed or unknown device": the token, the id and the nonce are deleted. The same orphaning and lockout follow from one flaky request.
+
+**Why it matters**: The outcome is the same as the regression. A normal user action (Sign out) or a transient error permanently loses the device approval, and for the Admin it forces a fresh bootstrap.
+**Suggested fix**: Treat the device token as a device credential that survives sign out. Clear it only on rejected, expired or revoked, or on a full wipe, and drop `setDeviceToken(null)` from `signOut()`. In `resumeExistingDevice()`, if the select returns an error, throw (show "could not reach the vault") instead of wiping. Wipe only when the row is visibly closed, or when it is missing while the query itself succeeded. Add tests for "sign out then sign in keeps the approved device" and "a status read error does not wipe identity".
+
+### Other items in this range
+| Item | Status | Reasoning |
+|---|---|---|
+| 🟠 Admin first run, rollback deletes a committed note | Resolved | An RPC error counts as success when `recovery_pubkey()` already returns this key (lost reply). The note is deleted only on a genuine failure, and the hint `secureSet` is non fatal. A test covers the lost reply. |
+| 🟡 reset-password burns the grant on a failed write | Resolved | The grant is released (`consumed_at = null`) when the password or wrap write fails. The release result is not checked (Nit). |
+| 🟠 Screens in `src/app/` | Open (deferred by the author) | Unchanged; not a regression. |
+| 🟠 Handler tests and pgTAP | Open (deferred by the author) | Unchanged; not a regression. |
+
+### New nit
+- ⚪ `src/features/auth/api.ts` `resumeExistingDevice`: an approved row whose token was rotated elsewhere resumes as approved, and the unwrap then fails with `not_released` instead of re-registering. This is an edge case. Confirm the token with a header gated read (for example `current_device_id()`) if it matters.
+
+## Re-review (fix range 4e84ebe..7592370)
 
 **New verdict**: Blocked.
 
