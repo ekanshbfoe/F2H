@@ -2,12 +2,12 @@
 _Steps derived from spec 0002 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
 ## UI / manual
-- [ ] Log in on an approved phone with no PIN → Set PIN appears before Home → AC-1
+- [x] Log in on an approved phone with no PIN → Set PIN appears before Home → AC-1
 - [ ] Set PIN: enter `123456` → refused with the straight run message; `000000` → refused as repeated → AC-15
-- [ ] Set PIN: two different PINs → shake, clear, back to the first step; a matching pair → Home, `f2h.lock_owner` is this user → AC-1
-- [ ] Kill the app, turn Wi-Fi off, reopen → the Unlock gate shows first, offline; the right PIN opens Home with a moving progress bar, about 1.5 s on the LAVA LXX503 → AC-2, AC-13
-- [ ] Background 59 s then return → still open; background 61 s (default 1 min) → the Unlock gate over Home, Home still there after the PIN → AC-3
-- [ ] Home → pick "15 s"; kill and reopen → the chip still says "15 s"; background 16 s → locked → AC-8
+- [x] Set PIN: two different PINs → shake, clear, back to the first step; a matching pair → Home, `f2h.lock_owner` is this user → AC-1
+- [x] Kill the app, turn Wi-Fi off, reopen → the Unlock gate shows first, offline; the right PIN opens Home with a moving progress bar, about 1.5 s on the LAVA LXX503 → AC-2, AC-13
+- [x] Background 59 s then return → still open; background 61 s (default 1 min) → the Unlock gate over Home, Home still there after the PIN → AC-3
+- [x] Home → pick "15 s"; kill and reopen → the chip still says "15 s"; background 16 s → locked → AC-8
 - [ ] Home → "Lock now" → the Unlock gate at once; the Locked badge until the PIN → AC-8
 - [ ] Wrong PIN 4 times → shake and the tries left line; 5th → "Try again in 0:30" with the pad disabled → AC-4
 - [ ] Kill the app during the countdown and reopen → the countdown resumes with the time that was left, not from zero → AC-4
@@ -33,7 +33,7 @@ _Steps derived from spec 0002 acceptance criteria. `/check verify` runs these; `
 - [ ] PIN never leaves the phone: watch the network tab or function logs while setting and unlocking → no request carries digits → invariant
 - [ ] Wrong owner: set `f2h.lock_owner` to another id (dev tool) → the right PIN answers "wrong PIN" → AC-14
 - [ ] Attempt entry written before the derivation: kill the app the instant after the sixth digit → on reopen the miss count went up by one → AC-4
-- [ ] Timeout source: with no `f2h.lock_timeout_ms` stored the lock fires after 60 s → AC-3
+- [x] Timeout source: with no `f2h.lock_timeout_ms` stored the lock fires after 60 s → AC-3
 - [ ] Background marker: an `inactive` blip (notification shade) under the timeout never locks → AC-3
 
 ## Acceptance-criteria coverage
