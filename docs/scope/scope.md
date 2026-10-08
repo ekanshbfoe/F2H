@@ -114,7 +114,7 @@ Six digit PIN set and unlock screens with the glow box motion, master key wrappe
    - [x] PIN pad and boxes, Set PIN handoff and sign out forgetting the PIN (AC-1, AC-11, AC-14, AC-15)
    - [x] Unlock modal, boot order, backoff, countdown, tenth miss wipe and Forgot PIN (AC-2, AC-4, AC-5, AC-6)
    - [x] Auto lock, Lock now, timeout setting, Change PIN, privacy overlay and the revoke guard (AC-3, AC-7, AC-8, AC-9, AC-10)
-- [ ] Verify it: `/check verify app lock`
+- [x] Verify it: `/check verify app lock`
 - [ ] Test it: `/test app lock`
 Spec [0002-app-lock](../specs/0002-app-lock/index.md) · code in `src/features/lock/`, `src/components/lock/`, `src/app/(lock)/`, `src/features/auth/{api,session}.ts`, `src/services/{app-storage,secure-store,supabase}.ts`, migration 0011
 
