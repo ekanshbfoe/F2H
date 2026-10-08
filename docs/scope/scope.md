@@ -116,7 +116,7 @@ Six digit PIN set and unlock screens with the glow box motion, master key wrappe
    - [x] Auto lock, Lock now, timeout setting, Change PIN, privacy overlay and the revoke guard (AC-3, AC-7, AC-8, AC-9, AC-10)
 - [ ] Verify it: `/check verify app lock`
 - [ ] Test it: `/test app lock`
-Spec [0002-app-lock](../specs/0002-app-lock.md) · code in `src/features/lock/`, `src/components/lock/`, `src/app/(lock)/`, `src/features/auth/{api,session}.ts`, `src/services/{app-storage,secure-store,supabase}.ts`, migration 0011
+Spec [0002-app-lock](../specs/0002-app-lock/index.md) · code in `src/features/lock/`, `src/components/lock/`, `src/app/(lock)/`, `src/features/auth/{api,session}.ts`, `src/services/{app-storage,secure-store,supabase}.ts`, migration 0011
 
 ## Slice 2: Contacts
 
