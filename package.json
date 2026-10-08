@@ -15,7 +15,7 @@
     "prepare": "husky",
     "db:push": "supabase db push",
     "db:test": "supabase test db",
-    "db:types": "supabase gen types typescript --project-id abkjryjrwvnutwmzbkex --schema public > src/types/database.types.ts",
+    "db:types": "npx supabase gen types typescript --project-id abkjryjrwvnutwmzbkex --schema public > src/types/database.types.ts",
     "bootstrap:admin": "node scripts/bootstrap-admin.ts"
   },
   "dependencies": {

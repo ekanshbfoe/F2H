@@ -612,6 +612,10 @@ export type Database = {
         }[];
       };
       request_device_token_hash: { Args: never; Returns: string };
+      revoke_my_device: {
+        Args: { p_device_id: string };
+        Returns: Database['public']['Enums']['device_status'];
+      };
     };
     Enums: {
       blob_state: 'uploading' | 'ok' | 'degraded' | 'missing';
