@@ -120,6 +120,19 @@ describe('registerDevice', () => {
     expect(mockCall).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps an approved registration when the server says the nonce is spent', async () => {
+    mockStore.set('f2h.device_id', 'dev-approved');
+    mockStore.set('f2h.device_token', 'dG9r');
+    mockCall.mockRejectedValue(new FunctionError(409, 'nonce_used', { status: 'approved' }));
+    await expect(registerDevice()).resolves.toEqual({
+      deviceId: 'dev-approved',
+      status: 'approved',
+    });
+    expect(mockCall).toHaveBeenCalledTimes(1);
+    expect(mockSetToken).not.toHaveBeenCalled();
+    expect(mockStore.get('f2h.device_id')).toBe('dev-approved');
+  });
+
   it('gives up after one nonce_used retry', async () => {
     mockCall.mockRejectedValue(new FunctionError(409, 'nonce_used', { status: 'expired' }));
     await expect(registerDevice()).rejects.toMatchObject({ code: 'nonce_used' });

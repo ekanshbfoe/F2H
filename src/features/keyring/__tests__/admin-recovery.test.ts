@@ -1,5 +1,5 @@
 // covers: AC-4 (24 words, 3 confirmed, key published once, seed kept as a vault note, Admin MK sealed to it)
-import { box, envelope, fromBase64, mnemonic, recovery, verifier } from '@/crypto';
+import { box, envelope, fromBase64, mnemonic, recovery, toBase64, verifier } from '@/crypto';
 import {
   exportRecoveryWords,
   finishRecoveryKit,
@@ -116,6 +116,19 @@ describe('recovery kit', () => {
     mockStore.clear(); // no hint: falls back to scanning the notes
     const again = await loadRecoverySecretKey(mk);
     expect(again).toEqual(secret);
+  });
+
+  it('treats a lost RPC reply as success when the published key is ours', async () => {
+    const draft = startRecoveryKit();
+    const pub = toBase64(recovery.deriveRecoveryKeypair(mnemonic.toSeed(draft.words)).publicKey);
+    mockRpc.mockImplementation(async (name: string) =>
+      name === 'admin_first_run'
+        ? { data: null, error: { message: 'network' } }
+        : { data: [{ recovery_pub: pub, fingerprint: draft.fingerprint }], error: null },
+    );
+    const mk = await finishRecoveryKit(draft, new Uint8Array(32).fill(5), ADMIN);
+    expect(mk).toHaveLength(32);
+    expect(mockItems).toHaveLength(1);
   });
 
   it('refuses to continue when the server rejects a second first run', async () => {

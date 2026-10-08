@@ -47,12 +47,20 @@ Deno.serve(
     const { error: pwError } = await db.auth.admin.updateUserById(user.id, {
       password: body.new_auth_secret,
     });
-    if (pwError) throw new HttpError(500, 'password_update_failed');
+    const release = () =>
+      db.from('recovery_grants').update({ consumed_at: null }).eq('id', grantId);
+    if (pwError) {
+      await release();
+      throw new HttpError(500, 'password_update_failed');
+    }
     const { error: kmError } = await db
       .from('key_material')
       .update({ mk_wrapped_pw: body.new_mk_wrapped_pw, updated_by_device: device.id })
       .eq('user_id', user.id);
-    if (kmError) throw new HttpError(500, 'key_material_update_failed');
+    if (kmError) {
+      await release();
+      throw new HttpError(500, 'key_material_update_failed');
+    }
     await writeAudit(db, {
       actor_id: user.id,
       actor_device_id: device.id,

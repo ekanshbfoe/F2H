@@ -86,11 +86,19 @@ export async function registerDevice(retried = false): Promise<Registration> {
       if (stored && serverId === stored) return { deviceId: stored, status: 'pending' };
       throw error;
     }
-    if (error instanceof FunctionError && error.code === 'nonce_used' && !retried) {
-      // The old request is closed (rejected, expired, cancelled): start a fresh one.
-      await secureDelete(SecureKeys.registrationNonce);
-      await secureDelete(SecureKeys.deviceId);
-      return registerDevice(true);
+    if (error instanceof FunctionError && error.code === 'nonce_used') {
+      // Our own approved registration answered: keep it, the stored token is still valid.
+      const stored = await secureGet(SecureKeys.deviceId);
+      const hasToken = (await secureGet(SecureKeys.deviceToken)) !== null;
+      if (error.payload?.status === 'approved' && stored && hasToken) {
+        return { deviceId: stored, status: 'approved' };
+      }
+      if (!retried) {
+        // The old request is closed (rejected, expired, cancelled): start a fresh one.
+        await secureDelete(SecureKeys.registrationNonce);
+        await secureDelete(SecureKeys.deviceId);
+        return registerDevice(true);
+      }
     }
     throw error;
   }

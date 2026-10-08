@@ -8,12 +8,23 @@ import {
   verifier,
   zero,
 } from '@/crypto';
-import { buildDevicePayload, deviceSecretKey, registerDevice } from '@/features/device/register';
+import {
+  buildDevicePayload,
+  deviceSecretKey,
+  registerDevice,
+  type Registration,
+} from '@/features/device/register';
 import { createMemberKeys } from '@/features/keyring/bootstrap';
 import { unlockWithKek } from '@/features/keyring/unlock';
 import { callFunction, FunctionError } from '@/services/functions';
-import { SecureKeys, secureGet, secureSet, secureWipe } from '@/services/secure-store';
-import { loadDeviceToken, setDeviceToken, supabase } from '@/services/supabase';
+import {
+  SecureKeys,
+  secureDelete,
+  secureGet,
+  secureSet,
+  secureWipe,
+} from '@/services/secure-store';
+import { getDeviceToken, loadDeviceToken, setDeviceToken, supabase } from '@/services/supabase';
 import { useSession, type SessionProfile } from '@/state/session.store';
 
 import type { LoginForm, SignupForm } from './model';
@@ -146,6 +157,25 @@ export class AuthError extends Error {
   }
 }
 
+/**
+ * A phone that already holds a device token resumes that device (approved or still pending)
+ * instead of registering again: registration is a one time event per install. A closed or
+ * unknown device forgets its local identity so a fresh registration can start.
+ */
+async function resumeExistingDevice(): Promise<Registration | null> {
+  const storedId = await secureGet(SecureKeys.deviceId);
+  const token = getDeviceToken() ?? (await loadDeviceToken());
+  if (!storedId || !token) return null;
+  const { data } = await supabase.from('devices').select('status').eq('id', storedId).maybeSingle();
+  if (data?.status === 'approved' || data?.status === 'pending') {
+    return { deviceId: storedId, status: data.status };
+  }
+  await setDeviceToken(null);
+  await secureDelete(SecureKeys.deviceId);
+  await secureDelete(SecureKeys.registrationNonce);
+  return null;
+}
+
 /** Password login on this phone, then device registration (AC-6, AC-12). */
 export async function signIn(form: LoginForm): Promise<AuthRoute> {
   const s = useSession.getState();
@@ -168,13 +198,15 @@ export async function signIn(form: LoginForm): Promise<AuthRoute> {
   const profile = await loadProfile(data.user.id);
   if (!profile) throw new AuthError('profile_missing');
   s.setProfile(profile);
-  let registration;
-  try {
-    registration = await registerDevice();
-  } catch (e) {
-    zero(split.kek);
-    if (e instanceof FunctionError) throw functionFailure('register-device', e);
-    throw e;
+  let registration: Registration | null = await resumeExistingDevice();
+  if (!registration) {
+    try {
+      registration = await registerDevice();
+    } catch (e) {
+      zero(split.kek);
+      if (e instanceof FunctionError) throw functionFailure('register-device', e);
+      throw e;
+    }
   }
   s.setDevice(registration.deviceId, registration.status);
   if (form.deviceName) {

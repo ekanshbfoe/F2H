@@ -65,7 +65,8 @@ jest.mock('@/services/supabase', () => ({
     },
   },
   setDeviceToken: jest.fn(async () => undefined),
-  loadDeviceToken: jest.fn(async () => null),
+  loadDeviceToken: jest.fn(async () => mockStore.get('f2h.device_token') ?? null),
+  getDeviceToken: () => mockStore.get('f2h.device_token') ?? null,
 }));
 jest.mock('@/services/functions', () => {
   class FunctionError extends Error {
@@ -93,6 +94,9 @@ jest.mock('@/services/secure-store', () => ({
     mockStore.set(k, v);
   }),
   secureWipe: jest.fn(async () => mockStore.clear()),
+  secureDelete: jest.fn(async (k: string) => {
+    mockStore.delete(k);
+  }),
 }));
 
 const EMAIL = 'father@example.com';
@@ -143,6 +147,28 @@ describe('signIn', () => {
     expect(s.phase).toBe('ready');
     expect(s.mk).toEqual(mk);
     expect(s.kek).toBeNull();
+  });
+
+  it('resumes an already approved phone on a cold start without registering again', async () => {
+    const split = passwordSplitSync(EMAIL, PASSWORD);
+    const mk = envelope.generateMasterKey();
+    seedKeyMaterial(mk, split.kek);
+    mockStore.set('f2h.device_id', 'dev-1');
+    mockStore.set('f2h.device_token', 'dG9r');
+    mockTables.devices = [{ id: 'dev-1', status: 'approved' }];
+    await expect(signIn({ email: EMAIL, password: PASSWORD })).resolves.toBe('home');
+    expect(mockRegister).not.toHaveBeenCalled();
+    expect(useSession.getState().deviceId).toBe('dev-1');
+  });
+
+  it('forgets a closed device and registers afresh', async () => {
+    mockStore.set('f2h.device_id', 'dev-old');
+    mockStore.set('f2h.device_token', 'dG9r');
+    mockTables.devices = [{ id: 'dev-old', status: 'revoked' }];
+    mockRegister.mockResolvedValue({ deviceId: 'dev-new', status: 'pending' });
+    await expect(signIn({ email: EMAIL, password: PASSWORD })).resolves.toBe('waiting');
+    expect(mockRegister).toHaveBeenCalledTimes(1);
+    expect(mockStore.has('f2h.device_id')).toBe(false);
   });
 
   it('keeps the KEK in memory and waits when the device is pending (AC-12 before approval)', async () => {

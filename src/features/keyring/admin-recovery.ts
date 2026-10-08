@@ -63,8 +63,10 @@ export async function finishRecoveryKit(
       p_mk_wrapped_admin: toBase64(box.seal(pair.publicKey, mk)),
       p_mk_verifier: toBase64(verifier.make(mk, userId)),
     });
-    if (error) throw new Error(`admin_first_run failed: ${error.message}`);
-    await secureSet(SecureKeys.recoveryItemId, itemId);
+    if (error && !(await publishedKeyIs(toBase64(pair.publicKey)))) {
+      throw new Error(`admin_first_run failed: ${error.message}`);
+    }
+    await secureSet(SecureKeys.recoveryItemId, itemId).catch(() => undefined); // hint only; the scan finds the note
     return mk;
   } catch (error) {
     if (itemId) await deleteItem(itemId).catch(() => undefined);
@@ -73,6 +75,13 @@ export async function finishRecoveryKit(
   } finally {
     zero(pair.secretKey);
   }
+}
+
+/** True when the published recovery key is exactly this one (an RPC whose reply was lost still committed). */
+async function publishedKeyIs(pubB64: string): Promise<boolean> {
+  const { data } = await supabase.rpc('recovery_pubkey');
+  const row = (Array.isArray(data) ? data[0] : data) as { recovery_pub?: string } | undefined;
+  return row?.recovery_pub === pubB64;
 }
 
 /** The Admin recovery secret key, read from the vault note after unlock. Zero it after use. */
