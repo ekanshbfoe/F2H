@@ -17,7 +17,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 4 | Crypto core | Foundation | in-progress |
 | 5 | Backend foundation (data model & RLS) | Foundation | done |
 | 6 | Auth & device gate | Slice 1 | in-progress |
-| 7 | App lock | Slice 1 | planned |
+| 7 | App lock | Slice 1 | in-progress |
 | 8 | Contacts vault | Slice 2 | planned |
 | 9 | Credential vault | Slice 3 | planned |
 | 10 | Files & Drive redundancy | Slice 4 | in-progress |
@@ -105,10 +105,18 @@ Invite code signup, zero knowledge login, device registration with model and app
 - [x] Document it: `/document auth & device gate`
 Spec [0001-account-and-device-gate](../specs/0001-system-architecture/0001-account-and-device-gate.md) · code in `src/app/(auth)`, `src/app/(admin)`, `src/app/(app)`, `src/features/{auth,device,keyring,admin,vault}`, `src/services/{functions,push,device-info}.ts`, `src/state/`, `supabase/functions/`, migration 0009
 
-### 7. App lock · needs a decision
+### 7. App lock · in-progress
 Six digit PIN set and unlock screens with the glow box motion, master key wrapped by PIN plus device secret, failure backoff and wipe, auto lock, optional biometrics.
 **Done when:** the vault needs the PIN after 60 s in the background or a cold start, ten failures wipe the local key, and biometrics unlock on supported phones.
-- [ ] Design it (spec): `/architect app lock`
+- [x] Design it (spec): `/architect app lock`
+- [ ] Build it: `/develop app lock`
+   - [ ] Self revoke RPC, lock store with the attempt gate, generation guard and wipe reasons (AC-5, AC-12, AC-13, AC-14, AC-16)
+   - [ ] PIN pad and boxes, Set PIN handoff and sign out forgetting the PIN (AC-1, AC-11, AC-14, AC-15)
+   - [ ] Unlock modal, boot order, backoff, countdown, tenth miss wipe and Forgot PIN (AC-2, AC-4, AC-5, AC-6)
+   - [ ] Auto lock, Lock now, timeout setting, Change PIN, privacy overlay and the revoke guard (AC-3, AC-7, AC-8, AC-9, AC-10)
+- [ ] Verify it: `/check verify app lock`
+- [ ] Test it: `/test app lock`
+Spec [0002-app-lock](../specs/0002-app-lock.md)
 
 ## Slice 2: Contacts
 
