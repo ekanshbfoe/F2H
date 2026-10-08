@@ -2,7 +2,20 @@
 
 **Reviewed by**: claude-opus-5-5 (fresh reviewer context; author on a separate session)
 **Scope**: 56 files, branch vs base (main, merge base 3d15704, committed range); re-review of the fix range 4e84ebe..HEAD (19 files, commits 7820694, aa51fdc, 5e8bbe0, 7592370)
-**Verdict**: Blocked (second re-review: the regression is fixed for cold start re-login but still happens after Sign out or a failed status read)
+**Verdict**: Changes requested (third re-review: no Blockers left; the two deferred Majors remain open)
+
+## Re-review 3 (fix range 3f55992..HEAD, commit 619c9d6), 2026-10-08
+
+**New verdict**: Changes requested. No Blockers remain. The only open Majors are the two the author deferred on purpose (screens under `src/app/`, and handler tests plus pgTAP).
+
+| Item | Status | Reasoning |
+|---|---|---|
+| 🔴 Approval lost after Sign out or a failed status read | Resolved | `signOut()` no longer clears the device token, so the token, id and nonce survive and the next login resumes the device. `resumeExistingDevice()` now returns null without side effects on a select error or a missing row. The `nonce_used` / `approved` guard in `registerDevice()` then keeps the stored approval, because the token is still stored. Identity is wiped only on a visible `rejected`, `expired` or `revoked` status. If `register-device` itself is unreachable, login fails and nothing is wiped. I traced all four paths, and the two new tests cover the transient error and sign out cases. |
+| 🟠 Screens in `src/app/` | Open (deferred by the author) | Unchanged; not a regression. |
+| 🟠 Handler tests and pgTAP for 0009 and 0010 | Open (deferred by the author) | Unchanged; not a regression. |
+
+### New minor
+- 🟡 `src/features/auth/api.ts` `resumeExistingDevice` / `signIn`: now that the device identity survives sign out, a second account signing in on the same phone cannot see the stored row. It falls through to `registerDevice()` with the same nonce, gets a new pending device for that account, and overwrites the first account's token and id. The first account then loses its approval on that phone. This is an edge case for a four person family. Bind the stored identity to the user id (key the SecureStore entries by user, or store the owner id and skip the resume when it differs).
 
 ## Re-review 2 (fix range 7592370..HEAD, commit 69cfcd6), 2026-10-08
 
