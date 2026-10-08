@@ -65,16 +65,24 @@ export interface Registration {
 /**
  * Registers this phone for the signed in account (AC-6). The token comes back exactly once and
  * goes straight into SecureStore and the request header. A 409 means a request is already
- * waiting: the stored id is kept and the screen keeps watching it.
+ * waiting: the stored id is kept and the screen keeps watching it. `replacePending` lets the
+ * Admin's phone expire a foreign pending row of their own account (self approval spec, AC-8).
  */
-export async function registerDevice(retried = false): Promise<Registration> {
+export async function registerDevice(
+  retried = false,
+  opts: { replacePending?: boolean } = {},
+): Promise<Registration> {
   const { device, nonce } = await buildDevicePayload();
   try {
     const res = await callFunction<{
       device_id: string;
       device_token: string;
       status: DeviceStatus;
-    }>('register-device', { device, nonce });
+    }>('register-device', {
+      device,
+      nonce,
+      ...(opts.replacePending ? { replace_pending: true } : {}),
+    });
     await setDeviceToken(res.device_token);
     await secureSet(SecureKeys.deviceId, res.device_id);
     return { deviceId: res.device_id, status: res.status };
@@ -97,7 +105,7 @@ export async function registerDevice(retried = false): Promise<Registration> {
         // The old request is closed (rejected, expired, cancelled): start a fresh one.
         await secureDelete(SecureKeys.registrationNonce);
         await secureDelete(SecureKeys.deviceId);
-        return registerDevice(true);
+        return registerDevice(true, opts);
       }
     }
     throw error;

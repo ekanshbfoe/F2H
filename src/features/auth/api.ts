@@ -36,6 +36,8 @@ export type AuthRoute =
   | 'rejected'
   | 'expired'
   | 'recovery-kit'
+  | 'recovery-words'
+  | 'recovered'
   | 'home'
   | 'unlock'
   | 'set-pin'
@@ -236,7 +238,8 @@ export async function signIn(form: LoginForm): Promise<AuthRoute> {
   let registration: Registration | null = await resumeExistingDevice();
   if (!registration) {
     try {
-      registration = await registerDevice();
+      // The Admin's new phone may take over a foreign pending slot of their own account.
+      registration = await registerDevice(false, { replacePending: profile.role === 'admin' });
     } catch (e) {
       zero(split.kek);
       if (e instanceof FunctionError) throw functionFailure('register-device', e);
@@ -339,7 +342,11 @@ export async function signOut(): Promise<void> {
   s.clearSecrets();
   useLock.getState().bumpGeneration();
   await forgetPin();
-  await Promise.all([appDelete(AppKeys.backgroundAt), appDelete(AppKeys.profile)]);
+  await Promise.all([
+    appDelete(AppKeys.backgroundAt),
+    appDelete(AppKeys.profile),
+    appDelete(AppKeys.adminApprovedCount),
+  ]);
   await supabase.auth.signOut().catch(() => undefined);
   s.reset('signed_out');
   useLock.getState().set({ state: 'no_pin', failures: 0, cooldownMs: 0, busy: false });

@@ -26,6 +26,24 @@ export function isValid(words: string[] | string): boolean {
   return phrase.split(' ').length === WORD_COUNT && validateMnemonic(phrase, wordlist);
 }
 
+/** Word list completions for the entry boxes, in list order. */
+export function suggest(prefix: string, limit = 4): string[] {
+  const p = prefix.trim().toLowerCase();
+  if (!p) return [];
+  const out: string[] = [];
+  for (const w of wordlist) {
+    if (w.startsWith(p)) {
+      out.push(w);
+      if (out.length >= limit) break;
+    }
+  }
+  return out;
+}
+
+export function isWord(word: string): boolean {
+  return wordlist.includes(word.trim().toLowerCase());
+}
+
 /** Inverse of `fromSeed`; throws `CryptoError('bad_mnemonic')` on a wrong word or checksum. */
 export function toSeed(words: string[] | string): Uint8Array {
   const phrase = normalize(words);

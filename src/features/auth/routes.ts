@@ -7,6 +7,8 @@ export const AUTH_ROUTES = {
   rejected: '/(auth)/denied?reason=rejected',
   expired: '/(auth)/denied?reason=expired',
   'recovery-kit': '/(admin)/recovery-kit',
+  'recovery-words': '/(auth)/recovery-words',
+  recovered: '/(auth)/recovered',
   home: '/(app)/home',
   /** The Unlock gate is an overlay over the boot screen, not a route: stay where we are. */
   unlock: '/',

@@ -2,12 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Plain (not secret) settings and markers in AsyncStorage. Nothing here is key material: the
- * lock timeout, when the app last left the foreground, and a cache of the public profile row.
+ * lock timeout, when the app last left the foreground, a cache of the public profile row and the
+ * Admin's approved device count for the last phone warning.
  */
 export const AppKeys = {
   lockTimeoutMs: 'f2h.lock_timeout_ms',
   backgroundAt: 'f2h.background_at',
   profile: 'f2h.profile',
+  /** Approved devices of the Admin, this phone included; written only for the admin role (spec 0001 self approval, AC-7). */
+  adminApprovedCount: 'f2h.admin_approved_count',
 } as const;
 
 export type AppKey = (typeof AppKeys)[keyof typeof AppKeys];
