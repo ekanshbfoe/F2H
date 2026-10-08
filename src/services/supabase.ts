@@ -33,11 +33,31 @@ export async function loadDeviceToken(): Promise<string | null> {
   return deviceToken;
 }
 
+let forbiddenHandler: (() => void) | null = null;
+
+/** Installed by the app lock: runs when a request answers 403 `device_not_approved` (spec 0002, AC-10). */
+export function setForbiddenHandler(handler: (() => void) | null): void {
+  forbiddenHandler = handler;
+}
+
+/** True when a 403 body carries the Edge Function code `device_not_approved`; a plain 403 is not it. */
+export async function isDeviceNotApproved(res: Response): Promise<boolean> {
+  if (res.status !== 403) return false;
+  try {
+    const body = (await res.clone().json()) as { error?: { code?: string } } | null;
+    return body?.error?.code === 'device_not_approved';
+  } catch {
+    return false;
+  }
+}
+
 /** Adds the device header when a token exists. Realtime uses the JWT only; it never sees this header. */
-export const fetchWithDeviceHeader: typeof fetch = (input, init) => {
+export const fetchWithDeviceHeader: typeof fetch = async (input, init) => {
   const headers = new Headers(init?.headers);
   if (deviceToken) headers.set(DEVICE_HEADER, deviceToken);
-  return fetch(input, { ...init, headers });
+  const res = await fetch(input, { ...init, headers });
+  if (forbiddenHandler && (await isDeviceNotApproved(res))) forbiddenHandler();
+  return res;
 };
 
 /**
