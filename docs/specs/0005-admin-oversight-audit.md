@@ -1,6 +1,6 @@
 # 0005. Admin oversight and audit
 
-**Status**: Proposed
+**Status**: In Progress
 **Date**: 2026-10-12
 **Mode**: FEATURE · Beta tier (project default) · Tracer Bullet
 **Decided by**: Claude during the autonomous run the engineer authorized on 2026-10-12. Every call below is a recommendation the engineer may overturn.
@@ -63,11 +63,11 @@ One audited Edge Function hands the Admin a member's sealed wrap and ciphertext;
 
 ## Build plan
 
-1. [ ] `oversight-open` function and the client `openMemberVault` (unseal, verify, decrypt, zero); jest, satisfies **AC-1**, **AC-2**, **AC-3**.
-2. [ ] Oversight screen with three read only tabs and the shared secret row; entry on Members with the confirm, satisfies **AC-1**, **AC-4**.
-3. [ ] Activity screen with labels; Home link; device sign out on Members; pgTAP `0008_audit_visibility.test.sql`, satisfies **AC-5**, **AC-6**, **AC-8**.
-4. [ ] Ciphertext cache in `vault/items.ts`, offline flag in the three stores, banners and disabled actions; erased by `wipeLocalState`, satisfies **AC-7**.
-5. [ ] Screen jest and the verify steps, satisfies **AC-8**.
+1. [x] `oversight-open` function and the client `openMemberVault` (unseal, verify, decrypt, zero); jest, satisfies **AC-1**, **AC-2**, **AC-3**.
+2. [x] Oversight screen with three read only tabs and the shared secret row; entry on Members with the confirm, satisfies **AC-1**, **AC-4**.
+3. [x] Activity screen with labels; Home link; device sign out on Members; pgTAP `0008_audit_visibility.test.sql`, satisfies **AC-5**, **AC-6**, **AC-8**.
+4. [x] Ciphertext cache in `vault/items.ts`, offline flag in the three stores, banners and disabled actions; erased by `wipeLocalState`, satisfies **AC-7**.
+5. [x] Screen jest and the verify steps, satisfies **AC-8**.
 
 ## Consequences
 

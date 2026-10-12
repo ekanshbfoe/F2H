@@ -303,3 +303,28 @@ _Queued by the autonomous run of 2026-10-12. The command and server checks ran g
 
 ## Acceptance-criteria coverage
 - AC-1 linking · AC-2 relink flag · AC-3 sessions · AC-4 chunked encrypt · AC-5 dual resumable upload · AC-6 verified completion · AC-7 fresh blob and DEK, bound metadata · AC-8 download token · AC-9 verify, decrypt, open, cache cleared · AC-10 list and states · AC-11 delete · AC-12 reconcile · AC-13 proxy mode
+
+---
+
+# Verify: admin oversight & audit · spec 0005 · updated 2026-10-12
+_Queued by the autonomous run of 2026-10-12. The command checks ran green; the phone steps need the Admin phone and one member phone._
+
+## UI / manual
+- [ ] Admin: Home → Admin → Members → a member → "Open vault (logged)" → the confirm says the member will be told → Open, logged → the member's contacts, credentials and file names show, with no add, edit or delete anywhere → AC-1, AC-4
+- [ ] The member's phone (EAS build for the push) gets "The Admin opened your vault"; their Home → Activity shows "The Admin opened a vault, read only" with the About you badge → AC-2, AC-5
+- [ ] In the oversight Credentials tab, a password shows 8 dots, Reveal shows it, and it masks again after 30 s → AC-4
+- [ ] Lock now while the oversight screen is open → after unlocking, the oversight screen is gone → AC-4
+- [ ] Admin: Activity shows every family event; a member's Activity shows only rows about them → AC-5
+- [ ] Admin: Members → a member → an approved phone → "Sign out this phone" → confirm → it shows `revoked`; that phone wipes the next time it opens F2H → AC-6
+- [ ] The Admin's own current phone has no "Sign out this phone" button in their own list → AC-6
+- [ ] Turn on airplane mode after Contacts, Credentials and Files loaded once → open each list → the "Offline, read only" banner shows the last copy; Add, Import, Edit and Delete are disabled → AC-7
+- [ ] Sign out, sign back in while offline → no offline copy is shown (it was erased) → AC-7
+
+## Commands
+- [x] `npx supabase db query --linked -f supabase/tests/database/0008_audit_visibility.test.sql` (admin uuid swapped, pgTAP enabled) → 0 failed of 6 → AC-5, AC-8 _(ran 2026-10-12 on the hosted project)_
+- [x] `npm test -- src/features/admin src/features/vault src/features/contacts` → green → AC-3, AC-5, AC-7, AC-8 _(2026-10-12: full suite 58 suites, 349 tests)_
+- [x] `oversight-open` without a session → 401 `unauthenticated` → AC-1 _(2026-10-12, deployed)_
+- [x] `npm run typecheck && npm run lint` → clean _(2026-10-12)_
+
+## Acceptance-criteria coverage
+- AC-1 entry and Admin only · AC-2 audit first, push, data · AC-3 unseal, verify, decrypt, zero · AC-4 read only screen · AC-5 Activity · AC-6 device sign out · AC-7 offline copy · AC-8 tests

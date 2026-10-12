@@ -124,3 +124,26 @@ Written during the autonomous run you started on 2026-10-12. Newest feature at t
 - **`bytes_used` accounting** for each Drive.
 - **Sweeping Drive orphans that have no database row.**
 - **Re copying a single blob above 64 MB.** These are reported, not copied.
+
+## Admin oversight & audit (feature 11): built, closing checks open
+
+**What landed** (5 commits on `main`, pushed):
+
+- **Spec 0005.**
+- **Read only oversight.**
+  - **The flow.** Members → a member → "Open vault (logged)" asks for a confirm first. The `oversight-open` function then writes the audit row before it returns anything, and pushes the member. The Admin phone unseals the member's key with the recovery key and checks the verifier. A tampered wrap decrypts nothing.
+  - **What you see.** Contacts, credentials (masked until Reveal) and file names, all read only.
+  - **When it closes.** The decrypted vault is dropped when you leave the screen and on lock.
+- **Activity** (Home → Account → Activity). It shows the newest 100 audit events in plain words. A member sees rows about themselves, including every oversight open, marked "About you". The Admin sees the whole family.
+- **Sign out a member's phone** from Members, through the existing `admin_revoke_device`. Your own current phone has no such button.
+- **Offline, read only.**
+  - Contacts, Credentials and Files keep a SQLite copy of the ciphertext they last loaded. It is never plaintext.
+  - When a load fails, they show that copy with a banner, and add, import, edit and delete are disabled.
+  - The copy is erased on sign out and on every wipe.
+- **Tests.**
+  - The audit visibility database test has 6 checks, all green on the hosted project. It covers a member seeing only their own rows, being unable to write or delete the log, and the Admin seeing everything.
+  - The full jest suite is green: 58 suites, 349 tests.
+
+**Waiting for your phone:** 9 steps in `verify.md` under "Verify: admin oversight & audit". They need the Admin phone and one member phone.
+
+**Not included:** opening a member's actual file contents during oversight. Only names and sizes show. Adding it needs a second audited download path, and the spec records it as a follow up.
