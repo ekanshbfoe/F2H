@@ -328,3 +328,32 @@ _Queued by the autonomous run of 2026-10-12. The command checks ran green; the p
 
 ## Acceptance-criteria coverage
 - AC-1 entry and Admin only · AC-2 audit first, push, data · AC-3 unseal, verify, decrypt, zero · AC-4 read only screen · AC-5 Activity · AC-6 device sign out · AC-7 offline copy · AC-8 tests
+
+---
+
+# Verify: backups & disaster drills · spec 0006 · updated 2026-10-12
+_Queued by the autonomous run of 2026-10-12. The server checks ran green; the Drive and drill steps wait for linked Drives and the engineer._
+
+## UI / manual (after Drive A and B are linked)
+- [ ] Home → Admin → Backups → empty card → Back up now → "Backup saved on both Drives" → a row with "Both Drives" → AC-3, AC-5
+- [ ] Each Drive: `F2H Vault/backups/f2h-backup-<today>.bin` exists; downloading it gives noise, not JSON → AC-2, AC-3
+- [ ] Back up now again the same day → still one row for today, and one file per Drive → AC-4
+- [ ] The next morning (03:00 UTC cron) a new row appears without touching the app → AC-1
+- [ ] Unlink Drive B (revoke F2H in that Google account) → Back up now → "One Drive"; the Admin phone gets the push (EAS build) → AC-3
+- [ ] A member never sees Backups on Home → AC-5
+
+## Disaster drill (a second Supabase project, or Docker locally)
+- [ ] Download the newest `.bin` from either Drive → `npm run restore:backup -- <file> --out restore.sql` → type the kit → the summary prints and "fingerprint … matches" → AC-6
+- [ ] Type a wrong valid phrase → "does not open with this kit"; a different family's kit → the fingerprint mismatch message → AC-6
+- [ ] Follow `docs/runbooks/restore.md` on the new project: `db:push`, `restore.sql`, Vault secrets, functions, Drive relink → the Admin logs in with the old password, self approves with the kit, links both Drives, opens an old contact and an old file → AC-6
+- [ ] A member logs in on the restored project with their old password → waits → the Admin approves → their old contacts and credentials open → AC-6
+
+## Commands
+- [x] `npx supabase db query --linked -f supabase/tests/database/0009_backups.test.sql` (admin uuid swapped) → 0 failed of 5 → AC-5, AC-7 _(ran 2026-10-12 on the hosted project)_
+- [x] `npm test -- src/__tests__/restore-backup.test.ts supabase/functions/_shared/__tests__/backup.test.ts src/features/backups` → green (server sealed box opened by the app's `box.open`, stripped columns, pruning, restore SQL, screen) → AC-2, AC-6, AC-7 _(2026-10-12: full suite 61 suites, 362 tests)_
+- [x] `backup-metadata` with the service key and `{"dry_run": true}` → 200 with counts for every table, 2 auth users, 14359 bytes sealed → AC-1, AC-2 _(2026-10-12)_
+- [x] `backup-metadata` with the service key and no Drive linked → 503 `no_drive_linked`; with the anon key → 401 → AC-1 _(2026-10-12)_
+- [x] `npm run typecheck && npm run lint` → clean _(2026-10-12)_
+
+## Acceptance-criteria coverage
+- AC-1 dump and filter · AC-2 seal to the kit · AC-3 both Drives, verified, recorded · AC-4 prune, one per day · AC-5 Backups screen · AC-6 restore script and runbook · AC-7 tests

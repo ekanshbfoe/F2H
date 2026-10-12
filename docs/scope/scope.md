@@ -22,7 +22,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 9 | Credential vault | Slice 3 | in-progress (built, closing checks open) |
 | 10 | Files & Drive redundancy | Slice 4 | in-progress (built, closing checks open) |
 | 11 | Admin oversight & audit | Slice 5 | in-progress (built, closing checks open) |
-| 12 | Backups & disaster drills | Slice 6 | in-progress |
+| 12 | Backups & disaster drills | Slice 6 | in-progress (built, closing checks open) |
 | 13 | Onboarding & polish | Slice 7 | planned |
 | 14 | Release | Slice 7 | planned |
 | 15 | Admin device self approval | Slice 1 | done |
@@ -198,20 +198,20 @@ Spec [0005-admin-oversight-audit](../specs/0005-admin-oversight-audit.md) · cod
 
 ## Slice 6: Disaster recovery
 
-### 12. Backups & disaster drills · in-progress · GA
+### 12. Backups & disaster drills · in-progress · GA · built, closing checks open
 Daily encrypted metadata snapshot to both Drives, a backups screen, and a restore runbook proven against a fresh local Supabase.
 **Done when:** a snapshot lands on both Drives daily, and the runbook restores a working vault from either Drive alone.
 - [x] Design it (spec): `/architect backups & disaster drills`
-- [ ] Build it: `/develop backups & disaster drills`
-   - [ ] Sealed box in Deno with a shared vector, table dump and filter (AC-1, AC-2, AC-7)
-   - [ ] `backup-metadata` function: seal, upload to both Drives, verify, record, prune (AC-1, AC-3, AC-4)
-   - [ ] Backups screen with Back up now, pgTAP (AC-5, AC-7)
-   - [ ] Restore script and runbook (AC-6, AC-7)
+- [x] Build it: `/develop backups & disaster drills`
+   - [x] Sealed box in Deno with a shared vector, table dump and filter (AC-1, AC-2, AC-7)
+   - [x] `backup-metadata` function: seal, upload to both Drives, verify, record, prune (AC-1, AC-3, AC-4)
+   - [x] Backups screen with Back up now, pgTAP (AC-5, AC-7)
+   - [x] Restore script and runbook (AC-6, AC-7)
 - [ ] Verify it: `/check verify backups & disaster drills`
 - [ ] Test it: `/test backups & disaster drills`
 - [ ] Review it: `/check review backups & disaster drills`
 - [ ] Document it: `/document backups & disaster drills`
-Spec [0006-backups-disaster-drills](../specs/0006-backups-disaster-drills.md)
+Spec [0006-backups-disaster-drills](../specs/0006-backups-disaster-drills.md) · code in migration 0014, `supabase/functions/{backup-metadata,_shared/sealed-box.ts,_shared/backup.ts}`, `src/features/backups/`, `src/app/(admin)/backups.tsx`, `scripts/restore-backup.ts`, `docs/runbooks/restore.md` · deployed 2026-10-12 · Drive and drill steps queued in the umbrella `verify.md`
 
 ## Slice 7: Ship
 

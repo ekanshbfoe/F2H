@@ -1,6 +1,6 @@
 # 0006. Backups and disaster drills
 
-**Status**: Proposed
+**Status**: In Progress
 **Date**: 2026-10-12
 **Mode**: FEATURE · GA tier · Tracer Bullet
 **Decided by**: Claude during the autonomous run the engineer authorized on 2026-10-12. Every call below is a recommendation the engineer may overturn.
@@ -58,10 +58,17 @@ A nightly service role function seals a JSON dump to the recovery public key and
 
 ## Build plan
 
-1. [ ] `_shared/sealed-box.ts` (Deno, same construction) with a vector test against the app's `box.open`; `_shared/backup.ts` (table dump and filter, prune choice); jest, satisfies **AC-1**, **AC-2**, **AC-7**.
-2. [ ] `backup-metadata` function: dump, seal, upload to both `backups` folders, verify, record, prune, push on failure; deploy and run once, satisfies **AC-1**, **AC-3**, **AC-4**.
-3. [ ] Backups screen with "Back up now"; Home link; pgTAP `0009_backups.test.sql`, satisfies **AC-5**, **AC-7**.
-4. [ ] `scripts/restore-backup.ts` with the SQL builder and its jest test; `docs/runbooks/restore.md` (also records the 2026-10-08 manual `decide_device` break glass), satisfies **AC-6**, **AC-7**.
+1. [x] `_shared/sealed-box.ts` (Deno, same construction) with a vector test against the app's `box.open`; `_shared/backup.ts` (table dump and filter, prune choice); jest, satisfies **AC-1**, **AC-2**, **AC-7**.
+2. [x] `backup-metadata` function: dump, seal, upload to both `backups` folders, verify, record, prune, push on failure; deploy and run once, satisfies **AC-1**, **AC-3**, **AC-4**.
+3. [x] Backups screen with "Back up now"; Home link; pgTAP `0009_backups.test.sql`, satisfies **AC-5**, **AC-7**.
+4. [x] `scripts/restore-backup.ts` with the SQL builder and its jest test; `docs/runbooks/restore.md` (also records the 2026-10-08 manual `decide_device` break glass), satisfies **AC-6**, **AC-7**.
+
+## Implementation notes (2026-10-12)
+
+- **Auth rows in the snapshot**: a restored project needs `auth.users` and `auth.identities` for the family to keep their passwords, and PostgREST cannot read the `auth` schema, so migration 0014 adds `backup_auth_rows()` (service role only). `encrypted_password` is a bcrypt of the derived auth secret, never the password; the snapshot is sealed. pgTAP `0009_backups.test.sql` proves a member cannot call it.
+- **Dry run**: a service key call with `{"dry_run": true}` dumps and seals in memory and returns only counts, size and hash (used to verify the live dump on 2026-10-12: 2 auth users, 11 tables, 14 KB sealed). Nothing is uploaded.
+- **Restore SQL**: loads with `session_replication_role = replica` (no webhook pushes, no audit triggers), restores every phone as `revoked` with a placeholder token and no push token, skips `drive_accounts`, and resets the audit sequence.
+- **Not yet proven**: the full drill against a fresh project (needs a second Supabase project or Docker); queued in `verify.md`.
 
 ## Consequences
 

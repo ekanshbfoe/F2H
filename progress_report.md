@@ -147,3 +147,22 @@ Written during the autonomous run you started on 2026-10-12. Newest feature at t
 **Waiting for your phone:** 9 steps in `verify.md` under "Verify: admin oversight & audit". They need the Admin phone and one member phone.
 
 **Not included:** opening a member's actual file contents during oversight. Only names and sizes show. Adding it needs a second audited download path, and the spec records it as a follow up.
+
+## Backups & disaster drills (feature 12): built, closing checks open
+
+**What landed** (5 commits on `main`, pushed):
+
+- **Spec 0006**, and **migration 0014 (live).** The migration lets the backup carry the `auth.users` and `auth.identities` rows. With them, a restored project keeps everyone's existing password. Only the service role can read them.
+- **`backup-metadata`, deployed** for the nightly 03:00 UTC cron and the Admin's "Back up now".
+  - **What goes in.** It dumps every table and drops device token hashes, registration nonces and Vault ids.
+  - **Sealing.** It seals the dump to the paper kit's public key with the same sealed box the app uses. A jest test opens a server sealed box with the app's own code.
+  - **Where it goes.** It uploads to `F2H Vault/backups` on both Drives, checks each upload by hash, records it, keeps 30 days and one snapshot per day, and pushes you on a failure.
+  - **Proven live.** A dry run against the hosted database dumped 2 auth users and all 11 tables, sealed to 14 KB, and uploaded nothing.
+- **Backups screen** under Home → Admin → Backups, with Back up now.
+- **`npm run restore:backup -- <file.bin>`.**
+  - It asks for your 24 words and refuses a kit whose fingerprint does not match the snapshot.
+  - It writes `restore.sql`: everyone keeps their password, old phones come back revoked, and Drive links are left out.
+- **`docs/runbooks/restore.md`**: a full restore onto a fresh Supabase project. It also records the 2026-10-08 SQL break glass.
+- **Tests.** The backups access database test has 5 checks, all green on the hosted project. The full jest suite is green: 61 suites, 362 tests.
+
+**Waiting for you:** link the Drives, then the 6 app steps and the 4 drill steps in `verify.md` under "Verify: backups & disaster drills". The drill needs a second Supabase project, or Docker, which this machine does not have.
