@@ -91,7 +91,8 @@ export function PinEntry({
   const onDelete = useCallback(() => set(latest.current.value.slice(0, -1)), [set]);
   const onClear = useCallback(() => set(''), [set]);
 
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, height } = useWindowDimensions();
+  const compact = height < t.sizes.compactHeight;
   const statusHeight = Math.ceil(
     2 * t.typography.caption.lineHeight! * Math.min(fontScale, t.sizes.maxFontScale),
   );
@@ -112,7 +113,10 @@ export function PinEntry({
   return (
     <View
       style={[
-        { gap: fill ? t.spacing.md : t.spacing.xxl, alignItems: 'center' },
+        {
+          gap: fill ? (compact ? t.spacing.sm : t.spacing.md) : t.spacing.xxl,
+          alignItems: 'center',
+        },
         fill && styles.fill,
       ]}
       testID={testID}

@@ -112,7 +112,12 @@ export function PinScreen({
             entering={enter}
             style={[styles.header, { gap: t.spacing.xs }]}
           >
-            <Text variant="title" align="center" accessibilityRole="header">
+            <Text
+              variant="title"
+              align="center"
+              accessibilityRole="header"
+              maxFontSizeMultiplier={t.sizes.maxFontScale}
+            >
               {title}
             </Text>
             {shown ? (
