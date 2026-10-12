@@ -3,7 +3,7 @@
  * Spec: docs/specs/0001-system-architecture/0001-design-system-motion.md
  * Art direction: design.md (root). No component may use a literal color or size.
  */
-import { Easing } from 'react-native-reanimated';
+import { cubicBezier, Easing } from 'react-native-reanimated';
 import type { TextStyle, ViewStyle } from 'react-native';
 
 export const colors = {
@@ -88,6 +88,10 @@ export const sizes = {
   hairline: 1,
   border: 2,
   focusRing: 3,
+  /** Below this window height the PIN screens tighten their spacing and drop the mascot. */
+  compactHeight: 680,
+  /** The largest text scale the fixed PIN screen slots are sized for. */
+  maxFontScale: 1.3,
 } as const;
 
 type Shadow = Pick<
@@ -155,8 +159,33 @@ export const typography: Record<
   pin: { fontFamily: fontFamilies.semibold, fontSize: 24, lineHeight: 32 },
 };
 
+/** Strong ease out for anything entering or answering a touch. */
+const easeOut = Easing.bezier(0.23, 1, 0.32, 1);
+/** For things moving across the screen. */
+const easeInOut = Easing.bezier(0.77, 0, 0.175, 1);
+
 /** Motion presets reverse engineered from the reference videos. */
 export const motion = {
+  easeOut,
+  easeInOut,
+  /** The same two curves for Reanimated CSS transitions, which take their own type. */
+  cssEaseOut: cubicBezier(0.23, 1, 0.32, 1),
+  cssEaseInOut: cubicBezier(0.77, 0, 0.175, 1),
+  /** A small state change: a colour, a ring, a pill moving one step. */
+  transitionMs: 150,
+  glideMs: 250,
+  /** A step title sliding in from the side you are heading to. */
+  timingStep: { duration: 200, easing: easeOut },
+  stepSlide: 16,
+  /** Rare screens: content rising into place, one beat apart. */
+  timingEnter: { duration: 260, easing: easeOut },
+  enterRise: 12,
+  /** Where a medallion starts as it settles in, and how far its icon is turned. */
+  enterScale: 0.92,
+  enterTilt: '-14deg',
+  enterStepMs: 60,
+  /** The PIN gate leaving after the right PIN: short, it happens many times a day. */
+  gateExitScale: 1.02,
   /** Toggle pill: visible overshoot past the track. */
   springOvershoot: { damping: 11, stiffness: 180, mass: 0.8 },
   /** Snappy settle for small elements. */
@@ -176,7 +205,7 @@ export const motion = {
   /** Press feedback scale. */
   pressScale: 0.97,
   /** Finger down on a physical key: a fast, strong ease out so the press lands at once. */
-  timingPressIn: { duration: 100, easing: Easing.bezier(0.23, 1, 0.32, 1) },
+  timingPressIn: { duration: 100, easing: easeOut },
   /** Finger up: the key pops back past its rest height once (about 10 percent), then settles. */
   springRelease: { duration: 220, dampingRatio: 0.6 },
   /** Flash overlay on tap (login reference). */
