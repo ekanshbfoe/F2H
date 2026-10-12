@@ -1,7 +1,7 @@
 # 0002. App lock: six digit PIN with device secret, backoff and wipe
 
 **Date**: 2026-10-08
-**Status**: In Progress
+**Status**: Accepted
 
 ## Summary
 

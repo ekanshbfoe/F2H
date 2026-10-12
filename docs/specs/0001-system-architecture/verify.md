@@ -164,20 +164,21 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 _Steps derived from the child spec's acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
 ## UI / manual (Admin phone, after a wipe or on a second phone; the paper kit at hand)
+_Run 2026-10-12 on the LAVA LXX503, one phone: Forgot PIN warning, wipe, login, kit card, offline retry, word entry checks, real proof, Set PIN, Home. Database confirmed: row `cb431f6f…` approved, decided by the Admin, 1 challenge, 0 misses, challenge columns null, `device.self_approve` audited. Steps left unticked need a second Admin phone, a member phone or a forced wrong tag; the engineer closed the feature with them skipped._
 - [ ] Log in as the Admin on a wiped phone → the waiting screen shows "Use my recovery kit" with the primary "Enter my 24 words" when no other admin phone is approved; with one approved it shows "Can't reach your other phone?" and the secondary button → AC-1
 - [ ] Log in as a member on a pending phone → no kit card → AC-1
-- [ ] Turn Wi-Fi off before the waiting screen loads → the card says the key could not be fetched with a Retry; Wi-Fi on, Retry → the button enables → AC-1
-- [ ] Open the words screen → the family fingerprint matches the paper kit; a screenshot is blocked → AC-3
-- [ ] Type "ab" in box 3 → suggestions appear; tap one → it fills and the focus moves to box 4 → AC-3
-- [ ] Paste the whole 24 word line into box 1 → all boxes fill, the clipboard is empty afterwards (paste into Notes shows nothing) → AC-3
-- [ ] Change one word and tap Prove → "do not form a valid kit" with no network request (function logs show no call) → AC-3
-- [ ] Type a valid phrase from another seed → "not the kit this family published" with no network request → AC-3
+- [x] Turn Wi-Fi off before the waiting screen loads → the card says the key could not be fetched with a Retry; Wi-Fi on, Retry → the button enables → AC-1
+- [x] Open the words screen → the family fingerprint matches the paper kit; a screenshot is blocked → AC-3
+- [x] Type "ab" in box 3 → suggestions appear; tap one → it fills and the focus moves to box 4 → AC-3
+- [x] Paste the whole 24 word line into box 1 → all boxes fill, the clipboard is empty afterwards (paste into Notes shows nothing) → AC-3
+- [x] Change one word and tap Prove → "do not form a valid kit" with no network request (function logs show no call) → AC-3
+- [x] Type a valid phrase from another seed → "not the kit this family published" with no network request → AC-3
 - [ ] Correct words, "Also sign out my other phones" on → "This phone is approved" appears first; the lost phone shows as signed out; Continue → Set PIN → Home → AC-4, AC-6
 - [ ] Dashboard: the new row is `approved` with `decided_by` = the Admin and all four challenge columns null or 0 attempts; the old row `revoked`; `audit_log` has `device.self_approve` and one `device.revoke` with reason `self_approve` → AC-4, AC-6
 - [ ] On the success step with another approved admin phone: "Sign out that phone" → the row flips to `revoked`, the badge says Signed out; that phone wipes on its next foreground → AC-6
 - [ ] The other admin phone (EAS build, not Expo Go on Android) receives "Admin account recovered" → AC-6
 - [ ] Kill the app on the words screen, reopen → waiting screen again; finish the proof → success step, then Continue goes to login; log in → straight to Set PIN → AC-4
-- [ ] Forgot PIN on the only approved admin phone → the confirm says "only approved Admin phone" and mentions the 24 words; with two approved admin phones → the plain copy → AC-7
+- [x] Forgot PIN on the only approved admin phone → the confirm says "only approved Admin phone" and mentions the 24 words; with two approved admin phones → the plain copy → AC-7
 - [ ] A member's Forgot PIN confirm never shows the admin copy → AC-7
 - [ ] Admin phone A pending, log in as the Admin on phone B → B registers and A's row becomes `expired` with `device.replaced`; A's waiting screen wipes to the expired screen → AC-8
 

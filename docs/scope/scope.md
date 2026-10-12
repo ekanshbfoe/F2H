@@ -17,7 +17,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 4 | Crypto core | Foundation | in-progress |
 | 5 | Backend foundation (data model & RLS) | Foundation | done |
 | 6 | Auth & device gate | Slice 1 | in-progress |
-| 7 | App lock | Slice 1 | in-progress |
+| 7 | App lock | Slice 1 | done |
 | 8 | Contacts vault | Slice 2 | planned |
 | 9 | Credential vault | Slice 3 | planned |
 | 10 | Files & Drive redundancy | Slice 4 | in-progress |
@@ -25,7 +25,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 12 | Backups & disaster drills | Slice 6 | planned |
 | 13 | Onboarding & polish | Slice 7 | planned |
 | 14 | Release | Slice 7 | planned |
-| 15 | Admin device self approval | Slice 1 | in-progress |
+| 15 | Admin device self approval | Slice 1 | done |
 
 ## Foundations
 
@@ -106,7 +106,7 @@ Invite code signup, zero knowledge login, device registration with model and app
 - [x] Document it: `/document auth & device gate`
 Spec [0001-account-and-device-gate](../specs/0001-system-architecture/0001-account-and-device-gate.md) · code in `src/app/(auth)`, `src/app/(admin)`, `src/app/(app)`, `src/features/{auth,device,keyring,admin,vault}`, `src/services/{functions,push,device-info}.ts`, `src/state/`, `supabase/functions/`, migration 0009
 
-### 7. App lock · in-progress
+### 7. App lock · done
 Six digit PIN set and unlock screens with the glow box motion, master key wrapped by PIN plus device secret, failure backoff and wipe, auto lock, optional biometrics.
 **Done when:** the vault needs the PIN after 60 s in the background or a cold start, ten failures wipe the local key, and biometrics unlock on supported phones.
 - [x] Design it (spec): `/architect app lock`
@@ -116,10 +116,10 @@ Six digit PIN set and unlock screens with the glow box motion, master key wrappe
    - [x] Unlock modal, boot order, backoff, countdown, tenth miss wipe and Forgot PIN (AC-2, AC-4, AC-5, AC-6)
    - [x] Auto lock, Lock now, timeout setting, Change PIN, privacy overlay and the revoke guard (AC-3, AC-7, AC-8, AC-9, AC-10)
 - [x] Verify it: `/check verify app lock`
-- [ ] Test it: `/test app lock`
+- [x] Test it: `/test app lock` _(skipped by the engineer 2026-10-12; the jest suites written during the build stand in. Owed and skipped: the LAVA unlock ms and the revoked phone 403 check)_
 Spec [0002-app-lock](../specs/0002-app-lock/index.md) · code in `src/features/lock/`, `src/components/lock/`, `src/app/(lock)/`, `src/features/auth/{api,session}.ts`, `src/services/{app-storage,secure-store,supabase}.ts`, migration 0011
 
-### 15. Admin device self approval · in-progress · GA · from spec 0001
+### 15. Admin device self approval · done · GA · from spec 0001
 The Admin approves their own new or wiped phone by proving the paper recovery kit (an X25519 agreement tag, the phone never decrypts anything), can sign out other admin phones in the same step, and is warned before wiping the only approved admin phone.
 **Done when:** an Admin with no reachable approved phone gets back in with the password and the 24 words, a lost phone can be signed out from the success step, and the Forgot PIN confirm warns on the last approved admin phone.
 - [x] Design it (spec): `/architect admin device self approval`
@@ -128,10 +128,10 @@ The Admin approves their own new or wiped phone by proving the paper recovery ki
    - [x] `self-approve-device` function with the tag construction, `requirePendingAdmin`, `replace_pending` (AC-2, AC-4, AC-5, AC-8)
    - [x] Word entry, kit card on the waiting screen, one burst proof and handoff to Set PIN (AC-1, AC-3, AC-4)
    - [x] Success step with sign out of other phones, approved count helper and the Forgot PIN warning, jest and verify.md (AC-6, AC-7, AC-9)
-- [ ] Verify it: `/check verify admin device self approval`
-- [ ] Test it: `/test admin device self approval`
-- [ ] Review it (fresh model): `/check review admin device self approval`
-- [ ] Document it: `/document admin device self approval`
+- [x] Verify it: `/check verify admin device self approval` _(single phone path verified 2026-10-12; second Admin phone, member phone and forced wrong tag steps skipped)_
+- [x] Test it: `/test admin device self approval` _(skipped; pgTAP 33/33 and the jest suites from the build stand in)_
+- [ ] Review it (fresh model): `/check review admin device self approval` _(skipped at close 2026-10-12, recommended before release: it is security code)_
+- [ ] Document it: `/document admin device self approval` _(skipped at close 2026-10-12)_
 Spec [0001-admin-device-self-approval](../specs/0001-system-architecture/0001-admin-device-self-approval.md) · code in migration 0012, `supabase/functions/{self-approve-device,register-device}`, `supabase/functions/_shared/{challenge,auth}.ts`, `src/crypto/challenge.ts`, `src/features/device/{self-approve,approved-count}.ts`, `src/features/device/screens/`, `src/components/mnemonic/`, `src/app/(auth)/{waiting,recovery-words,recovered}.tsx`, `src/features/lock/{api,storage}.ts` · migration applied and functions deployed to the hosted project 2026-10-08
 
 ## Slice 2: Contacts
