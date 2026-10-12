@@ -16,7 +16,8 @@
     "db:push": "supabase db push",
     "db:test": "supabase test db",
     "db:types": "npx supabase gen types typescript --project-id abkjryjrwvnutwmzbkex --schema public > src/types/database.types.ts",
-    "bootstrap:admin": "node scripts/bootstrap-admin.ts"
+    "bootstrap:admin": "node scripts/bootstrap-admin.ts",
+    "restore:backup": "node scripts/restore-backup.ts"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
