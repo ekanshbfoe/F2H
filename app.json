@@ -39,7 +39,8 @@
           "contactsPermission": "F2H reads your contacts only when you choose to import some into your encrypted vault."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,

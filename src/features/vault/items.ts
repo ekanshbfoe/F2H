@@ -1,5 +1,6 @@
 import { bytesToUtf8, envelope, fromBase64, randomUuid, toBase64, zero } from '@/crypto';
 import { withKey } from '@/features/lock/api';
+import { cachedRows, cacheRows } from '@/services/item-cache';
 import { supabase } from '@/services/supabase';
 import { useSession } from '@/state/session.store';
 import type { Database } from '@/types/database.types';
@@ -87,7 +88,8 @@ function ownerId(): string {
 export async function listItems<T>(
   kind: ItemKind,
   parse: (raw: unknown) => T | null,
-): Promise<{ items: StoredItem<T>[]; skipped: number }> {
+): Promise<{ items: StoredItem<T>[]; skipped: number; offline: boolean }> {
+  const owner = useSession.getState().profile?.id ?? null;
   return withKey(async (mk) => {
     const { data, error } = await supabase
       .from('vault_items')
@@ -95,15 +97,27 @@ export async function listItems<T>(
       .eq('kind', kind)
       .is('deleted_at', null)
       .order('created_at', { ascending: true });
-    if (error) throw new VaultItemError('vault_read_failed', error.message);
+    let rows: ItemRow[];
+    let offline = false;
+    if (error) {
+      // Offline (spec 0005, AC-7): the last ciphertext this phone loaded, read only.
+      const cached = owner ? await cachedRows(owner, kind).catch(() => null) : null;
+      if (!cached || cached.length === 0)
+        throw new VaultItemError('vault_read_failed', error.message);
+      rows = cached;
+      offline = true;
+    } else {
+      rows = (data ?? []) as ItemRow[];
+      if (owner) await cacheRows(owner, kind, rows).catch(() => undefined);
+    }
     const items: StoredItem<T>[] = [];
     let skipped = 0;
-    for (const row of (data ?? []) as ItemRow[]) {
+    for (const row of rows) {
       const item = openItem(mk, row, parse);
       if (item) items.push(item);
       else skipped += 1;
     }
-    return { items, skipped };
+    return { items, skipped, offline };
   });
 }
 

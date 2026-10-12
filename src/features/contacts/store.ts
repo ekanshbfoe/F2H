@@ -13,6 +13,8 @@ interface ContactsState {
   status: 'idle' | 'loading' | 'ready' | 'error';
   items: Record<string, StoredContact>;
   skipped: number;
+  /** showing the read only offline copy (spec 0005, AC-7) */
+  offline: boolean;
   error: string | null;
   load: () => Promise<void>;
   save: (payload: ContactPayload, existing?: StoredContact) => Promise<StoredContact>;
@@ -21,7 +23,7 @@ interface ContactsState {
   clear: () => void;
 }
 
-const EMPTY = { status: 'idle' as const, items: {}, skipped: 0, error: null };
+const EMPTY = { status: 'idle' as const, items: {}, skipped: 0, offline: false, error: null };
 
 export const useContacts = create<ContactsState>((set, get) => ({
   ...EMPTY,
@@ -29,12 +31,13 @@ export const useContacts = create<ContactsState>((set, get) => ({
     const generation = useLock.getState().generation;
     set({ status: get().status === 'ready' ? 'ready' : 'loading', error: null });
     try {
-      const { items, skipped } = await listContacts();
+      const { items, skipped, offline } = await listContacts();
       if (useLock.getState().generation !== generation) return;
       set({
         status: 'ready',
         items: Object.fromEntries(items.map((c) => [c.id, c])),
         skipped,
+        offline,
         error: null,
       });
     } catch (e) {

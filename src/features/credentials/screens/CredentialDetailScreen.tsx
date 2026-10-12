@@ -23,6 +23,7 @@ export function CredentialDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const credential = useCredentials((s) => (id ? s.items[id] : undefined));
   const status = useCredentials((s) => s.status);
+  const offline = useCredentials((s) => s.offline);
   const load = useCredentials((s) => s.load);
   const remove = useCredentials((s) => s.remove);
   const [copied, setCopied] = useState<string | null>(null);
@@ -98,12 +99,18 @@ export function CredentialDetailScreen() {
           <Button
             variant="secondary"
             onPress={() => router.push(credentialEditHref(credential.id))}
-            disabled={busy}
+            disabled={busy || offline}
             testID="credential-edit"
           >
             Edit
           </Button>
-          <Button variant="ghost" onPress={confirmDelete} loading={busy} testID="credential-delete">
+          <Button
+            variant="ghost"
+            onPress={confirmDelete}
+            loading={busy}
+            disabled={offline}
+            testID="credential-delete"
+          >
             Delete
           </Button>
         </>

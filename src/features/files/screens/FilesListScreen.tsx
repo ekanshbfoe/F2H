@@ -34,7 +34,7 @@ export function FilesListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const unlocked = useSession((s) => s.mk !== null);
-  const { status, items, states, skipped, error, upload, load, add } = useFiles();
+  const { status, items, states, skipped, offline, error, upload, load, add } = useFiles();
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -106,7 +106,7 @@ export function FilesListScreen() {
       <Button
         size="sm"
         onPress={() => void pick()}
-        disabled={upload !== null || !unlocked}
+        disabled={upload !== null || !unlocked || offline}
         testID="files-add"
         leading={
           <Ionicons name="cloud-upload-outline" size={t.sizes.icon} color={t.colors.onPrimary} />
@@ -130,6 +130,12 @@ export function FilesListScreen() {
         </Card>
       ) : null}
       {message ? <Callout tone={message.tone}>{message.text}</Callout> : null}
+      {offline ? (
+        <Callout testID="files-offline">
+          Offline, read only. You are seeing the copy this phone loaded last; adding and editing
+          come back when the connection does.
+        </Callout>
+      ) : null}
       {skipped > 0 ? (
         <Callout>{`${skipped} item${skipped === 1 ? '' : 's'} could not be opened on this phone and ${skipped === 1 ? 'is' : 'are'} hidden.`}</Callout>
       ) : null}

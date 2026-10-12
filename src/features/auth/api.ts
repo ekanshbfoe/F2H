@@ -20,6 +20,7 @@ import { checkDeviceStatus, loadLockState } from '@/features/lock/api';
 import { useLock } from '@/features/lock/lock.store';
 import { forgetPin, hasPinFor } from '@/features/lock/storage';
 import { AppKeys, appDelete } from '@/services/app-storage';
+import { eraseItemCache } from '@/services/item-cache';
 import { callFunction, FunctionError } from '@/services/functions';
 import { SecureKeys, secureDelete, secureGet, secureSet } from '@/services/secure-store';
 import { getDeviceToken, loadDeviceToken, setDeviceToken, supabase } from '@/services/supabase';
@@ -346,6 +347,7 @@ export async function signOut(): Promise<void> {
     appDelete(AppKeys.backgroundAt),
     appDelete(AppKeys.profile),
     appDelete(AppKeys.adminApprovedCount),
+    eraseItemCache(),
   ]);
   await supabase.auth.signOut().catch(() => undefined);
   s.reset('signed_out');

@@ -20,6 +20,8 @@ interface CredentialsState {
   status: 'idle' | 'loading' | 'ready' | 'error';
   items: Record<string, StoredCredential>;
   skipped: number;
+  /** showing the read only offline copy (spec 0005, AC-7) */
+  offline: boolean;
   error: string | null;
   load: () => Promise<void>;
   save: (payload: CredentialPayload, existing?: StoredCredential) => Promise<StoredCredential>;
@@ -27,7 +29,7 @@ interface CredentialsState {
   clear: () => void;
 }
 
-const EMPTY = { status: 'idle' as const, items: {}, skipped: 0, error: null };
+const EMPTY = { status: 'idle' as const, items: {}, skipped: 0, offline: false, error: null };
 
 export const useCredentials = create<CredentialsState>((set, get) => ({
   ...EMPTY,
@@ -35,9 +37,14 @@ export const useCredentials = create<CredentialsState>((set, get) => ({
     const generation = useLock.getState().generation;
     set({ status: get().status === 'ready' ? 'ready' : 'loading', error: null });
     try {
-      const { items, skipped } = await listItems('credential', parsePayload);
+      const { items, skipped, offline } = await listItems('credential', parsePayload);
       if (useLock.getState().generation !== generation) return;
-      set({ status: 'ready', items: Object.fromEntries(items.map((c) => [c.id, c])), skipped });
+      set({
+        status: 'ready',
+        items: Object.fromEntries(items.map((c) => [c.id, c])),
+        skipped,
+        offline,
+      });
     } catch (e) {
       if (useLock.getState().generation !== generation) return;
       set({

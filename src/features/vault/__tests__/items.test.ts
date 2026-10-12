@@ -7,6 +7,8 @@ import { createItems, listItems, updateItem, VaultItemError } from '../items';
 type Row = Record<string, unknown> & { id: string; kind: string; version: number };
 const mockRows: Row[] = [];
 let mockFailInsertAt = -1;
+let mockReadError = false;
+const mockCache = new Map<string, unknown[]>();
 
 jest.mock('@/services/supabase', () => {
   const from = () => {
@@ -21,7 +23,10 @@ jest.mock('@/services/supabase', () => {
         filters.push([c, v]);
         return chain;
       },
-      order: async () => ({ data: mockRows.filter(match), error: null }),
+      order: async () =>
+        mockReadError
+          ? { data: null, error: { message: 'Network request failed' } }
+          : { data: mockRows.filter(match), error: null },
       insert: async (rows: Row[]) => {
         if (mockFailInsertAt === 0) return { error: { message: 'offline' } };
         mockFailInsertAt -= 1;
@@ -44,12 +49,21 @@ jest.mock('@/services/supabase', () => {
   return { supabase: { from } };
 });
 
+jest.mock('@/services/item-cache', () => ({
+  cacheRows: async (owner: string, kind: string, rows: unknown[]) => {
+    mockCache.set(`${owner}:${kind}`, rows);
+  },
+  cachedRows: async (owner: string, kind: string) => mockCache.get(`${owner}:${kind}`) ?? [],
+}));
+
 const parseNote = (raw: unknown) =>
   (raw as { type?: string }).type === 'note' ? (raw as { type: 'note'; body: string }) : null;
 
 beforeEach(() => {
   mockRows.length = 0;
   mockFailInsertAt = -1;
+  mockReadError = false;
+  mockCache.clear();
   useSession.setState({
     mk: new Uint8Array(32).fill(3),
     profile: { id: 'u1', email: 'a@x', display_name: 'A', role: 'member', status: 'active' },
@@ -84,5 +98,21 @@ describe('vault items', () => {
       landed: 50,
     });
     expect(VaultItemError).toBeDefined();
+  });
+
+  it('falls back to the cached ciphertext when the load fails, read only (spec 0005, AC-7)', async () => {
+    await createItems('note', [{ type: 'note', body: 'cached body' }]);
+    const online = await listItems('note', parseNote);
+    expect(online.offline).toBe(false);
+    expect(JSON.stringify([...mockCache.values()])).not.toContain('cached body');
+    mockReadError = true;
+    const off = await listItems('note', parseNote);
+    expect(off.offline).toBe(true);
+    expect(off.items.map((i) => i.payload.body)).toEqual(['cached body']);
+  });
+
+  it('still fails when offline with nothing cached', async () => {
+    mockReadError = true;
+    await expect(listItems('note', parseNote)).rejects.toMatchObject({ code: 'vault_read_failed' });
   });
 });

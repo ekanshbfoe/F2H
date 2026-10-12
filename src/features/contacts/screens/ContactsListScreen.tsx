@@ -30,6 +30,7 @@ export function ContactsListScreen() {
   const status = useContacts((s) => s.status);
   const items = useContacts((s) => s.items);
   const skipped = useContacts((s) => s.skipped);
+  const offline = useContacts((s) => s.offline);
   const error = useContacts((s) => s.error);
   const load = useContacts((s) => s.load);
   const [tab, setTab] = useState<0 | 1>(0);
@@ -89,6 +90,7 @@ export function ContactsListScreen() {
           <Button
             size="sm"
             onPress={() => router.push(contactEditHref())}
+            disabled={offline}
             testID="contacts-add"
             leading={<Ionicons name="add" size={t.sizes.icon} color={t.colors.onPrimary} />}
           >
@@ -100,6 +102,7 @@ export function ContactsListScreen() {
             size="sm"
             variant="secondary"
             onPress={() => router.push(CONTACTS_IMPORT_HREF)}
+            disabled={offline}
             testID="contacts-import"
             leading={
               <Ionicons name="download-outline" size={t.sizes.icon} color={t.colors.primary} />
@@ -109,6 +112,12 @@ export function ContactsListScreen() {
           </Button>
         </View>
       </View>
+      {offline ? (
+        <Callout testID="contacts-offline">
+          Offline, read only. You are seeing the copy this phone loaded last; adding and editing
+          come back when the connection does.
+        </Callout>
+      ) : null}
       {skipped > 0 ? (
         <Callout>{`${skipped} item${skipped === 1 ? '' : 's'} could not be opened on this phone and ${skipped === 1 ? 'is' : 'are'} hidden.`}</Callout>
       ) : null}

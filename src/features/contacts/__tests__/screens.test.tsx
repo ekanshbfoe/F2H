@@ -137,6 +137,15 @@ describe('ContactsListScreen', () => {
     expect(await screen.findByText('Papa')).toBeOnTheScreen();
   });
 
+  it('shows the offline copy read only (spec 0005, AC-7)', async () => {
+    mockList.mockResolvedValueOnce({ items: book, skipped: 0, offline: true });
+    await renderWithProviders(<ContactsListScreen />);
+    expect(await screen.findByTestId('contacts-offline')).toBeOnTheScreen();
+    expect(screen.getByText('Papa')).toBeOnTheScreen();
+    expect(screen.getByTestId('contacts-add')).toBeDisabled();
+    expect(screen.getByTestId('contacts-import')).toBeDisabled();
+  });
+
   it('opens a contact', async () => {
     await renderWithProviders(<ContactsListScreen />);
     await userEvent.setup().press(await screen.findByTestId('contact-row-1'));

@@ -21,7 +21,11 @@ export function openRow(mk: Uint8Array, row: ItemRow): StoredContact | null {
   return openItem(mk, row, parsePayload);
 }
 
-export async function listContacts(): Promise<{ items: StoredContact[]; skipped: number }> {
+export async function listContacts(): Promise<{
+  items: StoredContact[];
+  skipped: number;
+  offline: boolean;
+}> {
   return listItems('contact', parsePayload);
 }
 

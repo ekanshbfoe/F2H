@@ -27,6 +27,7 @@ export function CredentialsListScreen() {
   const status = useCredentials((s) => s.status);
   const items = useCredentials((s) => s.items);
   const skipped = useCredentials((s) => s.skipped);
+  const offline = useCredentials((s) => s.offline);
   const error = useCredentials((s) => s.error);
   const load = useCredentials((s) => s.load);
   const [query, setQuery] = useState('');
@@ -75,11 +76,18 @@ export function CredentialsListScreen() {
       <Button
         size="sm"
         onPress={() => router.push(credentialEditHref())}
+        disabled={offline}
         testID="credentials-add"
         leading={<Ionicons name="add" size={t.sizes.icon} color={t.colors.onPrimary} />}
       >
         Add a credential
       </Button>
+      {offline ? (
+        <Callout testID="credentials-offline">
+          Offline, read only. You are seeing the copy this phone loaded last; adding and editing
+          come back when the connection does.
+        </Callout>
+      ) : null}
       {skipped > 0 ? (
         <Callout>{`${skipped} item${skipped === 1 ? '' : 's'} could not be opened on this phone and ${skipped === 1 ? 'is' : 'are'} hidden.`}</Callout>
       ) : null}

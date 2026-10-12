@@ -228,12 +228,15 @@ export async function listFiles(): Promise<{
   items: StoredFile[];
   states: Record<string, BlobState>;
   skipped: number;
+  offline: boolean;
 }> {
-  const { items, skipped } = await listItems('file', parsePayload);
-  const { data } = await supabase.from('file_blobs').select('item_id, state');
+  const { items, skipped, offline } = await listItems('file', parsePayload);
   const states: Record<string, BlobState> = {};
-  for (const row of data ?? []) if (row.item_id) states[row.item_id] = row.state as BlobState;
-  return { items, states, skipped };
+  if (!offline) {
+    const { data } = await supabase.from('file_blobs').select('item_id, state');
+    for (const row of data ?? []) if (row.item_id) states[row.item_id] = row.state as BlobState;
+  }
+  return { items, states, skipped, offline };
 }
 
 interface TokenResponse {

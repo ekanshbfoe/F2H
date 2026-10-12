@@ -18,6 +18,7 @@ export function ContactDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const contact = useContacts((s) => (id ? s.items[id] : undefined));
   const status = useContacts((s) => s.status);
+  const offline = useContacts((s) => s.offline);
   const load = useContacts((s) => s.load);
   const remove = useContacts((s) => s.remove);
   const [message, setMessage] = useState<string | null>(null);
@@ -84,12 +85,18 @@ export function ContactDetailScreen() {
           <Button
             variant="secondary"
             onPress={() => router.push(contactEditHref(contact.id))}
-            disabled={busy}
+            disabled={busy || offline}
             testID="contact-edit"
           >
             Edit
           </Button>
-          <Button variant="ghost" onPress={confirmDelete} loading={busy} testID="contact-delete">
+          <Button
+            variant="ghost"
+            onPress={confirmDelete}
+            loading={busy}
+            disabled={offline}
+            testID="contact-delete"
+          >
             Delete
           </Button>
         </>

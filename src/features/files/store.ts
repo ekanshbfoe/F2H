@@ -15,6 +15,8 @@ interface FilesState {
   items: Record<string, StoredFile>;
   states: Record<string, BlobState>;
   skipped: number;
+  /** showing the read only offline copy (spec 0005, AC-7) */
+  offline: boolean;
   error: string | null;
   upload: { name: string; progress: UploadProgress } | null;
   load: () => Promise<void>;
@@ -28,6 +30,7 @@ const EMPTY = {
   items: {},
   states: {},
   skipped: 0,
+  offline: false,
   error: null,
   upload: null,
 };
@@ -38,13 +41,14 @@ export const useFiles = create<FilesState>((set, get) => ({
     const generation = useLock.getState().generation;
     set({ status: get().status === 'ready' ? 'ready' : 'loading', error: null });
     try {
-      const { items, states, skipped } = await listFiles();
+      const { items, states, skipped, offline } = await listFiles();
       if (useLock.getState().generation !== generation) return;
       set({
         status: 'ready',
         items: Object.fromEntries(items.map((f) => [f.id, f])),
         states,
         skipped,
+        offline,
       });
     } catch (e) {
       if (useLock.getState().generation !== generation) return;

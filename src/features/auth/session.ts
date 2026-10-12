@@ -1,5 +1,6 @@
 import { useLock } from '@/features/lock/lock.store';
 import { AppKeys, appDelete, appGet, appSet } from '@/services/app-storage';
+import { eraseItemCache } from '@/services/item-cache';
 import { secureWipe } from '@/services/secure-store';
 import { setDeviceToken, supabase } from '@/services/supabase';
 import { useSession, type SessionProfile, type SessionPhase } from '@/state/session.store';
@@ -56,6 +57,7 @@ export async function wipeLocalState(phase: SessionPhase = 'signed_out'): Promis
     appDelete(AppKeys.backgroundAt),
     appDelete(AppKeys.profile),
     appDelete(AppKeys.adminApprovedCount),
+    eraseItemCache(),
   ]);
   await supabase.auth.signOut().catch(() => undefined);
   s.reset(phase);

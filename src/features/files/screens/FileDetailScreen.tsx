@@ -20,6 +20,7 @@ export function FileDetailScreen() {
   const file = useFiles((s) => (id ? s.items[id] : undefined));
   const state = useFiles((s) => (id ? s.states[id] : undefined));
   const status = useFiles((s) => s.status);
+  const offline = useFiles((s) => s.offline);
   const load = useFiles((s) => s.load);
   const remove = useFiles((s) => s.remove);
   const [busy, setBusy] = useState<'open' | 'delete' | null>(null);
@@ -114,8 +115,8 @@ export function FileDetailScreen() {
             variant="ghost"
             onPress={confirmDelete}
             loading={busy === 'delete'}
-            disabled={busy !== null}
-            testID="file-delete"
+            disabled={busy !== null || offline}
+            testID="file-delete\"
           >
             Delete
           </Button>
