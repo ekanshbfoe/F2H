@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { PinEntry, PinProgress, type PinBoxesState } from '@/components/lock';
+import { PinScreen, type PinBoxesState } from '@/components/lock';
 import { Badge, Button, Callout, Card, Screen } from '@/components/ui';
+import { useTheme } from '@/theme';
 
 import { LockError, rewrapPin, verifyPin } from '../api';
 import { useLock } from '../lock.store';
@@ -13,6 +14,7 @@ type Step = 'current' | 'new' | 'confirm' | 'done';
 /** Change PIN (AC-7): the current PIN through the attempt gate, then the new one twice. */
 export function ChangePinScreen() {
   const router = useRouter();
+  const t = useTheme();
   const busy = useLock((s) => s.busy);
   const [step, setStep] = useState<Step>('current');
   const [first, setFirst] = useState('');
@@ -84,6 +86,12 @@ export function ChangePinScreen() {
       .finally(() => setSaving(false));
   };
 
+  const short: Record<Step, string> = {
+    current: 'The PIN you use today.',
+    new: 'Not all the same, not a run.',
+    confirm: 'Same six digits once more.',
+    done: '',
+  };
   const copy: Record<Step, [string, string]> = {
     current: ['Current PIN', 'Enter the PIN you use today.'],
     new: ['New PIN', 'Six digits, not all the same and not a straight run.'],
@@ -91,34 +99,43 @@ export function ChangePinScreen() {
     done: ['PIN changed', 'The old PIN stopped working just now.'],
   };
 
-  return (
-    <Screen
-      title={copy[step][0]}
-      subtitle={copy[step][1]}
-      footer={step === 'done' ? <Button onPress={() => router.back()}>Done</Button> : undefined}
-    >
-      {step === 'done' ? (
-        <Card style={{ gap: 8 }}>
+  if (step === 'done') {
+    return (
+      <Screen
+        title={copy.done[0]}
+        subtitle={copy.done[1]}
+        footer={<Button onPress={() => router.back()}>Done</Button>}
+      >
+        <Card style={{ gap: t.spacing.sm }}>
           <Badge tone="success">New PIN saved</Badge>
           <Callout>Use the new PIN the next time this phone locks.</Callout>
         </Card>
-      ) : (
-        <>
-          <PinEntry
-            value={pin}
-            onChange={(v) => {
-              setPin(v);
-              if (boxes !== 'idle') setBoxes('idle');
-            }}
-            onComplete={complete}
-            state={boxes}
-            disabled={busy || saving}
-            testID="change-pin"
-          />
-          <PinProgress visible={busy || saving} label={saving ? 'Saving your PIN' : undefined} />
-          {message ? <Callout tone="danger">{message}</Callout> : null}
-        </>
-      )}
-    </Screen>
+      </Screen>
+    );
+  }
+
+  const order: Step[] = ['current', 'new', 'confirm'];
+  return (
+    <PinScreen
+      title={copy[step][0]}
+      subtitle={copy[step][1]}
+      compactSubtitle={short[step]}
+      steps={{ count: 3, current: order.indexOf(step) }}
+      direction={boxes === 'error' ? 'back' : 'forward'}
+      entry={{
+        value: pin,
+        onChange: (v) => {
+          setPin(v);
+          if (boxes !== 'idle') setBoxes('idle');
+        },
+        onComplete: complete,
+        state: boxes,
+        disabled: busy || saving,
+        busy: busy || saving,
+        busyLabel: saving ? 'Saving your PIN' : undefined,
+        status: message ? { tone: 'danger', text: message } : null,
+        testID: 'change-pin',
+      }}
+    />
   );
 }

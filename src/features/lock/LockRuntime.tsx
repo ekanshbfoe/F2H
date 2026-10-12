@@ -1,6 +1,11 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
+import Animated, {
+  useReducedMotion,
+  withTiming,
+  type EntryExitAnimationFunction,
+} from 'react-native-reanimated';
 
 import { Text } from '@/components/ui';
 import { useTheme } from '@/theme';
@@ -15,6 +20,7 @@ import { UnlockScreen } from './screens/UnlockScreen';
  */
 export function LockRuntime() {
   const state = useLock((s) => s.state);
+  const gateExit = useGateExit();
   useAutoLock();
   useRevokeGuard();
   useScreenCaptureBlock();
@@ -34,10 +40,36 @@ export function LockRuntime() {
 
   return (
     <>
-      {state === 'locked' || state === 'cooling_down' ? <UnlockScreen /> : null}
+      {state === 'locked' || state === 'cooling_down' ? (
+        <Animated.View style={StyleSheet.absoluteFill} exiting={gateExit}>
+          <UnlockScreen />
+        </Animated.View>
+      ) : null}
       <PrivacyOverlay />
     </>
   );
+}
+
+/**
+ * The right PIN opens the vault: the gate fades and swells a hair toward you as it goes, so the
+ * app reads as revealed underneath rather than swapped in. It is quick (it happens many times a
+ * day, right after the PIN check); reduced motion keeps only the fade.
+ */
+function useGateExit(): EntryExitAnimationFunction {
+  const t = useTheme();
+  const reduceMotion = useReducedMotion();
+  const grow = reduceMotion ? 1 : t.motion.gateExitScale;
+  const timing = { duration: t.motion.timingMicro.duration, easing: t.motion.easeOut };
+  return () => {
+    'worklet';
+    return {
+      initialValues: { opacity: 1, transform: [{ scale: 1 }] },
+      animations: {
+        opacity: withTiming(0, timing),
+        transform: [{ scale: withTiming(grow, timing) }],
+      },
+    };
+  };
 }
 
 /** Covers everything while the app is not active: the app switcher sees only the mascot (AC-9). */

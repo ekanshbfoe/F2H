@@ -1,10 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { PinEntry, PinProgress, type PinBoxesState } from '@/components/lock';
-import { Callout, Screen, Text } from '@/components/ui';
+import { useWindowDimensions } from 'react-native';
+
+import { PinScreen, type PinBoxesState } from '@/components/lock';
+import { Text } from '@/components/ui';
 import { pathFor } from '@/features/auth/routes';
 import { useSession } from '@/state/session.store';
+import { useTheme } from '@/theme';
 
 import { LockError, setPin } from '../api';
 import { describePinProblem, pinProblem } from '../model';
@@ -12,6 +15,8 @@ import { describePinProblem, pinProblem } from '../model';
 /** Set PIN (AC-1, AC-15): six digits twice; a mismatch shakes, clears and starts over. */
 export function SetPinScreen() {
   const router = useRouter();
+  const t = useTheme();
+  const compact = useWindowDimensions().height < t.sizes.compactHeight;
   const hasKey = useSession((s) => s.mk !== null);
   const [step, setStep] = useState<'enter' | 'confirm'>('enter');
   const [first, setFirst] = useState('');
@@ -70,30 +75,39 @@ export function SetPinScreen() {
   };
 
   return (
-    <Screen
+    <PinScreen
       title={step === 'enter' ? 'Choose a PIN' : 'Confirm your PIN'}
       subtitle={
         step === 'enter'
-          ? 'Six digits open your vault on this phone from now on. Pick something only you would guess.'
+          ? 'Pick six digits only you would guess. They open your vault here.'
           : 'Type the same six digits once more.'
       }
-    >
-      <PinEntry
-        value={pin}
-        onChange={(v) => {
+      compactSubtitle={
+        step === 'enter' ? "Six digits only you'd guess." : 'Same six digits once more.'
+      }
+      steps={{ count: 2, current: step === 'enter' ? 0 : 1 }}
+      direction={step === 'enter' && boxes === 'error' ? 'back' : 'forward'}
+      entry={{
+        value: pin,
+        onChange: (v) => {
           setPinValue(v);
           if (boxes !== 'idle') setBoxes('idle');
-        }}
-        onComplete={complete}
-        state={boxes}
-        disabled={busy}
-        testID="set-pin"
-      />
-      <PinProgress visible={busy} label="Saving your PIN" />
-      {message ? <Callout tone="danger">{message}</Callout> : null}
-      <Text variant="caption" color="muted" align="center">
-        Ten wrong PINs in a row wipe this phone&apos;s keys. The Admin can approve it again.
-      </Text>
-    </Screen>
+        },
+        onComplete: complete,
+        state: boxes,
+        disabled: busy,
+        busy,
+        busyLabel: 'Saving your PIN',
+        status: message ? { tone: 'danger', text: message } : null,
+        testID: 'set-pin',
+      }}
+      footer={
+        compact ? undefined : (
+          <Text variant="caption" color="muted" align="center">
+            Ten wrong PINs in a row wipe this phone&apos;s keys. The Admin can approve it again.
+          </Text>
+        )
+      }
+    />
   );
 }

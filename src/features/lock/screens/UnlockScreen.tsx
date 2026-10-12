@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, BackHandler, Image, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, BackHandler, Image, useWindowDimensions, View } from 'react-native';
 
-import { PinEntry, PinProgress, type PinBoxesState } from '@/components/lock';
-import { Button, Callout, Text } from '@/components/ui';
+import { PinScreen, type PinBoxesState } from '@/components/lock';
+import { Button } from '@/components/ui';
 import { useTheme } from '@/theme';
 
 import { unlock, wipe } from '../api';
@@ -18,7 +17,7 @@ import { isLastAdminPhone } from '../storage';
  */
 export function UnlockScreen() {
   const t = useTheme();
-  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const busy = useLock((s) => s.busy);
   const failures = useLock((s) => s.failures);
   const remaining = useCooldown();
@@ -79,59 +78,74 @@ export function UnlockScreen() {
     });
   };
 
+  // on a short phone the mascot steps aside so the pad keeps its full size keys
+  const tall = height >= t.sizes.compactHeight;
   return (
-    <View
-      style={[
-        StyleSheet.absoluteFill,
-        {
-          backgroundColor: t.colors.canvas,
-          paddingTop: insets.top + t.spacing.xxl,
-          paddingBottom: insets.bottom + t.spacing.lg,
-          paddingHorizontal: t.sizes.sheetInset,
-          gap: t.spacing.xxl,
-          alignItems: 'center',
-        },
-      ]}
-      accessibilityViewIsModal
+    <PinScreen
+      overlay
       testID="unlock-screen"
-    >
-      <Image
-        source={require('../../../../assets/images/splash-icon.png')}
-        accessibilityLabel="F2H bear mascot"
-        style={{ width: t.sizes.hero * 0.6, height: t.sizes.hero * 0.6, borderRadius: t.radii.lg }}
-      />
-      <View style={{ alignItems: 'center', gap: t.spacing.xs }}>
-        <Text variant="title" accessibilityRole="header">
-          {cooling ? 'Locked for now' : 'Enter your PIN'}
-        </Text>
-        <Text variant="body" color="muted" align="center">
-          {cooling
-            ? `Try again in ${formatCountdown(remaining)}`
-            : 'Your vault is locked. Six digits open it.'}
-        </Text>
-      </View>
-      <PinEntry
-        value={pin}
-        onChange={(v) => {
+      title={cooling ? 'Locked for now' : 'Enter your PIN'}
+      subtitle={
+        cooling
+          ? `Try again in ${formatCountdown(remaining)}`
+          : 'Your vault is locked. Six digits open it.'
+      }
+      compactSubtitle={
+        cooling ? `Try again in ${formatCountdown(remaining)}` : 'Six digits open your vault.'
+      }
+      accessory={
+        tall ? (
+          <View
+            style={[
+              t.shadows.raised,
+              {
+                padding: t.spacing.xs,
+                borderRadius: t.radii.xl,
+                backgroundColor: t.colors.surface,
+              },
+            ]}
+          >
+            <Image
+              source={require('../../../../assets/images/splash-icon.png')}
+              accessibilityLabel="F2H bear mascot"
+              style={{
+                width: t.sizes.hero * 0.5,
+                height: t.sizes.hero * 0.5,
+                borderRadius: t.radii.lg,
+              }}
+            />
+          </View>
+        ) : null
+      }
+      entry={{
+        value: pin,
+        onChange: (v) => {
           setPin(v);
           if (boxes !== 'idle') setBoxes('idle');
-        }}
-        onComplete={submit}
-        state={boxes}
-        disabled={busy || cooling}
-        testID="unlock"
-      />
-      <PinProgress visible={busy} />
-      {message ? <Callout tone="danger">{message}</Callout> : null}
-      {failures > 0 && !message && !cooling ? (
-        <Text variant="caption" color="muted">
-          {`${MAX_FAILURES - failures} tries left`}
-        </Text>
-      ) : null}
-      <View style={{ flex: 1 }} />
-      <Button variant="ghost" onPress={forgot} disabled={busy} testID="unlock-forgot">
-        Forgot your PIN?
-      </Button>
-    </View>
+        },
+        onComplete: submit,
+        state: boxes,
+        disabled: busy || cooling,
+        busy,
+        status: message
+          ? { tone: 'danger', text: message }
+          : failures > 0 && !cooling
+            ? { tone: 'muted', text: `${MAX_FAILURES - failures} tries left` }
+            : null,
+        testID: 'unlock',
+      }}
+      footer={
+        <Button
+          variant="ghost"
+          size={tall ? 'md' : 'sm'}
+          fullWidth={tall}
+          onPress={forgot}
+          disabled={busy}
+          testID="unlock-forgot"
+        >
+          Forgot your PIN?
+        </Button>
+      }
+    />
   );
 }
