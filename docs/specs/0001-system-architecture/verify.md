@@ -231,3 +231,37 @@ _Steps derived from spec 0003 acceptance criteria. `/check verify` runs these; `
 
 ## Acceptance-criteria coverage
 - AC-1 tabs and counts · AC-2 form and normalization · AC-3 call and WhatsApp · AC-4 import · AC-5 search · AC-6 version retry and soft delete · AC-7 isolation (pgTAP) · AC-8 lock clears · AC-9 states · AC-10 tests
+
+---
+
+# Verify: credential vault · spec 0004 · updated 2026-10-12
+_Steps derived from spec 0004 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones. Queued by the autonomous run of 2026-10-12: the command checks ran green, the phone steps wait for the engineer._
+
+## UI / manual (Expo Go on the LAVA, unlocked)
+- [ ] Home → "Your vault" → Credentials → the empty card; the Bank, Email and Other badges read 0 → AC-1, AC-9
+- [ ] Add a credential → Bank is selected and "Customer ID" and "Account number" fields are there → AC-2
+- [ ] Save with no title → "Enter a title"; with a title but nothing else → "Add a username, a password or a field to keep" → AC-2
+- [ ] Make a strong password → 20 characters and a "Very strong" badge; the length stepper changes it by 4 between 12 and 64; turning sets off leaves at least one on → AC-3
+- [ ] Use this password → the password field fills; type `netbanking.example.in` as the website → Save → the detail opens → AC-2, AC-3
+- [ ] Detail → the password and the account number show 8 dots whatever their length; Reveal shows the value; 30 seconds later it is dots again → AC-4
+- [ ] Reveal, then go back and open the item again → masked → AC-4
+- [ ] Copy the password → "Password copied. Clears in 30 seconds."; paste into Notes within 30 s works; after 30 s the clipboard is empty → AC-4
+- [ ] Copy, then copy some other text in another app → after 30 s that other text is still on the clipboard → AC-4
+- [ ] Copy the password, then Lock now → paste into Notes shows nothing → AC-4, AC-8
+- [ ] Try a screenshot on the detail and the form → blocked → AC-5
+- [ ] Website → tapping the host opens the browser at `https://netbanking.example.in` → AC-2
+- [ ] Search "netbank" finds it; searching part of the password finds nothing → AC-1
+- [ ] Edit → change the title → Save; Delete → confirm → gone from the list, the dashboard row has `deleted_at` → AC-6
+- [ ] In the dashboard the credential row's `ciphertext` shows no readable title, username or password → AC-7
+
+## Commands
+- [x] `npx supabase db query --linked -f supabase/tests/database/0006_credentials.test.sql` (pgTAP enabled, ending with `select num_failed()`) → 0 failed of 12 → AC-6, AC-7 _(ran 2026-10-12 on the hosted project)_
+- [x] `npm test -- src/features/credentials src/features/vault src/features/contacts` → green → AC-10 _(2026-10-12: credentials 3 suites 31 tests, vault 3 tests, contacts 45 tests; full suite 54 suites 318 tests)_
+- [x] `npm run typecheck && npm run lint` → clean _(2026-10-12)_
+
+## Value sourcing checks
+- [ ] A second phone of the same member edits a credential first, then this phone saves → the save lands after one automatic retry → AC-6
+- [ ] Type `javascript:alert(1)` as the website → refused with the web address hint → AC-2
+
+## Acceptance-criteria coverage
+- AC-1 sections and search · AC-2 form · AC-3 generator · AC-4 mask, reveal, clipboard · AC-5 screenshot keys · AC-6 version retry and soft delete · AC-7 isolation (pgTAP) · AC-8 lock clears · AC-9 states · AC-10 tests

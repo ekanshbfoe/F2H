@@ -1,6 +1,6 @@
 # 0004. Credential vault
 
-**Status**: Proposed
+**Status**: In Progress
 **Date**: 2026-10-12
 **Mode**: FEATURE · Beta tier (project default) · Tracer Bullet
 **Decided by**: Claude during the autonomous run the engineer authorized on 2026-10-12. Every call below is a recommendation the engineer may overturn; no migration is involved.
@@ -92,10 +92,10 @@ Credentials are `vault_items` rows of kind `credential` holding a versioned JSON
 
 ## Build plan
 
-1. [ ] `src/features/vault/items.ts` with tests; contacts api delegates to it with its suites still green, satisfies **AC-6**, **AC-10**.
-2. [ ] `model.ts` (payload schema, form schema, `normalizeUrl`, `hostOf`, search, sections), `generator.ts`, `src/services/clipboard.ts`, `store.ts`; jest; pgTAP `0006_credentials.test.sql`, satisfies **AC-2**, **AC-3**, **AC-4**, **AC-7**, **AC-8**.
-3. [ ] Screens: list with sections and search, detail with reveal and copy, form with extra fields and the generator; routes under `src/app/(app)/credentials/`; Home link, satisfies **AC-1**, **AC-2**, **AC-3**, **AC-4**, **AC-5**, **AC-9**.
-4. [ ] Screen jest and the verify steps in the umbrella `verify.md`, satisfies **AC-10**.
+1. [x] `src/features/vault/items.ts` with tests; contacts api delegates to it with its suites still green, satisfies **AC-6**, **AC-10**.
+2. [x] `model.ts` (payload schema, form schema, `normalizeUrl`, `hostOf`, search, sections), `generator.ts`, `src/services/clipboard.ts`, `store.ts`; jest; pgTAP `0006_credentials.test.sql`, satisfies **AC-2**, **AC-3**, **AC-4**, **AC-7**, **AC-8**.
+3. [x] Screens: list with sections and search, detail with reveal and copy, form with extra fields and the generator; routes under `src/app/(app)/credentials/`; Home link, satisfies **AC-1**, **AC-2**, **AC-3**, **AC-4**, **AC-5**, **AC-9**.
+4. [x] Screen jest and the verify steps in the umbrella `verify.md`, satisfies **AC-10**.
 
 ## Consequences
 

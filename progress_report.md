@@ -47,3 +47,37 @@ Written during the autonomous run you started on 2026-10-12. Newest feature at t
 - **Typed routes.** Two Expo dev servers from your own session (`expo start -c`) were still running, and I left them alone. They write a slightly different typed route list than a fresh server does. The contacts links therefore go through `src/features/contacts/routes.ts`, so typecheck passes either way.
 - **`npx expo-doctor` reports `newArchEnabled` in `app.json` as a schema error.** This was there before my changes. I left it, since removing it changes native config.
 - **`expo-contacts` was added** (SDK 57, included in Expo Go), with its config plugin text for the iOS prompt.
+
+## Fix found on the way: screenshot block (2026-10-12)
+
+- **The bug.** Leaving the recovery words screen or Show my recovery kit released the app wide screenshot block. They shared its key, `f2h`.
+- **The fix.** Each screen now holds its own key (`e7c4efb`), and a jest test proves the app wide hold survives.
+- **What you will see.** A screenshot after visiting those screens was possible before this fix and should now be blocked.
+
+## Credential vault (feature 9): built, closing checks open
+
+**What landed** (5 commits on `main`, pushed):
+
+- **Spec 0004** (`docs/specs/0004-credential-vault.md`).
+- **Shared vault items module** (`src/features/vault/items.ts`). Contacts now uses it too, with every contacts test still green.
+- **Credentials as encrypted `vault_items`** of kind `credential`. Each one holds:
+  - a type (Bank, Email, Other), a title, a username, a password and a website (`https://` only);
+  - up to 8 extra fields, each optionally secret;
+  - a note.
+  - A new Bank item starts with "Customer ID" and "Account number".
+- **Screens.**
+  - A list grouped into Bank, Email and Other, with search over the title, username and website host. Passwords and secret fields are never searched.
+  - A detail screen with secrets masked as 8 dots. Reveal lasts 30 seconds and masks again when you leave.
+  - Copy goes through a 30 second clipboard timer. It clears only if the clipboard still holds the copied value, and a lock clears it at once.
+  - A form with a password generator: 12 to 64 characters, the four character sets, unbiased sampling and a strength badge.
+- **Tests.** The database test file for credentials has 12 checks, all green on the hosted project. The full jest suite is green: 54 suites, 318 tests. Typecheck and lint are clean.
+
+**Waiting for your phone:** 15 steps in `docs/specs/0001-system-architecture/verify.md`, under "Verify: credential vault".
+
+**Decisions I made for you** (all in the spec):
+
+- **Fixed 8 dot mask.** It never shows the real length.
+- **30 second reveal and clipboard windows.**
+- **Search covers the host only,** never the URL path, which can carry tokens.
+- **No passphrase mode yet.**
+- **Limit: Expo Go cannot mark copied text as sensitive.** Android 13 and later may show it in the clipboard preview until it clears. This is a follow up for an EAS build.
