@@ -180,3 +180,37 @@ Written during the autonomous run you started on 2026-10-12. Newest feature at t
 - **`expo-doctor` now passes 21 of 21.** I removed `newArchEnabled` from `app.json`. It is not part of the SDK 57 schema, where the New Architecture is always on.
 
 **Waiting for your phone:** 7 steps in `verify.md` under "Verify: onboarding & polish".
+
+## Release (feature 14): built, closing checks open; the codebase is complete
+
+**What landed:**
+
+- **`eas.json`.**
+  - `preview` builds an installable APK for internal distribution, using the EAS `preview` environment.
+  - `production` builds a Play Store bundle, using the `production` environment, with the version code kept by EAS.
+  - `development` stays as it was.
+- **`npm run eas:env`** copies the three public `EXPO_PUBLIC_*` values from your `.env` into the EAS preview and production environments. Nothing secret goes up. `eas config` resolves the preview profile, and EAS confirms the variables are not set there yet.
+- **Version 0.1.0** in `app.json` and `package.json`.
+- **README.** It now covers where every secret lives, the Expo Go limits, the Google Cloud setup, building and installing the APK, Android push credentials, and recovery.
+- **`final_testing_checklist.md`** is every manual step in one file:
+  - Part 1: the Google console.
+  - Part 2: the EAS build.
+  - Part 3: every unticked phone and dashboard step from the verify files, grouped by feature in a recommended order.
+
+**Fixed along the way:**
+
+- **The isolation database test now runs on the hosted project.** It used to collide with the real Admin, and it now passes 23 of 23.
+- **The published RFC 7914 scrypt vector is back in the vector file.** The old entry had quietly become an N=128 variant on 2026-10-07.
+- **The last two colour literals moved into theme tokens.** Nothing looks different.
+- **The 9 design and crypto command checks** in `verify.md` were run and ticked.
+
+**Final automated state (2026-10-12):**
+
+| Check | Result |
+|---|---|
+| pgTAP, 9 files on the hosted project | 116 of 116 |
+| jest | 62 suites, 366 tests |
+| typecheck and lint | clean |
+| expo-doctor | 21 of 21 |
+
+**Next:** work through `final_testing_checklist.md`. When a step fails, call me back with `/debug <feature>`. When a feature passes, run `/check verify <feature>` to close it in the scope.

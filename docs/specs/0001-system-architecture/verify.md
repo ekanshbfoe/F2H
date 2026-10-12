@@ -14,10 +14,10 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 - [ ] Every component in the gallery renders without a raw default control, a black bar or an unstyled element → AC-4
 
 ## Commands
-- [ ] `npm test` → 17 tests pass (tokens, Button, TextField, SegmentedToggle, CardDeck, BootScreen) → AC-9
-- [ ] `npm run typecheck` → clean → AC-1
-- [ ] `npm run lint` → clean, including the React Compiler rules → AC-1
-- [ ] `grep -rn "#[0-9A-Fa-f]\{6\}" src/components src/app` → only `design.md` and `src/theme/tokens.ts` hold colour literals (plus the two Button edge colours flagged as TODO tokens) → AC-1
+- [x] `npm test` → 17 tests pass (tokens, Button, TextField, SegmentedToggle, CardDeck, BootScreen) → AC-9 _(2026-10-12: the suite has grown to 62 suites and 366 tests, all green)_
+- [x] `npm run typecheck` → clean → AC-1 _(2026-10-12)_
+- [x] `npm run lint` → clean, including the React Compiler rules → AC-1 _(2026-10-12)_
+- [x] `grep -rn "#[0-9A-Fa-f]\{6\}" src/components src/app` → only `design.md` and `src/theme/tokens.ts` hold colour literals (plus the two Button edge colours flagged as TODO tokens) → AC-1 _(2026-10-12: the last two literals, the warning badge tint and the danger button edge, moved into tokens; none remain outside `src/theme/tokens.ts`)_
 
 ## Acceptance-criteria coverage
 - AC-1 tokens and presets: commands 2, 3, 4; reduce motion step
@@ -36,11 +36,11 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 _Steps derived from the child spec's acceptance criteria. `/check verify` runs these; `/test` locks the durable ones._
 
 ## Commands
-- [ ] `npm test -- src/crypto` → 10 suites, 41 tests pass, every vector in `src/crypto/__tests__/vectors.json` reproduced → AC-11 (covers AC-2 to AC-8, AC-10)
-- [ ] `npm run typecheck` and `npm run lint` → clean → AC-1 (polyfill import compiles first in `src/app/_layout.tsx`)
-- [ ] `node scripts/bench-kdf.ts` → prints scrypt timings for N=2^7..2^14; the default N=2^7 a few ms on Node → AC-12
-- [ ] `grep -rn "noble\|scure" src --include=*.ts --include=*.tsx -l | grep -v "^src/crypto"` → no file outside `src/crypto/` imports a crypto library → key invariant
-- [ ] `node -e "const v=require('./src/crypto/__tests__/vectors.json'); console.log(v.scrypt[0].dk.slice(0,16), v.hkdf[0].okm.slice(0,16))"` → `fdbabe1c9d347200` and `3cb25f25faacd57a` (RFC 7914 and RFC 5869 published values) → AC-2
+- [x] `npm test -- src/crypto` → 10 suites, 41 tests pass, every vector in `src/crypto/__tests__/vectors.json` reproduced → AC-11 (covers AC-2 to AC-8, AC-10) _(2026-10-12: 11 suites, 45 tests, with the published RFC 7914 vector restored)_
+- [x] `npm run typecheck` and `npm run lint` → clean → AC-1 (polyfill import compiles first in `src/app/_layout.tsx`) _(2026-10-12)_
+- [x] `node scripts/bench-kdf.ts` → prints scrypt timings for N=2^7..2^14; the default N=2^7 a few ms on Node → AC-12 _(2026-10-12: N=2^7 28 ms on the first, cold run; N=2^14 307 ms)_
+- [x] `grep -rn "noble\|scure" src --include=*.ts --include=*.tsx -l | grep -v "^src/crypto"` → no file outside `src/crypto/` imports a crypto library → key invariant _(2026-10-12: no file)_
+- [x] `node -e "const v=require('./src/crypto/__tests__/vectors.json'); console.log(v.scrypt[0].dk.slice(0,16), v.hkdf[0].okm.slice(0,16))"` → `fdbabe1c9d347200` and `3cb25f25faacd57a` (RFC 7914 and RFC 5869 published values) → AC-2 _(2026-10-12: `fdbabe1c9d347200 3cb25f25faacd57a` after restoring the published vector as the first scrypt entry)_
 
 ## UI / manual (Expo Go, boot screen → "Open component gallery" → "Crypto bench")
 - [ ] Press "Run KDF benchmark": the button shows a spinner, then four rows N = 2^6 to 2^9 with millisecond timings and the UI stays responsive; copy the N = 2^7 number into the `SCRYPT_DEFAULT` comment in `src/crypto/kdf.ts` → AC-12

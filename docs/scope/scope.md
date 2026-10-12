@@ -24,7 +24,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 11 | Admin oversight & audit | Slice 5 | in-progress (built, closing checks open) |
 | 12 | Backups & disaster drills | Slice 6 | in-progress (built, closing checks open) |
 | 13 | Onboarding & polish | Slice 7 | in-progress (built, closing checks open) |
-| 14 | Release | Slice 7 | planned |
+| 14 | Release | Slice 7 | in-progress (built, closing checks open) |
 | 15 | Admin device self approval | Slice 1 | done |
 
 ## Foundations
@@ -227,10 +227,14 @@ Swipeable onboarding card deck with the warm palette exception, home summary, em
 - [ ] Test it: `/test onboarding & polish`
 Spec [0007-onboarding-polish](../specs/0007-onboarding-polish.md) · code in `src/features/onboarding/`, `src/app/onboarding.tsx`, `src/app/(app)/home.tsx`, `src/features/auth/{api,routes}.ts` · phone steps queued in the umbrella `verify.md`
 
-### 14. Release
+### 14. Release · in-progress · built, closing checks open
 EAS preview and production profiles, Android push credentials, README with setup, secrets and Expo Go limits, tag v0.1.0.
 **Done when:** a preview APK installs on the family phones, push works outside Expo Go, and the README lets a new machine run the project.
-- [ ] Build it: `/develop release`
+- [x] Build it: `/develop release` _(2026-10-12: `eas.json` preview APK and production bundle profiles bound to EAS environments, `npm run eas:env`, version 0.1.0, README with secrets, Expo Go limits, Google and EAS setup; `eas config` resolves the preview profile)_
+- [ ] Build the APK and install it (`npx eas-cli login`, `npm run eas:env`, `npx eas-cli build --profile preview --platform android`): in `final_testing_checklist.md` Part 2
+- [ ] Android push credentials (FCM V1 key through `npx eas-cli credentials`) and a push received outside Expo Go
+- [ ] Tag `v0.1.0` once the checklist passes
+Code in `eas.json`, `app.json`, `scripts/push-eas-env.ts`, `README.md`, `final_testing_checklist.md`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
