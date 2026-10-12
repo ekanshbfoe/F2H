@@ -21,3 +21,5 @@ export type { TextProps, TextVariant } from './Text';
 export { TextField } from './TextField';
 export type { TextFieldProps } from './TextField';
 export { Screen, type ScreenProps } from './Screen';
+export { Well } from './Well';
+export type { WellProps } from './Well';
