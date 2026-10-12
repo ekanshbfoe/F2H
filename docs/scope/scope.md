@@ -20,7 +20,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 7 | App lock | Slice 1 | done |
 | 8 | Contacts vault | Slice 2 | in-progress (built, closing checks open) |
 | 9 | Credential vault | Slice 3 | in-progress (built, closing checks open) |
-| 10 | Files & Drive redundancy | Slice 4 | in-progress |
+| 10 | Files & Drive redundancy | Slice 4 | in-progress (built, closing checks open) |
 | 11 | Admin oversight & audit | Slice 5 | planned |
 | 12 | Backups & disaster drills | Slice 6 | planned |
 | 13 | Onboarding & polish | Slice 7 | planned |
@@ -166,20 +166,20 @@ Spec [0004-credential-vault](../specs/0004-credential-vault.md) · code in `src/
 
 ## Slice 4: Files
 
-### 10. Files & Drive redundancy · in-progress · GA
+### 10. Files & Drive redundancy · in-progress · GA · built, closing checks open
 Google account linking for two Drive slots, chunked client side encryption, dual resumable uploads straight from the phone, verified completion, downloads, deletes, and the nightly reconcile.
 **Done when:** every saved file exists encrypted on both Drives, one Drive being down still allows saving and reading, and a deleted copy is restored by the reconcile job.
 - [x] Design it (spec): `/architect files & drive redundancy`
-- [ ] Build it: `/develop files & drive redundancy`
-   - [ ] OAuth linking functions and screens for slot a and b (AC-1..2)
-   - [ ] Upload session, chunked encrypt, dual resumable upload, completion verification (AC-3..7)
-   - [ ] Download token, decrypt and open, list with degraded badge, delete (AC-8..11)
-   - [ ] Reconcile cron with budgeted re copy and orphan sweep (AC-12..13)
+- [x] Build it: `/develop files & drive redundancy`
+   - [x] OAuth linking functions and screens for slot a and b (AC-1..2)
+   - [x] Upload session, chunked encrypt, dual resumable upload, completion verification (AC-3..7)
+   - [x] Download token, decrypt and open, list with degraded badge, delete (AC-8..11)
+   - [x] Reconcile cron with budgeted re copy and orphan sweep (AC-12..13)
 - [ ] Verify it: `/check verify files & drive redundancy`
 - [ ] Test it: `/test files & drive redundancy`
 - [ ] Review it: `/check review files & drive redundancy`
 - [ ] Document it: `/document files & drive redundancy`
-Spec [0001-drive-redundancy](../specs/0001-system-architecture/0001-drive-redundancy.md)
+Spec [0001-drive-redundancy](../specs/0001-system-architecture/0001-drive-redundancy.md) · code in migration 0013, `supabase/functions/{drive-*,reconcile-blobs}`, `supabase/functions/_shared/google.ts`, `src/features/files/`, `src/services/file-adapter.ts`, `src/app/(app)/files/`, `src/app/(admin)/drive.tsx` · functions deployed and Vault cron secrets stored 2026-10-12 · Google console and phone steps queued in the umbrella `verify.md`
 
 ## Slice 5: Oversight
 

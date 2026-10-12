@@ -265,3 +265,41 @@ _Steps derived from spec 0004 acceptance criteria. `/check verify` runs these; `
 
 ## Acceptance-criteria coverage
 - AC-1 sections and search · AC-2 form · AC-3 generator · AC-4 mask, reveal, clipboard · AC-5 screenshot keys · AC-6 version retry and soft delete · AC-7 isolation (pgTAP) · AC-8 lock clears · AC-9 states · AC-10 tests
+
+---
+
+# Verify: files & drive redundancy · spec 0001 (child 0001-drive-redundancy) · updated 2026-10-12
+_Queued by the autonomous run of 2026-10-12. The command and server checks ran green; the Google and phone steps wait for the engineer._
+
+## Before anything (Google Cloud console, once)
+- [ ] The OAuth client (type Web) lists the redirect URI `https://abkjryjrwvnutwmzbkex.supabase.co/functions/v1/drive-link-callback`
+- [ ] The Drive API is enabled for the project, and the consent screen asks only for `drive.file` and is published to **Production** (Testing drops refresh tokens after 7 days)
+
+## UI / manual (Admin phone in Expo Go)
+- [ ] Home → Admin → Google Drives → both slots say "Not linked" → AC-1
+- [ ] Drive A → Link with Google → sign in with the Admin's account → allow → back in F2H "Drive A is linked." with the account email → AC-1
+- [ ] In that Google Drive a folder `F2H Vault` with a `backups` folder inside exists → AC-1
+- [ ] Drive B → the Father signs in on this phone → "Drive B is linked." → AC-1
+- [ ] Home → Files → empty card → Add a file → pick a PDF of a few MB → "Encrypting…", then both Drive percentages climb, "Checking both copies…", then "saved on both Drives" → AC-3, AC-4, AC-5, AC-6, AC-10
+- [ ] Each Drive's `F2H Vault` folder has one `<hex>.bin` file of about the PDF's size; downloading it from Drive's web page gives bytes that are not a PDF → AC-4, AC-7
+- [ ] Turn Wi-Fi off halfway through an upload of a larger file, wait 10 s, turn it on → the upload carries on without starting again → AC-5
+- [ ] Open the file → the share sheet offers apps; open it in a PDF viewer → it reads correctly → AC-8, AC-9
+- [ ] Lock now, unlock → `cache/f2h-open` is gone (opening again downloads again) → AC-9
+- [ ] Delete the file → both `.bin` files are in each Drive's trash; the list no longer shows it → AC-11
+- [ ] A member phone with no Drive linked yet (or before the Admin links any) → Add a file → "No Google Drive is linked yet" → AC-3
+
+## Server / dashboard
+- [ ] Unlink Drive B by revoking F2H's access in that Google account (myaccount.google.com → Security → third party access), then upload → the file lands `degraded` ("saved on one Drive"); the next reconcile marks slot B `needs_relink` and the Admin phone gets the push (EAS build) → AC-2, AC-6
+- [ ] Relink Drive B, then run reconcile (dashboard SQL `select public.call_edge_function('reconcile-blobs');`) → the degraded blob becomes `ok` and a copy appears on Drive B → AC-12
+- [ ] Delete a `.bin` from Drive A's trash permanently, run reconcile → the blob is re copied to A from B → AC-12
+- [ ] Set the function secret `DOWNLOAD_MODE=proxy`, open a file → it still opens (bytes stream through the function) → AC-13
+
+## Commands
+- [x] `npx supabase db query --linked -f supabase/tests/database/0007_drive_vault.test.sql` (pgTAP enabled) → 0 failed of 9 → AC-1, AC-2 _(ran 2026-10-12 on the hosted project)_
+- [x] `npm test -- src/features/files supabase/functions/_shared/__tests__/google.test.ts` → green → AC-1, AC-4, AC-5, AC-6, AC-7, AC-9, AC-10 _(2026-10-12: files 2 suites 14 tests, google 7 tests; full suite 57 suites 339 tests)_
+- [x] Every Drive function answers without a session: 401 `unauthenticated` (six user functions), 401 `service_key_required` (reconcile with the anon key), the callback renders "Link expired" for a bad state → AC-3, AC-8 _(2026-10-12)_
+- [x] `select public.call_edge_function('reconcile-blobs')` from the database → `net._http_response` 200 with the empty report → AC-12 _(2026-10-12, after storing the `project_url` and `service_role_key` Vault secrets)_
+- [x] `npm run typecheck && npm run lint` → clean _(2026-10-12)_
+
+## Acceptance-criteria coverage
+- AC-1 linking · AC-2 relink flag · AC-3 sessions · AC-4 chunked encrypt · AC-5 dual resumable upload · AC-6 verified completion · AC-7 fresh blob and DEK, bound metadata · AC-8 download token · AC-9 verify, decrypt, open, cache cleared · AC-10 list and states · AC-11 delete · AC-12 reconcile · AC-13 proxy mode

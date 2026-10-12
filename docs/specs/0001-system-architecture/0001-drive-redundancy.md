@@ -76,17 +76,31 @@ Google Drive API v3 with the `drive.file` scope, refresh tokens in Supabase Vaul
 
 ## Build plan
 
-1. Spike (Phase 0): confirm resumable PUT without Authorization; record in `rationale.md`; choose direct or proxy, precondition for **AC-5**.
-2. `drive-link-start` and `drive-link-callback` functions with Vault storage; Settings → Drive screens for slots a and b, satisfies **AC-1**, **AC-2**.
-3. `drive-upload-session` with dual sessions and the `uploading` row, satisfies **AC-3**.
-4. Client chunked encrypt to a temp file (uses crypto child), satisfies **AC-4**, **AC-7**.
-5. Dual resumable chunk upload with progress, resume and SQLite persistence, satisfies **AC-5**.
-6. `drive-upload-complete` verification and item insert, satisfies **AC-6**.
-7. `drive-download-token` and the client download, decrypt, verify, open, satisfies **AC-8**, **AC-9**.
-8. Files list, detail, badges and states, satisfies **AC-10**.
-9. `drive-delete`, satisfies **AC-11**.
-10. `reconcile-blobs` with budget, orphan sweep and Admin push; cron wiring, satisfies **AC-12**.
-11. Proxy mode in `drive-download-token`, satisfies **AC-13**.
+1. [x] Spike (Phase 0): confirm resumable PUT without Authorization; record in `rationale.md`; choose direct or proxy, precondition for **AC-5**.
+2. [x] `drive-link-start` and `drive-link-callback` functions with Vault storage; Settings → Drive screens for slots a and b, satisfies **AC-1**, **AC-2**.
+3. [x] `drive-upload-session` with dual sessions and the `uploading` row, satisfies **AC-3**.
+4. [x] Client chunked encrypt to a temp file (uses crypto child), satisfies **AC-4**, **AC-7**.
+5. [x] Dual resumable chunk upload with progress and resume, satisfies **AC-5**. _(Resume across an app restart, the SQLite `uploads` table, is deferred; see the implementation notes.)_
+6. [x] `drive-upload-complete` verification and item insert, satisfies **AC-6**.
+7. [x] `drive-download-token` and the client download, decrypt, verify, open, satisfies **AC-8**, **AC-9**.
+8. [x] Files list, detail, badges and states, satisfies **AC-10**.
+9. [x] `drive-delete`, satisfies **AC-11**.
+10. [x] `reconcile-blobs` with budget, orphan sweep and Admin push; cron wiring, satisfies **AC-12**.
+11. [x] Proxy mode in `drive-download-token`, satisfies **AC-13**.
+
+## Implementation notes (2026-10-12)
+
+Recorded during the autonomous build the engineer authorized on 2026-10-12; each is a local call inside this spec's decision.
+
+- **Refresh tokens in Vault**: migration 0013 adds `drive_link_account`, `drive_refresh_token` and `drive_mark_relink`, all `security definer` and executable only by the service role. pgTAP `0007_drive_vault.test.sql` proves a member cannot read a token.
+- **OAuth state**: HMAC SHA 256 over `{slot, admin, return_url, nonce, exp}` with `DRIVE_STATE_SECRET`, valid 10 minutes; the return URL must be an `exp://`, `exps://` or `f2h://` deep link. `drive-link-callback` is deployed with `--no-verify-jwt` (config.toml says so too); the signed state is its guard.
+- **Drive layout**: files are named `<blob_id hex>.bin` directly in the slot's `F2H Vault` folder with `appProperties {owner, blob_id}` (no per owner subfolder); `backups/` is created beside them for Slice 6. Relinking the same Google account keeps its folder.
+- **Completion check**: `drive-upload-complete` finds each copy by its `blob_id` app property and compares size and `sha256Checksum`; extra copies are trashed.
+- **Upload client**: the phone encrypts to `cache/f2h-upload/<blob>.ct`, then sends 1 MiB ranges per Drive with `File.upload` (PUT, binary, `Content-Range`); a failed range asks the session `bytes */total` and resumes, up to 3 failures in a row. A Drive that fails is dropped and the blob lands `degraded`.
+- **Download client**: `File.downloadFileAsync` with the one hour token (or the proxy URL and the session headers when `DOWNLOAD_MODE=proxy`), then the whole ciphertext hash is checked before any decryption; the plaintext goes to `cache/f2h-open/` and opens through `expo-sharing`. Every `f2h-*` cache folder is deleted on lock.
+- **One DEK per file**: the item metadata (AAD item id) and the blob chunks (AAD with the blob id) share the item's DEK, as the umbrella's data flow says.
+- **Reconcile limits**: a re copy holds one blob in memory, so a blob above `RECOPY_MAX_BYTES` (default 64 MB) is reported, not copied; work stops after 120 s. Drive orphans with no row at all are not listed yet; only `uploading` rows older than 24 h are swept.
+- **Deferred**: resume across an app restart (SQLite `uploads` table); an in app image and PDF viewer (files open through the system share sheet for now); `bytes_used` accounting on `drive_accounts`.
 
 ## Consequences
 

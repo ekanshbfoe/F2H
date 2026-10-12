@@ -81,3 +81,46 @@ Written during the autonomous run you started on 2026-10-12. Newest feature at t
 - **Search covers the host only,** never the URL path, which can carry tokens.
 - **No passphrase mode yet.**
 - **Limit: Expo Go cannot mark copied text as sensitive.** Android 13 and later may show it in the clipboard preview until it clears. This is a follow up for an EAS build.
+
+## Files & Drive redundancy (feature 10): built, closing checks open
+
+**Do this first, before any Drive test** (in the Google Cloud console, I cannot do it from here):
+
+1. **Register the redirect URI** on the OAuth client: `https://abkjryjrwvnutwmzbkex.supabase.co/functions/v1/drive-link-callback`.
+2. **Enable the Drive API** for the project.
+3. **Publish the consent screen to Production**, asking only for the `drive.file` scope. In Testing status, Google drops the link after 7 days.
+
+**What landed** (4 commits on `main`, pushed):
+
+- **Migration 0013 (live).** Each Drive's refresh token lives only in Supabase Vault, behind service role only functions. The database test has 9 checks, all green on the hosted project, and proves a member cannot read a token.
+- **Seven Edge Functions, deployed and smoke tested.**
+  - `drive-link-start` and `drive-link-callback`: Google sign in with a signed `state`, then the token goes to Vault and an `F2H Vault` folder is created.
+  - `drive-upload-session`: two resumable sessions, and no token ever reaches the phone.
+  - `drive-upload-complete`: size and SHA 256 are checked on each Drive, giving `ok` or `degraded`.
+  - `drive-download-token`: a one hour token, or proxy mode.
+  - `drive-delete`: both copies go to the Drive trash.
+  - `reconcile-blobs`: verify both copies, re copy a missing one, sweep abandoned uploads and push the Admin.
+- **Phone side.**
+  - Files opens from Home: a list with "One copy" badges, live upload progress per Drive, and a detail screen with Open and Delete.
+  - Encryption runs 1 MiB at a time on the phone. The upload resumes after a dropped chunk, and a download is refused if its hash differs.
+  - Decrypted copies are deleted on lock.
+  - Admin → Google Drives links slot A and slot B.
+- **Tests.** The full jest suite is green: 57 suites, 339 tests. They include the real upload protocol with encryption, resume, one Drive failing and a tampered download.
+
+**Server configuration I changed** (all reversible, all what the README already asks for):
+
+- **Function secrets set:** `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (from `supabase/.env`), and a newly generated `DRIVE_STATE_SECRET`.
+- **Vault secrets stored:** `project_url` and `service_role_key`. This is README step 4, which had not been done. Before this, none of the cron jobs or the approval webhook could reach the functions. I proved the path once by calling reconcile from the database, and it answered 200. This also means:
+  - **the hourly expiry sweep now runs**, so pending phones older than 24 hours become expired and expired invite codes are voided;
+  - **the approval push webhook now fires.**
+  - If you would rather not have these yet, delete the two secrets in the dashboard under Vault.
+
+**Waiting for you:** the Google console steps above, then the phone and dashboard steps in `verify.md` under "Verify: files & drive redundancy".
+
+**Deferred, recorded in the spec's implementation notes:**
+
+- **Upload resume after the app restarts.** It resumes within a session only.
+- **An in app image and PDF viewer.** Files open through the system share sheet for now.
+- **`bytes_used` accounting** for each Drive.
+- **Sweeping Drive orphans that have no database row.**
+- **Re copying a single blob above 64 MB.** These are reported, not copied.
