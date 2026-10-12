@@ -19,7 +19,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 6 | Auth & device gate | Slice 1 | in-progress |
 | 7 | App lock | Slice 1 | done |
 | 8 | Contacts vault | Slice 2 | in-progress (built, closing checks open) |
-| 9 | Credential vault | Slice 3 | planned |
+| 9 | Credential vault | Slice 3 | in-progress |
 | 10 | Files & Drive redundancy | Slice 4 | in-progress |
 | 11 | Admin oversight & audit | Slice 5 | planned |
 | 12 | Backups & disaster drills | Slice 6 | planned |
@@ -151,10 +151,18 @@ Spec [0003-contacts-vault](../specs/0003-contacts-vault.md) · code in `src/feat
 
 ## Slice 3: Credentials
 
-### 9. Credential vault · needs a decision
+### 9. Credential vault · in-progress
 Encrypted credentials by type (bank, email, other) with a generator, reveal and copy with clipboard clearing, and screenshot protection.
 **Done when:** a member can store, find, reveal and copy credentials, the clipboard clears after 30 s, and sensitive screens are hidden in the app switcher.
-- [ ] Design it (spec): `/architect credential vault`
+- [x] Design it (spec): `/architect credential vault`
+- [ ] Build it: `/develop credential vault`
+   - [ ] Shared vault items module, contacts moved onto it (AC-6, AC-10)
+   - [ ] Model, generator, clipboard service, store, pgTAP (AC-2, AC-3, AC-4, AC-7, AC-8)
+   - [ ] List with sections and search, detail with reveal and copy, form with the generator, Home link (AC-1 to AC-5, AC-9)
+   - [ ] Screen jest and verify steps (AC-10)
+- [ ] Verify it: `/check verify credential vault`
+- [ ] Test it: `/test credential vault`
+Spec [0004-credential-vault](../specs/0004-credential-vault.md)
 
 ## Slice 4: Files
 
