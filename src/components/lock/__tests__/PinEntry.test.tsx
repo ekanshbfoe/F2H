@@ -7,14 +7,6 @@ import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-han
 
 import { PinEntry } from '../PinEntry';
 
-jest.mock('expo-haptics', () => ({
-  selectionAsync: jest.fn(async () => undefined),
-  impactAsync: jest.fn(async () => undefined),
-  performAndroidHapticsAsync: jest.fn(async () => undefined),
-  ImpactFeedbackStyle: { Light: 'light' },
-  AndroidHaptics: { Virtual_Key: 'virtual-key' },
-}));
-
 function Harness({ onComplete }: { onComplete: (pin: string) => void }) {
   const [pin, setPin] = useState('');
   return <PinEntry value={pin} onChange={setPin} onComplete={onComplete} testID="pin" />;

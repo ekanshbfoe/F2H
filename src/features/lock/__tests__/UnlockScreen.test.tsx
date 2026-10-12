@@ -10,7 +10,6 @@ import { UnlockScreen } from '../screens/UnlockScreen';
 const mockUnlock = jest.fn();
 const mockWipe = jest.fn(async (_reason: string) => undefined);
 
-jest.mock('expo-haptics', () => ({ selectionAsync: jest.fn(async () => undefined) }));
 jest.mock('@/services/supabase', () => ({ setForbiddenHandler: jest.fn() }));
 jest.mock('../api', () => ({
   unlock: (pin: string) => mockUnlock(pin),
