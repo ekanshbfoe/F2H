@@ -1,6 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, View } from 'react-native';
 
 import { Badge, Button, Callout, Card, Screen, Text } from '@/components/ui';
@@ -9,11 +8,12 @@ import { VaultItemError } from '@/features/vault/items';
 import { copySecret } from '@/services/clipboard';
 import { useTheme } from '@/theme';
 
-import { CATEGORY_LABEL, hostOf, MASK } from '../model';
+import { SecretRow, ValueRow } from '../components';
+import { CATEGORY_LABEL, hostOf } from '../model';
 import { credentialEditHref } from '../routes';
 import { useCredentials } from '../store';
 
-export const REVEAL_MS = 30_000;
+export { REVEAL_MS } from '../components';
 
 /** One credential (spec 0004, AC-4, AC-5, AC-6): masked secrets, timed reveal, timed copy. */
 export function CredentialDetailScreen() {
@@ -196,136 +196,5 @@ export function CredentialDetailScreen() {
       ) : null}
       {message ? <Callout tone="danger">{message}</Callout> : null}
     </Screen>
-  );
-}
-
-function ValueRow({
-  label,
-  value,
-  onCopy,
-  testID,
-}: {
-  label: string;
-  value: string;
-  onCopy: () => void;
-  testID: string;
-}) {
-  const t = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
-      <View style={{ flex: 1, gap: t.spacing.xxs }}>
-        <Text variant="caption" color="muted">
-          {label}
-        </Text>
-        <Text variant="label" testID={`${testID}-value`}>
-          {value}
-        </Text>
-      </View>
-      <IconButton
-        icon="copy-outline"
-        label={`Copy ${label}`}
-        onPress={onCopy}
-        testID={`${testID}-copy`}
-      />
-    </View>
-  );
-}
-
-/** A secret shown as 8 dots; Reveal shows it for 30 seconds or until the screen loses focus. */
-function SecretRow({
-  label,
-  value,
-  epoch,
-  onCopy,
-  testID,
-}: {
-  label: string;
-  value: string;
-  epoch: number;
-  onCopy: () => void;
-  testID: string;
-}) {
-  const t = useTheme();
-  const [revealedAt, setRevealedAt] = useState<number | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const shown = revealedAt !== null && revealedAt >= epoch;
-
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
-
-  const toggle = () => {
-    if (timer.current) clearTimeout(timer.current);
-    if (shown) {
-      setRevealedAt(null);
-      return;
-    }
-    setRevealedAt(epoch);
-    timer.current = setTimeout(() => setRevealedAt(null), REVEAL_MS);
-  };
-
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
-      <View style={{ flex: 1, gap: t.spacing.xxs }}>
-        <Text variant="caption" color="muted">
-          {label}
-        </Text>
-        <Text
-          variant="label"
-          testID={`${testID}-value`}
-          accessibilityLabel={shown ? undefined : `${label} hidden`}
-        >
-          {shown ? value : MASK}
-        </Text>
-      </View>
-      <IconButton
-        icon={shown ? 'eye-off-outline' : 'eye-outline'}
-        label={shown ? `Hide ${label}` : `Reveal ${label}`}
-        onPress={toggle}
-        testID={`${testID}-reveal`}
-      />
-      <IconButton
-        icon="copy-outline"
-        label={`Copy ${label}`}
-        onPress={onCopy}
-        testID={`${testID}-copy`}
-      />
-    </View>
-  );
-}
-
-function IconButton({
-  icon,
-  label,
-  onPress,
-  testID,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-  testID: string;
-}) {
-  const t = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      hitSlop={6}
-      testID={testID}
-      style={({ pressed }) => ({
-        width: t.sizes.touch,
-        height: t.sizes.touch,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: t.radii.pill,
-        backgroundColor: pressed ? t.colors.primaryTint : t.colors.skyTint,
-      })}
-    >
-      <Ionicons name={icon} size={t.sizes.icon} color={t.colors.primary} />
-    </Pressable>
   );
 }

@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import {
@@ -19,6 +20,7 @@ import {
   createRecoveryGrant,
   listMemberDevices,
   listMembers,
+  revokeMemberDevice,
   type AllowedRow,
   type MemberDevice,
   type MemberLabel,
@@ -33,7 +35,11 @@ const LABELS: MemberLabel[] = ['father', 'mother', 'brother'];
 /** Members (AC-5, AC-15): invite codes as text and QR, members with devices and recovery grants. */
 export default function MembersScreen() {
   const t = useTheme();
+  const router = useRouter();
   const mk = useSession((s) => s.mk);
+  const myDeviceId = useSession((s) => s.deviceId);
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<MemberRow[]>([]);
   const [allowed, setAllowed] = useState<AllowedRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -118,6 +124,56 @@ export default function MembersScreen() {
             : (e as Error).message,
       });
     }
+  };
+
+  // Oversight (spec 0005, AC-1): the member is told before anything is decrypted.
+  const openVault = () => {
+    if (!member) return;
+    const who = member.display_name;
+    Alert.alert(
+      `Open ${who}'s vault?`,
+      `${who} gets a notification and an entry in their Activity log saying you opened it. You see it read only.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Open, logged',
+          onPress: () => {
+            setMember(null);
+            router.push({
+              pathname: '/(admin)/oversight/[userId]',
+              params: { userId: member.id, name: who },
+            });
+          },
+        },
+      ],
+    );
+  };
+
+  // Sign out a member's phone (spec 0005, AC-6).
+  const signOutDevice = (d: MemberDevice) => {
+    if (!member || !d.id) return;
+    const id = d.id;
+    Alert.alert(
+      'Sign out this phone?',
+      `${d.name || d.model || 'This phone'} wipes its vault keys the next time it opens F2H.`,
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Sign out',
+          style: 'destructive',
+          onPress: () => {
+            setRevoking(id);
+            setRevokeError(null);
+            revokeMemberDevice(id)
+              .then(() => listMemberDevices(member.id).then(setDevices))
+              .catch((e: unknown) =>
+                setRevokeError(e instanceof Error ? e.message : 'Could not sign it out'),
+              )
+              .finally(() => setRevoking(null));
+          },
+        },
+      ],
+    );
   };
 
   const pendingInvites = allowed.filter((a) => a.label !== 'admin' && !a.consumed_at);
@@ -265,10 +321,16 @@ export default function MembersScreen() {
         onClose={() => setMember(null)}
         title={member?.display_name ?? 'Member'}
       >
+        {member && member.role !== 'admin' ? (
+          <Button variant="secondary" onPress={openVault} testID="member-open-vault">
+            Open vault (logged)
+          </Button>
+        ) : null}
         <Callout>
           Lost password? Pick the phone they still have. A one hour recovery grant lets that phone
           set a new password without an email.
         </Callout>
+        {revokeError ? <Callout tone="danger">{revokeError}</Callout> : null}
         {devices === null ? (
           <Text variant="body" color="muted">
             Loading devices…
@@ -293,6 +355,18 @@ export default function MembersScreen() {
                   onPress={() => void grant(d)}
                 >
                   {state?.status === 'done' ? 'Grant created' : 'Create recovery grant'}
+                </Button>
+              ) : null}
+              {d.status === 'approved' && d.id !== myDeviceId ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  loading={revoking === d.id}
+                  disabled={revoking !== null}
+                  onPress={() => signOutDevice(d)}
+                  testID={`member-signout-${d.id}`}
+                >
+                  Sign out this phone
                 </Button>
               ) : null}
               {state?.status === 'error' ? (

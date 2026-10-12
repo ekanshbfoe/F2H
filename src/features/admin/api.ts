@@ -146,3 +146,9 @@ export async function createRecoveryGrant(
   if (error) throw new Error(error.message);
   return String(data);
 }
+
+/** Signs out one of a member's approved phones (spec 0005, AC-6). Never the caller's own phone. */
+export async function revokeMemberDevice(deviceId: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_revoke_device', { p_device_id: deviceId });
+  if (error) throw new Error(error.message);
+}
