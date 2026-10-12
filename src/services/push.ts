@@ -7,6 +7,8 @@ import { Platform } from 'react-native';
 const SCREEN_ROUTES = {
   approvals: '/(admin)/approvals',
   waiting: '/(auth)/waiting',
+  activity: '/(app)/activity',
+  drive: '/(admin)/drive',
 } as const;
 
 type PushScreen = keyof typeof SCREEN_ROUTES;

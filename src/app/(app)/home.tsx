@@ -5,6 +5,7 @@ import { Pressable, View } from 'react-native';
 
 import { Avatar, Badge, Button, Card, Row, Screen, Text } from '@/components/ui';
 import { listPendingDevices, subscribePendingDevices } from '@/features/admin/api';
+import { ACTIVITY_HREF } from '@/features/audit/routes';
 import { CONTACTS_HREF } from '@/features/contacts/routes';
 import { CREDENTIALS_HREF } from '@/features/credentials/routes';
 import { DRIVE_HREF, FILES_HREF } from '@/features/files/routes';
@@ -238,6 +239,19 @@ export default function HomeScreen() {
 
         <Card style={{ gap: t.spacing.sm }}>
           <Text variant="heading">Account</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(ACTIVITY_HREF)}
+            testID="home-activity"
+          >
+            <Row
+              label="Activity"
+              value="Who did what, and when"
+              trailing={
+                <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
+              }
+            />
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/(app)/change-password')}
