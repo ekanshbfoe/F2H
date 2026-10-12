@@ -8,6 +8,8 @@ export { Callout } from './Callout';
 export type { CalloutProps } from './Callout';
 export { Card } from './Card';
 export type { CardProps } from './Card';
+export { Medallion } from './Medallion';
+export type { MedallionProps, MedallionTone } from './Medallion';
 export { Row } from './Row';
 export type { RowProps } from './Row';
 export { Sheet } from './Sheet';
