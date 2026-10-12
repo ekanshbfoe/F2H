@@ -1,7 +1,17 @@
 {
   "scrypt": [
     {
-      "name": "rfc7914-2",
+      "password": "password",
+      "salt": "NaCl",
+      "r": 8,
+      "name": "rfc7914-published-3",
+      "N": 1024,
+      "p": 16,
+      "dkLen": 64,
+      "dk": "fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640"
+    },
+    {
+      "name": "rfc7914-inputs-at-n128",
       "password": "password",
       "salt": "NaCl",
       "N": 128,
