@@ -8,8 +8,11 @@ import { listPendingDevices, subscribePendingDevices } from '@/features/admin/ap
 import { ACTIVITY_HREF } from '@/features/audit/routes';
 import { BACKUPS_HREF } from '@/features/backups/routes';
 import { CONTACTS_HREF } from '@/features/contacts/routes';
+import { useContacts } from '@/features/contacts/store';
 import { CREDENTIALS_HREF } from '@/features/credentials/routes';
+import { useCredentials } from '@/features/credentials/store';
 import { DRIVE_HREF, FILES_HREF } from '@/features/files/routes';
+import { useFiles } from '@/features/files/store';
 import { signOut } from '@/features/auth/api';
 import { pathFor } from '@/features/auth/routes';
 import { lockNow } from '@/features/lock/api';
@@ -32,6 +35,14 @@ export default function HomeScreen() {
   const [timeoutMs, setTimeoutMs] = useState<number>(DEFAULT_TIMEOUT_MS);
   const hasPin = useLock((s) => s.state === 'unlocked');
   const isAdmin = profile?.role === 'admin';
+  // Vault summary (spec 0007, AC-4): counts only once a list loaded on this phone.
+  const contactCount = useContacts((s) =>
+    s.status === 'ready' ? Object.keys(s.items).length : null,
+  );
+  const credentialCount = useCredentials((s) =>
+    s.status === 'ready' ? Object.keys(s.items).length : null,
+  );
+  const fileCount = useFiles((s) => (s.status === 'ready' ? Object.keys(s.items).length : null));
 
   useEffect(() => {
     readTimeoutMs()
@@ -158,7 +169,7 @@ export default function HomeScreen() {
           >
             <Row
               label="Contacts"
-              value="Call and WhatsApp"
+              value={contactCount === null ? 'Call and WhatsApp' : `${contactCount} saved`}
               trailing={
                 <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
               }
@@ -171,7 +182,7 @@ export default function HomeScreen() {
           >
             <Row
               label="Credentials"
-              value="Bank, email and more"
+              value={credentialCount === null ? 'Bank, email and more' : `${credentialCount} saved`}
               trailing={
                 <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
               }
@@ -184,7 +195,7 @@ export default function HomeScreen() {
           >
             <Row
               label="Files"
-              value="Kept on two Drives"
+              value={fileCount === null ? 'Kept on two Drives' : `${fileCount} saved`}
               trailing={
                 <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
               }

@@ -1,6 +1,6 @@
 # 0007. Onboarding and polish
 
-**Status**: Proposed
+**Status**: In Progress
 **Date**: 2026-10-12
 **Mode**: FEATURE · Beta tier (project default) · Tracer Bullet
 **Decided by**: Claude during the autonomous run the engineer authorized on 2026-10-12, from the engineer's own onboarding brief (`doc/ui/Onboarding/working.md`: drag cards left or right until the login screen, colourful orange, yellow and red text, not the blue and white theme).
@@ -21,7 +21,7 @@ A first launch shows four draggable cards that explain F2H in warm colours; drag
 
 ## Decision
 
-A route `/(onboarding)` built on the existing `CardDeck`, gated by an AsyncStorage flag read during boot; Home reads the three vault stores for its counts.
+A route `/onboarding` built on the existing `CardDeck`, gated by an AsyncStorage flag read during boot; Home reads the three vault stores for its counts.
 
 **Calls made here (recommended items):**
 - **AsyncStorage flag, kept on wipe.** Onboarding is a welcome, not a secret; showing it again after a PIN wipe would only slow the person down.

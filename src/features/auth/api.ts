@@ -19,6 +19,7 @@ import { unlockWithKek } from '@/features/keyring/unlock';
 import { checkDeviceStatus, loadLockState } from '@/features/lock/api';
 import { useLock } from '@/features/lock/lock.store';
 import { forgetPin, hasPinFor } from '@/features/lock/storage';
+import { hasOnboarded } from '@/features/onboarding/model';
 import { AppKeys, appDelete } from '@/services/app-storage';
 import { eraseItemCache } from '@/services/item-cache';
 import { callFunction, FunctionError } from '@/services/functions';
@@ -33,6 +34,7 @@ export { wipeLocalState } from './session';
 
 export type AuthRoute =
   | 'login'
+  | 'onboarding'
   | 'waiting'
   | 'rejected'
   | 'expired'
@@ -71,7 +73,8 @@ export async function resolveBootRoute(): Promise<AuthRoute> {
   const session = data.session;
   if (!session) {
     s.reset('signed_out');
-    return 'login';
+    // First launch on this phone: the welcome deck before login (spec 0007, AC-1).
+    return (await hasOnboarded()) ? 'login' : 'onboarding';
   }
   const profile = await loadProfile(session.user.id);
   if (!profile) {

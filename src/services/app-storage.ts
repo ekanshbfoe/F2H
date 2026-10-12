@@ -11,6 +11,8 @@ export const AppKeys = {
   profile: 'f2h.profile',
   /** Approved devices of the Admin, this phone included; written only for the admin role (spec 0001 self approval, AC-7). */
   adminApprovedCount: 'f2h.admin_approved_count',
+  /** The first launch deck was finished or skipped on this phone (spec 0007); kept on wipe. */
+  onboarded: 'f2h.onboarded',
 } as const;
 
 export type AppKey = (typeof AppKeys)[keyof typeof AppKeys];

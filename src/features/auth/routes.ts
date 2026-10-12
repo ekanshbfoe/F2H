@@ -3,6 +3,7 @@ import type { AuthRoute } from './api';
 /** Maps a gate outcome to the screen that shows it. */
 export const AUTH_ROUTES = {
   login: '/(auth)/login',
+  onboarding: '/onboarding',
   waiting: '/(auth)/waiting',
   rejected: '/(auth)/denied?reason=rejected',
   expired: '/(auth)/denied?reason=expired',
