@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/theme';
@@ -9,7 +9,10 @@ import { PinPad } from './PinPad';
 export interface PinEntryProps {
   value: string;
   onChange: (pin: string) => void;
-  /** Called once when the sixth digit lands. */
+  /**
+   * Called once when the sixth digit lands. Input then pauses until the parent clears the value
+   * (or moves on), so a stray tap can never edit or resubmit a PIN that is being checked.
+   */
   onComplete?: (pin: string) => void;
   length?: number;
   state?: PinBoxesState;
@@ -42,10 +45,28 @@ export function PinEntry({
     if (value.length < length) completed.current = null;
   }, [value, length, onComplete]);
 
-  const set = (next: string) => {
-    if (disabled) return;
-    onChange(next.replace(/\D/g, '').slice(0, length));
-  };
+  // The pad commits from the gesture thread, so two quick taps can both land before React renders
+  // the first. Reading the latest value (and props) from refs keeps every digit and keeps the
+  // pad's callbacks stable, so its memoised keys never re-render on a tap.
+  // Synced before paint, so a tap that lands right after the parent clears a wrong PIN builds on
+  // the cleared value, not on the six digits that were just checked.
+  const submits = Boolean(onComplete);
+  const latest = useRef({ value, onChange, disabled, length, submits });
+  useLayoutEffect(() => {
+    latest.current = { value, onChange, disabled, length, submits };
+  });
+
+  const set = useCallback((next: string) => {
+    const l = latest.current;
+    if (l.disabled) return;
+    if (l.submits && l.value.length >= l.length) return;
+    const clean = next.replace(/\D/g, '').slice(0, l.length);
+    l.value = clean;
+    l.onChange(clean);
+  }, []);
+  const onDigit = useCallback((d: string) => set(latest.current.value + d), [set]);
+  const onDelete = useCallback(() => set(latest.current.value.slice(0, -1)), [set]);
+  const onClear = useCallback(() => set(''), [set]);
 
   return (
     <View style={{ gap: t.spacing.xxl, alignItems: 'center' }} testID={testID}>
@@ -73,8 +94,9 @@ export function PinEntry({
       />
       <PinPad
         disabled={disabled}
-        onDigit={(d) => set(value + d)}
-        onDelete={() => set(value.slice(0, -1))}
+        onDigit={onDigit}
+        onDelete={onDelete}
+        onClear={onClear}
         testID={testID ? `${testID}-pad` : undefined}
       />
     </View>

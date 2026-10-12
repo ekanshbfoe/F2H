@@ -1,19 +1,45 @@
-// covers: AC-11 (labelled keys, announced count, hidden input for hardware keyboards)
-import { fireEvent, render, screen, userEvent } from '@testing-library/react-native';
+// covers: AC-11 (labelled keys, announced count, hidden input for hardware keyboards, hold to clear)
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useState } from 'react';
+import { Text } from 'react-native';
+import { State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { PinEntry } from '../PinEntry';
 
-jest.mock('expo-haptics', () => ({ selectionAsync: jest.fn(async () => undefined) }));
+jest.mock('expo-haptics', () => ({
+  selectionAsync: jest.fn(async () => undefined),
+  impactAsync: jest.fn(async () => undefined),
+  performAndroidHapticsAsync: jest.fn(async () => undefined),
+  ImpactFeedbackStyle: { Light: 'light' },
+  AndroidHaptics: { Virtual_Key: 'virtual-key' },
+}));
 
 function Harness({ onComplete }: { onComplete: (pin: string) => void }) {
   const [pin, setPin] = useState('');
   return <PinEntry value={pin} onChange={setPin} onComplete={onComplete} testID="pin" />;
 }
 
+/** A finger tap: the native gesture begins, activates and ends. */
+async function tap(key: string) {
+  await act(async () => {
+    fireGestureHandler(getByGestureTestId(`pin-key-${key}`), [
+      { state: State.BEGAN },
+      { state: State.ACTIVE },
+      { state: State.END },
+    ]);
+  });
+}
+
+/** A screen reader double tap. */
+async function activate(name: string) {
+  await fireEvent(screen.getByRole('button', { name }), 'accessibilityAction', {
+    nativeEvent: { actionName: 'activate' },
+  });
+}
+
 describe('PinEntry', () => {
   it('every key has a label, counts digits aloud and completes at six', async () => {
-    const user = userEvent.setup();
     const onComplete = jest.fn();
     await render(<Harness onComplete={onComplete} />);
     for (const d of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']) {
@@ -21,16 +47,93 @@ describe('PinEntry', () => {
     }
     expect(screen.getByRole('button', { name: 'Delete' })).toBeTruthy();
     expect(screen.getByLabelText('0 of 6 digits entered')).toBeTruthy();
-    await user.press(screen.getByRole('button', { name: '4' }));
-    await user.press(screen.getByRole('button', { name: '8' }));
+    await tap('4');
+    await tap('8');
     expect(screen.getByLabelText('2 of 6 digits entered')).toBeTruthy();
-    await user.press(screen.getByRole('button', { name: 'Delete' }));
+    await tap('delete');
     expect(screen.getByLabelText('1 of 6 digits entered')).toBeTruthy();
-    for (const d of ['8', '2', '9', '1', '3']) {
-      await user.press(screen.getByRole('button', { name: d }));
-    }
+    for (const d of ['8', '2', '9', '1', '3']) await tap(d);
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(onComplete).toHaveBeenCalledWith('482913');
+  });
+
+  it('keeps both digits when two taps land before a render', async () => {
+    const onChange = jest.fn();
+    await render(<PinEntry value="" onChange={onChange} />);
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('pin-key-1'), [
+        { state: State.BEGAN },
+        { state: State.ACTIVE },
+        { state: State.END },
+      ]);
+      fireGestureHandler(getByGestureTestId('pin-key-2'), [
+        { state: State.BEGAN },
+        { state: State.ACTIVE },
+        { state: State.END },
+      ]);
+    });
+    expect(onChange).toHaveBeenLastCalledWith('12');
+  });
+
+  it('a cancelled touch (finger slid off) commits nothing', async () => {
+    const onChange = jest.fn();
+    await render(<PinEntry value="" onChange={onChange} />);
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('pin-key-5'), [
+        { state: State.BEGAN },
+        { state: State.FAILED },
+      ]);
+    });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('works with a screen reader through the activate action', async () => {
+    await render(<Harness onComplete={jest.fn()} />);
+    await activate('7');
+    await activate('3');
+    expect(screen.getByLabelText('2 of 6 digits entered')).toBeTruthy();
+    await activate('Delete');
+    expect(screen.getByLabelText('1 of 6 digits entered')).toBeTruthy();
+  });
+
+  it('a long press on delete clears every digit', async () => {
+    await render(<Harness onComplete={jest.fn()} />);
+    for (const d of ['1', '2', '3']) await tap(d);
+    expect(screen.getByLabelText('3 of 6 digits entered')).toBeTruthy();
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('pin-key-clear'), [
+        { state: State.BEGAN },
+        { state: State.ACTIVE },
+        { state: State.END },
+      ]);
+    });
+    expect(screen.getByLabelText('0 of 6 digits entered')).toBeTruthy();
+  });
+
+  it('pauses input once six digits are submitted, until the parent clears them', async () => {
+    const onComplete = jest.fn();
+    function Clearing() {
+      const [pin, setPin] = useState('');
+      return (
+        <>
+          <PinEntry value={pin} onChange={setPin} onComplete={onComplete} testID="pin" />
+          <Text accessibilityRole="button" onPress={() => setPin('')}>
+            reset
+          </Text>
+        </>
+      );
+    }
+    await render(<Clearing />);
+    for (const d of ['1', '2', '3', '4', '5', '6']) await tap(d);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    await tap('delete');
+    await tap('9');
+    expect(screen.getByLabelText('6 of 6 digits entered')).toBeTruthy();
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'reset' }));
+    await tap('7');
+    expect(screen.getByLabelText('1 of 6 digits entered')).toBeTruthy();
+    expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
   it('accepts digits from a hardware keyboard through the hidden input and drops the rest', async () => {
@@ -42,11 +145,10 @@ describe('PinEntry', () => {
     expect(onComplete).toHaveBeenCalledWith('123456');
   });
 
-  it('ignores taps while disabled', async () => {
-    const user = userEvent.setup();
+  it('ignores taps and screen reader actions while disabled', async () => {
     const onChange = jest.fn();
     await render(<PinEntry value="" onChange={onChange} disabled />);
-    await user.press(screen.getByRole('button', { name: '1' }));
+    await activate('1');
     expect(onChange).not.toHaveBeenCalled();
   });
 });
