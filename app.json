@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "f2h",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.ekansh.f2h"
