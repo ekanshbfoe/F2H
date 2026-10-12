@@ -1,7 +1,7 @@
 {
   "name": "f2h",
   "main": "expo-router/entry",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "start": "expo start",
@@ -17,7 +17,8 @@
     "db:test": "supabase test db",
     "db:types": "npx supabase gen types typescript --project-id abkjryjrwvnutwmzbkex --schema public > src/types/database.types.ts",
     "bootstrap:admin": "node scripts/bootstrap-admin.ts",
-    "restore:backup": "node scripts/restore-backup.ts"
+    "restore:backup": "node scripts/restore-backup.ts",
+    "eas:env": "node scripts/push-eas-env.ts"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
