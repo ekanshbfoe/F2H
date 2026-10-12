@@ -175,6 +175,10 @@ export const motion = {
   cascadeStepMs: 30,
   /** Press feedback scale. */
   pressScale: 0.97,
+  /** Finger down on a physical key: a fast, strong ease out so the press lands at once. */
+  timingPressIn: { duration: 100, easing: Easing.bezier(0.23, 1, 0.32, 1) },
+  /** Finger up: the key pops back past its rest height once (about 10 percent), then settles. */
+  springRelease: { duration: 220, dampingRatio: 0.6 },
   /** Flash overlay on tap (login reference). */
   flashInMs: 60,
   flashOutMs: 180,
