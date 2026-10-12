@@ -197,3 +197,37 @@ _Run 2026-10-12 on the LAVA LXX503, one phone: Forgot PIN warning, wipe, login, 
 
 ## Acceptance-criteria coverage
 - AC-1 kit card placement and offline · AC-2 challenge step, gate and limits · AC-3 word entry and local checks · AC-4 atomic approval, success step first, cold start · AC-5 wrong, expired, third wrong rejects · AC-6 success step revoke and push · AC-7 last admin phone warning · AC-8 trigger, race, replace · AC-9 pgTAP, vector tests, jest
+
+---
+
+# Verify: contacts vault · spec 0003 · updated 2026-10-12
+_Steps derived from spec 0003 acceptance criteria. `/check verify` runs these; `/test` locks the durable ones. Queued by the autonomous run of 2026-10-12: the command checks ran green, the phone steps wait for the engineer._
+
+## UI / manual (Expo Go on the LAVA, unlocked)
+- [ ] Home → "Your vault" → Contacts → the screen opens with the Call and WhatsApp tabs, both at 0, and the empty card → AC-1, AC-9
+- [ ] Add → name "Papa", number `98765 43210`, both switches on → Save → the detail shows `+91 98765 43210` with Call and WhatsApp badges → AC-2
+- [ ] Back to the list → Papa is in both tabs; the counts read 1 and 1 → AC-1
+- [ ] Detail → Call → the dialer opens with +919876543210; WhatsApp → the chat with that number opens (or wa.me in the browser when WhatsApp is not installed) → AC-3
+- [ ] Add a landline `0261 2345678` tagged Call only → the detail disables WhatsApp with the country code reason → AC-3
+- [ ] Add with an empty name, or both switches off → the field errors show and nothing is saved → AC-2
+- [ ] Search "pap" → Papa; search "2345" → the landline; search "zz" → "Nothing matches" → AC-5
+- [ ] Edit Papa → rename → Save → the list shows the new name; pull to refresh keeps it → AC-6
+- [ ] Delete the landline → confirm → it leaves the list; the dashboard row has `deleted_at` set and is still there → AC-6
+- [ ] Import → "Read my contacts" → deny the permission → the explanation and Try again; deny with "Don't ask again" → Open settings → AC-4
+- [ ] Import → allow → the review lists the phone's contacts with numbers; Papa (already added) shows "Already in your vault" and cannot be picked → AC-4
+- [ ] Turn WhatsApp on, Select all, Import → "N of N saved" then "N contacts imported"; the WhatsApp tab grows by N → AC-4
+- [ ] Lock now while the list is open, then unlock → the list loads again (nothing stale flashes before the PIN) → AC-8
+- [ ] In the dashboard, the `ciphertext` of a contact row shows no readable name or number → invariant
+
+## Commands
+- [x] `npx supabase db query --linked -f supabase/tests/database/0005_contacts.test.sql` (pgTAP enabled, the file ending with `select num_failed()`) → 0 failed of 12 → AC-6, AC-7 _(ran 2026-10-12 on the hosted project)_
+- [x] `npm test -- src/features/contacts` → model, api, store, import and screen suites green → AC-10 _(2026-10-12: 5 suites, 45 tests; full suite 49 suites, 283 tests)_
+- [x] `npm run typecheck && npm run lint` → clean _(2026-10-12)_
+
+## Value sourcing checks
+- [ ] A second phone of the same member edits Papa first, then this phone saves an edit → the save still lands (one automatic retry) → AC-6
+- [ ] A contact typed as `+44 20 7946 0958` keeps its code; WhatsApp opens `wa.me/442079460958` → AC-3
+- [ ] A member logged in on another phone sees none of this member's contacts → AC-7
+
+## Acceptance-criteria coverage
+- AC-1 tabs and counts · AC-2 form and normalization · AC-3 call and WhatsApp · AC-4 import · AC-5 search · AC-6 version retry and soft delete · AC-7 isolation (pgTAP) · AC-8 lock clears · AC-9 states · AC-10 tests

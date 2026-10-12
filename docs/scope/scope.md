@@ -18,7 +18,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 5 | Backend foundation (data model & RLS) | Foundation | done |
 | 6 | Auth & device gate | Slice 1 | in-progress |
 | 7 | App lock | Slice 1 | done |
-| 8 | Contacts vault | Slice 2 | in-progress |
+| 8 | Contacts vault | Slice 2 | in-progress (built, closing checks open) |
 | 9 | Credential vault | Slice 3 | planned |
 | 10 | Files & Drive redundancy | Slice 4 | in-progress |
 | 11 | Admin oversight & audit | Slice 5 | planned |
@@ -136,18 +136,18 @@ Spec [0001-admin-device-self-approval](../specs/0001-system-architecture/0001-ad
 
 ## Slice 2: Contacts
 
-### 8. Contacts vault · in-progress
+### 8. Contacts vault · in-progress · built, closing checks open
 Encrypted contacts tagged as Call and/or WhatsApp, two tabs, search, import from the phone address book with bulk tagging, call and open in WhatsApp actions.
 **Done when:** a member can import, tag, search, edit and call contacts; the other members cannot read them; empty and error states render.
 - [x] Design it (spec): `/architect contacts vault`
-- [ ] Build it: `/develop contacts vault`
-   - [ ] Model, api and store: payload, number normalization, search, dedupe, version retry, soft delete, lock clearing, pgTAP (AC-2, AC-5, AC-6, AC-7, AC-8)
-   - [ ] List with Call and WhatsApp tabs, search, detail with call and WhatsApp, add and edit form, Home link (AC-1, AC-2, AC-3, AC-5, AC-9)
-   - [ ] Import from the phone with bulk tags, dedupe and batched insert (AC-4)
-   - [ ] Screen and import jest, verify steps (AC-10)
+- [x] Build it: `/develop contacts vault`
+   - [x] Model, api and store: payload, number normalization, search, dedupe, version retry, soft delete, lock clearing, pgTAP (AC-2, AC-5, AC-6, AC-7, AC-8)
+   - [x] List with Call and WhatsApp tabs, search, detail with call and WhatsApp, add and edit form, Home link (AC-1, AC-2, AC-3, AC-5, AC-9)
+   - [x] Import from the phone with bulk tags, dedupe and batched insert (AC-4)
+   - [x] Screen and import jest, verify steps (AC-10)
 - [ ] Verify it: `/check verify contacts vault`
 - [ ] Test it: `/test contacts vault`
-Spec [0003-contacts-vault](../specs/0003-contacts-vault.md)
+Spec [0003-contacts-vault](../specs/0003-contacts-vault.md) · code in `src/features/contacts/`, `src/app/(app)/contacts/`, `supabase/tests/database/0005_contacts.test.sql` · no migration (reuses `vault_items`) · phone steps queued in the umbrella `verify.md`
 
 ## Slice 3: Credentials
 

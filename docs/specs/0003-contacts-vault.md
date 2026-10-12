@@ -1,6 +1,6 @@
 # 0003. Contacts vault
 
-**Status**: Proposed
+**Status**: In Progress
 **Date**: 2026-10-12
 **Mode**: FEATURE · Beta tier (project default) · Tracer Bullet
 **Decided by**: Claude during an autonomous run the engineer authorized on 2026-10-12 ("do not pause for architectural, aesthetic or design decisions"). Every call below is a recommendation the engineer may overturn; nothing here is hard to reverse because no migration is involved.
@@ -105,11 +105,11 @@ Contacts are `vault_items` rows of kind `contact` holding a versioned JSON paylo
 
 Tracer Bullet: one contact travels from the form through the envelope to the database and back into the list first; then import, search and conflicts thicken it.
 
-1. [ ] `src/features/contacts/model.ts`: payload schema (zod), `normalizePhone`, `isInternational`, `whatsappUrl`, `telUrl`, `foldName`, `matchesSearch`, `isDuplicate`, `sortContacts`; jest, satisfies **AC-2**, **AC-3**, **AC-5**.
-2. [ ] `api.ts` and `store.ts`: list, create, update and delete with the version retry and soft delete, the store cleared on lock; jest; pgTAP `0005_contacts.test.sql`, satisfies **AC-6**, **AC-7**, **AC-8**.
-3. [ ] Screens: list with the two tabs, counts, search and states; detail with Call and WhatsApp; the add and edit form; Home link; routes under `src/app/(app)/contacts/`, satisfies **AC-1**, **AC-2**, **AC-3**, **AC-5**, **AC-9**.
-4. [ ] `import.ts` and the import screen: permission, paged read, mapping, dedupe, bulk tags, batched insert with progress; config plugin, satisfies **AC-4**.
-5. [ ] Jest for the screens and the import mapping; verify steps appended to the umbrella `verify.md` section for this spec, satisfies **AC-10**.
+1. [x] `src/features/contacts/model.ts`: payload schema (zod), `normalizePhone`, `isInternational`, `whatsappUrl`, `telUrl`, `foldName`, `matchesSearch`, `isDuplicate`, `sortContacts`; jest, satisfies **AC-2**, **AC-3**, **AC-5**.
+2. [x] `api.ts` and `store.ts`: list, create, update and delete with the version retry and soft delete, the store cleared on lock; jest; pgTAP `0005_contacts.test.sql`, satisfies **AC-6**, **AC-7**, **AC-8**.
+3. [x] Screens: list with the two tabs, counts, search and states; detail with Call and WhatsApp; the add and edit form; Home link; routes under `src/app/(app)/contacts/`, satisfies **AC-1**, **AC-2**, **AC-3**, **AC-5**, **AC-9**.
+4. [x] `import.ts` and the import screen: permission, paged read, mapping, dedupe, bulk tags, batched insert with progress; config plugin, satisfies **AC-4**.
+5. [x] Jest for the screens and the import mapping; verify steps appended to the umbrella `verify.md` section for this spec, satisfies **AC-10**.
 
 ## Consequences
 
