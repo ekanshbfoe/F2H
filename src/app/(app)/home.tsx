@@ -118,9 +118,21 @@ export default function HomeScreen() {
           </Card>
         ) : null}
 
-        <Card dashed style={{ gap: t.spacing.sm }}>
+        <Card style={{ gap: t.spacing.sm }}>
           <Text variant="heading">Your vault</Text>
-          <Row dashed label="Contacts" value="coming next" />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/(app)/contacts')}
+            testID="home-contacts"
+          >
+            <Row
+              label="Contacts"
+              value="Call and WhatsApp"
+              trailing={
+                <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
+              }
+            />
+          </Pressable>
           <Row dashed label="Credentials" value="coming next" />
           <Row dashed label="Files" value="coming next" />
         </Card>
