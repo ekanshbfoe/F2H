@@ -102,6 +102,19 @@ export default function HomeScreen() {
                 }
               />
             </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/(admin)/show-kit')}
+              testID="home-show-kit"
+            >
+              <Row
+                label="Show my recovery kit"
+                value="24 words"
+                trailing={
+                  <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
+                }
+              />
+            </Pressable>
           </Card>
         ) : null}
 

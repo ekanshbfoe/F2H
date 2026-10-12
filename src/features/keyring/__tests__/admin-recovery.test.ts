@@ -1,6 +1,7 @@
 // covers: AC-4 (24 words, 3 confirmed, key published once, seed kept as a vault note, Admin MK sealed to it)
 import { box, envelope, fromBase64, mnemonic, recovery, toBase64, verifier } from '@/crypto';
 import {
+  exportRecoveryKit,
   exportRecoveryWords,
   finishRecoveryKit,
   loadRecoverySecretKey,
@@ -113,6 +114,12 @@ describe('recovery kit', () => {
     const secret = await loadRecoverySecretKey(mk);
     expect(secret).toEqual(recovery.deriveRecoveryKeypair(mnemonic.toSeed(words)).secretKey);
     await expect(exportRecoveryWords(mk)).resolves.toEqual(words);
+    const kit = await exportRecoveryKit(mk);
+    expect(kit?.words).toEqual(words);
+    expect(kit?.fingerprint).toBe(draft.fingerprint);
+    expect(kit?.publicKey).toBe(
+      toBase64(recovery.deriveRecoveryKeypair(mnemonic.toSeed(words)).publicKey),
+    );
     mockStore.clear(); // no hint: falls back to scanning the notes
     const again = await loadRecoverySecretKey(mk);
     expect(again).toEqual(secret);

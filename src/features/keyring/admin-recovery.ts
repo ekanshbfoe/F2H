@@ -96,6 +96,36 @@ export async function loadRecoverySecretKey(mk: Uint8Array): Promise<Uint8Array 
   return pair.secretKey;
 }
 
+export interface RecoveryKitView {
+  words: string[];
+  /** computed on the phone from the stored seed */
+  fingerprint: string;
+  /** base64 public key derived from the stored seed, compared with the published one */
+  publicKey: string;
+}
+
+/**
+ * The whole kit for the "Show my recovery kit" screen: the words, and the fingerprint and public
+ * key derived from the same seed so the screen can prove they match what the family published.
+ */
+export async function exportRecoveryKit(mk: Uint8Array): Promise<RecoveryKitView | null> {
+  const hint = await secureGet(SecureKeys.recoveryItemId);
+  const found = await findNoteByTag(mk, RECOVERY_TAG, hint);
+  if (!found) return null;
+  const seed = fromBase64(found.note.body);
+  try {
+    const pair = recovery.deriveRecoveryKeypair(seed);
+    zero(pair.secretKey);
+    return {
+      words: mnemonic.fromSeed(seed),
+      fingerprint: recovery.fingerprint(pair.publicKey),
+      publicKey: toBase64(pair.publicKey),
+    };
+  } finally {
+    zero(seed);
+  }
+}
+
 /** Re export the kit later (Settings): the 24 words from the stored seed. */
 export async function exportRecoveryWords(mk: Uint8Array): Promise<string[] | null> {
   const hint = await secureGet(SecureKeys.recoveryItemId);
