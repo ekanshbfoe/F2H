@@ -7,6 +7,7 @@ import { Avatar, Badge, Button, Card, Row, Screen, Text } from '@/components/ui'
 import { listPendingDevices, subscribePendingDevices } from '@/features/admin/api';
 import { CONTACTS_HREF } from '@/features/contacts/routes';
 import { CREDENTIALS_HREF } from '@/features/credentials/routes';
+import { DRIVE_HREF, FILES_HREF } from '@/features/files/routes';
 import { signOut } from '@/features/auth/api';
 import { pathFor } from '@/features/auth/routes';
 import { lockNow } from '@/features/lock/api';
@@ -106,6 +107,19 @@ export default function HomeScreen() {
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              onPress={() => router.push(DRIVE_HREF)}
+              testID="home-drive"
+            >
+              <Row
+                label="Google Drives"
+                value="Link slot A and B"
+                trailing={
+                  <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
+                }
+              />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
               onPress={() => router.push('/(admin)/show-kit')}
               testID="home-show-kit"
             >
@@ -148,7 +162,19 @@ export default function HomeScreen() {
               }
             />
           </Pressable>
-          <Row dashed label="Files" value="coming next" />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(FILES_HREF)}
+            testID="home-files"
+          >
+            <Row
+              label="Files"
+              value="Kept on two Drives"
+              trailing={
+                <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
+              }
+            />
+          </Pressable>
         </Card>
 
         <Card style={{ gap: t.spacing.sm }}>
