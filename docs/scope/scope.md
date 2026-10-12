@@ -21,7 +21,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 8 | Contacts vault | Slice 2 | in-progress (built, closing checks open) |
 | 9 | Credential vault | Slice 3 | in-progress (built, closing checks open) |
 | 10 | Files & Drive redundancy | Slice 4 | in-progress (built, closing checks open) |
-| 11 | Admin oversight & audit | Slice 5 | planned |
+| 11 | Admin oversight & audit | Slice 5 | in-progress |
 | 12 | Backups & disaster drills | Slice 6 | planned |
 | 13 | Onboarding & polish | Slice 7 | planned |
 | 14 | Release | Slice 7 | planned |
@@ -183,10 +183,18 @@ Spec [0001-drive-redundancy](../specs/0001-system-architecture/0001-drive-redund
 
 ## Slice 5: Oversight
 
-### 11. Admin oversight & audit · needs a decision
+### 11. Admin oversight & audit · in-progress
 Admin read only browsing of any member's vault through the recovery key, every open logged and pushed to the member, device revoke, and a read only offline ciphertext cache.
 **Done when:** the Admin can open a member's vault, the member sees the audit entry within seconds, a revoked device is bounced to login, and the app shows cached items offline.
-- [ ] Design it (spec): `/architect admin oversight & audit`
+- [x] Design it (spec): `/architect admin oversight & audit`
+- [ ] Build it: `/develop admin oversight & audit`
+   - [ ] `oversight-open` function and the audited, verified decrypt on the Admin phone (AC-1, AC-2, AC-3)
+   - [ ] Read only oversight screen, entry from Members (AC-1, AC-4)
+   - [ ] Activity screen, device sign out, audit pgTAP (AC-5, AC-6, AC-8)
+   - [ ] Offline read only ciphertext cache and screen jest (AC-7, AC-8)
+- [ ] Verify it: `/check verify admin oversight & audit`
+- [ ] Test it: `/test admin oversight & audit`
+Spec [0005-admin-oversight-audit](../specs/0005-admin-oversight-audit.md)
 
 ## Slice 6: Disaster recovery
 
