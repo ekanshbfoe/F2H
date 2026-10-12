@@ -8,6 +8,7 @@ import { useTheme } from '@/theme';
 
 import { ContactsError } from '../api';
 import { formatPhone, telUrl, whatsappUrl } from '../model';
+import { contactEditHref } from '../routes';
 import { useContacts } from '../store';
 
 /** One contact (spec 0003, AC-3, AC-6): call, open in WhatsApp, edit, delete. */
@@ -82,7 +83,7 @@ export function ContactDetailScreen() {
         <>
           <Button
             variant="secondary"
-            onPress={() => router.push(`/(app)/contacts/edit?id=${contact.id}`)}
+            onPress={() => router.push(contactEditHref(contact.id))}
             disabled={busy}
             testID="contact-edit"
           >

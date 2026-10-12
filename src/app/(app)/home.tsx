@@ -5,6 +5,7 @@ import { Pressable, View } from 'react-native';
 
 import { Avatar, Badge, Button, Card, Row, Screen, Text } from '@/components/ui';
 import { listPendingDevices, subscribePendingDevices } from '@/features/admin/api';
+import { CONTACTS_HREF } from '@/features/contacts/routes';
 import { signOut } from '@/features/auth/api';
 import { pathFor } from '@/features/auth/routes';
 import { lockNow } from '@/features/lock/api';
@@ -122,7 +123,7 @@ export default function HomeScreen() {
           <Text variant="heading">Your vault</Text>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push('/(app)/contacts')}
+            onPress={() => router.push(CONTACTS_HREF)}
             testID="home-contacts"
           >
             <Row

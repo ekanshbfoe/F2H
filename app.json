@@ -32,7 +32,13 @@
         }
       ],
       "expo-asset",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "F2H reads your contacts only when you choose to import some into your encrypted vault."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -17,6 +17,7 @@ import {
   toPayloadInput,
   type ContactForm,
 } from '../model';
+import { contactHref } from '../routes';
 import { useContacts } from '../store';
 
 /** Add or edit one contact (spec 0003, AC-2, AC-6). `?id=` edits, no id adds. */
@@ -43,7 +44,7 @@ export function ContactFormScreen() {
         toPayloadInput(values, existing?.payload.source ?? 'manual'),
       );
       const saved = await save(payload, existing);
-      router.replace(`/(app)/contacts/${saved.id}`);
+      router.replace(contactHref(saved.id));
     } catch (e) {
       setError(
         e instanceof ContactsError && e.code === 'stale_version'

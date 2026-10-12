@@ -16,6 +16,7 @@ import {
   type ContactTab,
   type StoredContact,
 } from '../model';
+import { CONTACTS_IMPORT_HREF, contactEditHref, contactHref } from '../routes';
 import { useContacts } from '../store';
 
 const TABS: readonly ContactTab[] = ['call', 'whatsapp'];
@@ -87,7 +88,7 @@ export function ContactsListScreen() {
         <View style={{ flex: 1 }}>
           <Button
             size="sm"
-            onPress={() => router.push('/(app)/contacts/edit')}
+            onPress={() => router.push(contactEditHref())}
             testID="contacts-add"
             leading={<Ionicons name="add" size={t.sizes.icon} color={t.colors.onPrimary} />}
           >
@@ -98,7 +99,7 @@ export function ContactsListScreen() {
           <Button
             size="sm"
             variant="secondary"
-            onPress={() => router.push('/(app)/contacts/import')}
+            onPress={() => router.push(CONTACTS_IMPORT_HREF)}
             testID="contacts-import"
             leading={
               <Ionicons name="download-outline" size={t.sizes.icon} color={t.colors.primary} />
@@ -167,7 +168,7 @@ export function ContactsListScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={t.colors.primary} />
       }
       renderItem={({ item }) => (
-        <ContactRow contact={item} onPress={() => router.push(`/(app)/contacts/${item.id}`)} />
+        <ContactRow contact={item} onPress={() => router.push(contactHref(item.id))} />
       )}
       testID="contacts-list"
     />
