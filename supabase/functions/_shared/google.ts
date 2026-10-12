@@ -305,6 +305,19 @@ export async function findByBlob(token: string, blobHex: string): Promise<DriveF
   }));
 }
 
+/** A folder this app created under `parent`, by name (the `backups` folder made at link time). */
+export async function findChildFolder(
+  token: string,
+  parent: string,
+  name: string,
+): Promise<string | null> {
+  const q = `name = '${name.replace(/'/g, "\\'")}' and '${parent}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+  const res = await drive(token, `/files?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1`);
+  if (!res.ok) throw new HttpError(502, 'drive_list_failed');
+  const b = (await res.json()) as { files?: { id: string }[] };
+  return b.files?.[0]?.id ?? null;
+}
+
 export async function trashFile(token: string, id: string): Promise<void> {
   const res = await drive(token, `/files/${encodeURIComponent(id)}`, {
     method: 'PATCH',

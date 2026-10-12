@@ -7,7 +7,7 @@ module.exports = {
   // Edge Functions import supabase-js with the Deno npm specifier; map it to node_modules here.
   moduleNameMapper: {
     '^npm:@supabase/supabase-js@2$': '@supabase/supabase-js',
-    '^npm:@noble/(curves|hashes)@[^/]+/(.*)$': '@noble/$1/$2',
+    '^npm:@noble/(curves|hashes|ciphers)@[^/]+/(.*)$': '@noble/$1/$2',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.expo/', '/supabase/tests/', '/scripts/'],
   transformIgnorePatterns: [

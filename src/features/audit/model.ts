@@ -39,6 +39,7 @@ export const ACTION_LABELS: Record<string, string> = {
   'drive.link': 'A Google Drive was linked',
   'drive.needs_relink': 'A Google Drive stopped working and needs linking again',
   'drive.reconcile': 'The nightly Drive check ran',
+  'backup.snapshot': 'An encrypted backup was saved to the Drives',
 };
 
 export function labelFor(action: string): string {
