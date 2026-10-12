@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+
+import { Text } from '@/components/ui';
 
 import { useTheme } from '@/theme';
 
 import { PinBoxes, type PinBoxesState } from './PinBoxes';
-import { PinPad } from './PinPad';
+import { PinPad, pinPadHeight, usePinKeySize } from './PinPad';
+import { PinProgress } from './PinProgress';
 
 export interface PinEntryProps {
   value: string;
@@ -17,7 +21,22 @@ export interface PinEntryProps {
   length?: number;
   state?: PinBoxesState;
   disabled?: boolean;
+  /**
+   * Take the full height: boxes on top, the status line under them, the pad pinned to the bottom
+   * in the thumb zone.
+   */
+  fill?: boolean;
+  /** Shows the progress bar in the status line (the PIN is being checked or saved). */
+  busy?: boolean;
+  busyLabel?: string;
+  /** One short line under the boxes: an error, or a quiet note like the tries left. */
+  status?: PinStatus | null;
   testID?: string;
+}
+
+export interface PinStatus {
+  tone: 'danger' | 'muted';
+  text: string;
 }
 
 /**
@@ -31,6 +50,10 @@ export function PinEntry({
   length = 6,
   state = 'idle',
   disabled = false,
+  fill = false,
+  busy = false,
+  busyLabel,
+  status = null,
   testID,
 }: PinEntryProps) {
   const t = useTheme();
@@ -68,8 +91,32 @@ export function PinEntry({
   const onDelete = useCallback(() => set(latest.current.value.slice(0, -1)), [set]);
   const onClear = useCallback(() => set(''), [set]);
 
+  const { fontScale } = useWindowDimensions();
+  const statusHeight = Math.ceil(
+    2 * t.typography.caption.lineHeight! * Math.min(fontScale, t.sizes.maxFontScale),
+  );
+  const [padArea, setPadArea] = useState<number | undefined>(undefined);
+  const keySize = usePinKeySize(fill ? padArea : undefined);
+  const minPad = pinPadHeight(t.sizes.touch, t.spacing.md, t.sizes.buttonEdge);
+  const pad = (
+    <PinPad
+      disabled={disabled}
+      onDigit={onDigit}
+      onDelete={onDelete}
+      onClear={onClear}
+      keySize={keySize}
+      testID={testID ? `${testID}-pad` : undefined}
+    />
+  );
+
   return (
-    <View style={{ gap: t.spacing.xxl, alignItems: 'center' }} testID={testID}>
+    <View
+      style={[
+        { gap: fill ? t.spacing.md : t.spacing.xxl, alignItems: 'center' },
+        fill && styles.fill,
+      ]}
+      testID={testID}
+    >
       <PinBoxes
         value={value}
         length={length}
@@ -92,17 +139,54 @@ export function PinEntry({
         style={styles.hidden}
         testID={testID ? `${testID}-input` : undefined}
       />
-      <PinPad
-        disabled={disabled}
-        onDigit={onDigit}
-        onDelete={onDelete}
-        onClear={onClear}
-        testID={testID ? `${testID}-pad` : undefined}
-      />
+      {fill || busy || status ? (
+        // A fixed two line slot: progress, an error or a note swap in place and never move the
+        // pad, so the keys stay put while a PIN is being checked.
+        <View style={[styles.between, { height: statusHeight }]}>
+          {busy ? (
+            <PinProgress visible label={busyLabel} />
+          ) : status ? (
+            <Animated.View
+              key={status.text}
+              entering={FadeIn.duration(t.motion.transitionMs).easing(t.motion.easeOut)}
+            >
+              <Text
+                variant="caption"
+                color={status.tone}
+                align="center"
+                numberOfLines={2}
+                maxFontSizeMultiplier={t.sizes.maxFontScale}
+                accessibilityLiveRegion="polite"
+                accessibilityLabel={status.text}
+              >
+                {status.text}
+              </Text>
+            </Animated.View>
+          ) : null}
+        </View>
+      ) : null}
+      {fill ? (
+        // Everything left under the boxes belongs to the pad: measure it and size the keys to
+        // fit, so the whole screen sits on one view even on a short old phone.
+        <View
+          style={[styles.padArea, { minHeight: minPad }]}
+          onLayout={(e) => setPadArea(Math.floor(e.nativeEvent.layout.height))}
+        >
+          {/* hidden for the single frame before the area is measured, so it never flashes big */}
+          <View style={[styles.padPin, { opacity: padArea === undefined ? 0 : 1 }]}>{pad}</View>
+        </View>
+      ) : (
+        pad
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   hidden: { position: 'absolute', opacity: 0, height: 1, width: 1 },
+  fill: { flex: 1, alignSelf: 'stretch' },
+  between: { alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
+  padArea: { flex: 1, alignSelf: 'stretch' },
+  // absolute, so the pad never feeds back into the height it is sized from
+  padPin: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
 });

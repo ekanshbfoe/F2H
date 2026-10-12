@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react';
 import {
   Platform,
   StyleSheet,
+  useWindowDimensions,
   View,
   type AccessibilityActionEvent,
   type AccessibilityActionInfo,
@@ -29,6 +30,8 @@ export interface PinPadProps {
   /** Long press on delete. */
   onClear?: () => void;
   disabled?: boolean;
+  /** Key diameter; by default sized from the window (see usePinKeySize). */
+  keySize?: number;
   testID?: string;
 }
 
@@ -245,10 +248,39 @@ const DeleteKey = memo(function DeleteKey({ size, disabled, onDelete, onClear }:
   );
 });
 
-/** Numeric pad with labelled 44 pt or larger keys (AC-11). The reference has none; this is F2H's own. */
-export function PinPad({ onDigit, onDelete, onClear, disabled = false, testID }: PinPadProps) {
+/**
+ * The key diameter that fits: 72 on a normal phone, less when the width or the height given to
+ * the pad is short, never under the 44 pt touch target.
+ */
+export function usePinKeySize(availableHeight?: number) {
   const t = useTheme();
-  const size = Math.max(t.sizes.touch, t.sizes.pinBoxLg + t.spacing.sm);
+  const { width } = useWindowDimensions();
+  const ideal = t.sizes.pinBoxLg + t.spacing.sm;
+  const byWidth = Math.floor((width - 2 * t.sizes.sheetInset - 2 * t.spacing.xxl) / 3);
+  const byHeight =
+    availableHeight === undefined
+      ? ideal
+      : Math.floor((availableHeight - 3 * t.spacing.md) / 4 - t.sizes.buttonEdge);
+  return Math.max(t.sizes.touch, Math.min(ideal, byWidth, byHeight));
+}
+
+/** The pad's height for a key size: four rows of key plus lip, three row gaps. */
+export function pinPadHeight(keySize: number, rowGap: number, edge: number) {
+  return 4 * (keySize + edge) + 3 * rowGap;
+}
+
+/** Numeric pad with labelled 44 pt or larger keys (AC-11). The reference has none; this is F2H's own. */
+export function PinPad({
+  onDigit,
+  onDelete,
+  onClear,
+  disabled = false,
+  keySize,
+  testID,
+}: PinPadProps) {
+  const t = useTheme();
+  const fallback = usePinKeySize();
+  const size = keySize ?? fallback;
   return (
     <View
       testID={testID}

@@ -137,6 +137,32 @@ describe('PinEntry', () => {
     expect(onComplete).toHaveBeenCalledWith('123456');
   });
 
+  it('shows progress while busy, otherwise the status line, in one fixed slot', async () => {
+    const { rerender } = await render(
+      <PinEntry value="" onChange={jest.fn()} fill busy busyLabel="Saving your PIN" />,
+    );
+    expect(screen.getByText('Saving your PIN')).toBeTruthy();
+    await rerender(
+      <PinEntry
+        value=""
+        onChange={jest.fn()}
+        fill
+        status={{ tone: 'muted', text: '7 tries left' }}
+      />,
+    );
+    expect(screen.queryByText('Saving your PIN')).toBeNull();
+    expect(screen.getByText('7 tries left')).toBeTruthy();
+    await rerender(
+      <PinEntry
+        value=""
+        onChange={jest.fn()}
+        fill
+        status={{ tone: 'danger', text: 'The two PINs do not match. Start again.' }}
+      />,
+    );
+    expect(screen.getByText('The two PINs do not match. Start again.')).toBeTruthy();
+  });
+
   it('ignores taps and screen reader actions while disabled', async () => {
     const onChange = jest.fn();
     await render(<PinEntry value="" onChange={onChange} disabled />);

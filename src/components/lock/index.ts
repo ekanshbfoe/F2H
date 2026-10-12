@@ -6,3 +6,7 @@ export { PinPad } from './PinPad';
 export type { PinPadProps } from './PinPad';
 export { PinProgress } from './PinProgress';
 export type { PinProgressProps } from './PinProgress';
+export { PinScreen } from './PinScreen';
+export type { PinScreenProps } from './PinScreen';
+export { StepDots } from './StepDots';
+export type { StepDotsProps } from './StepDots';

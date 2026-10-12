@@ -2,8 +2,6 @@ import * as Haptics from 'expo-haptics';
 import { memo, useEffect, useRef } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
-  cubicBezier,
-  Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -23,10 +21,6 @@ export interface PinBoxesProps {
   state?: PinBoxesState;
   testID?: string;
 }
-
-const EASE_OUT = cubicBezier(0.23, 1, 0.32, 1);
-/** Moving on screen: ease in and out, so each swing of the shake reads as a swing. */
-const SHAKE_EASE = Easing.bezier(0.77, 0, 0.175, 1);
 
 interface SlotProps {
   filled: boolean;
@@ -87,8 +81,8 @@ const Slot = memo(function Slot({ filled, active, tone, width, height }: SlotPro
             borderRadius: t.radii.md,
             backgroundColor: frameColor,
             transitionProperty: 'backgroundColor',
-            transitionDuration: 150,
-            transitionTimingFunction: EASE_OUT,
+            transitionDuration: t.motion.transitionMs,
+            transitionTimingFunction: t.motion.cssEaseOut,
           },
         ]}
       />
@@ -118,8 +112,8 @@ const Slot = memo(function Slot({ filled, active, tone, width, height }: SlotPro
               borderRadius: t.radii.pill,
               backgroundColor: beadColor,
               transitionProperty: 'backgroundColor',
-              transitionDuration: 150,
-              transitionTimingFunction: EASE_OUT,
+              transitionDuration: t.motion.transitionMs,
+              transitionTimingFunction: t.motion.cssEaseOut,
             },
             beadStyle,
           ]}
@@ -148,6 +142,7 @@ export function PinBoxes({ value, length = 6, state = 'idle', testID }: PinBoxes
   const t = useTheme();
   const reduceMotion = useReducedMotion();
   const shake = useSharedValue(0);
+  const shakeEase = t.motion.easeInOut;
   const { width: screen } = useWindowDimensions();
   const gap = t.spacing.sm;
   // 44 wide on a normal phone; narrower on a 320 dp one so six slots always fit the gutters
@@ -166,7 +161,8 @@ export function PinBoxes({ value, length = 6, state = 'idle', testID }: PinBoxes
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
       if (!reduceMotion) {
         // One decaying shake of the whole row, about 300 ms: a head shake, not a rattle.
-        const step = { duration: 50, easing: SHAKE_EASE };
+        // moving on screen: ease in and out, so each swing reads as a swing
+        const step = { duration: 50, easing: shakeEase };
         shake.set(
           withSequence(
             withTiming(-10, step),
@@ -181,7 +177,7 @@ export function PinBoxes({ value, length = 6, state = 'idle', testID }: PinBoxes
     } else if (state === 'success') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     }
-  }, [state, reduceMotion, shake]);
+  }, [state, reduceMotion, shake, shakeEase]);
 
   const row = useAnimatedStyle(() => ({ transform: [{ translateX: shake.get() }] }));
 
