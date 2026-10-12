@@ -23,7 +23,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 10 | Files & Drive redundancy | Slice 4 | in-progress (built, closing checks open) |
 | 11 | Admin oversight & audit | Slice 5 | in-progress (built, closing checks open) |
 | 12 | Backups & disaster drills | Slice 6 | in-progress (built, closing checks open) |
-| 13 | Onboarding & polish | Slice 7 | in-progress |
+| 13 | Onboarding & polish | Slice 7 | in-progress (built, closing checks open) |
 | 14 | Release | Slice 7 | planned |
 | 15 | Admin device self approval | Slice 1 | done |
 
@@ -215,17 +215,17 @@ Spec [0006-backups-disaster-drills](../specs/0006-backups-disaster-drills.md) ·
 
 ## Slice 7: Ship
 
-### 13. Onboarding & polish · in-progress
+### 13. Onboarding & polish · in-progress · built, closing checks open
 Swipeable onboarding card deck with the warm palette exception, home summary, empty, error and offline states, bundle audit.
 **Done when:** a first run reaches login by swiping cards, every screen has empty and error states, and the bundle has no unused heavy dependency.
 - [x] Design it (spec): `/architect onboarding & polish`
-- [ ] Build it: `/develop onboarding & polish`
-   - [ ] Onboarding deck, boot gate and flag (AC-1, AC-2, AC-3, AC-6)
-   - [ ] Home vault counts (AC-4, AC-6)
-   - [ ] Dependency audit (AC-5)
+- [x] Build it: `/develop onboarding & polish`
+   - [x] Onboarding deck, boot gate and flag (AC-1, AC-2, AC-3, AC-6)
+   - [x] Home vault counts (AC-4, AC-6)
+   - [x] Dependency audit (AC-5)
 - [ ] Verify it: `/check verify onboarding & polish`
 - [ ] Test it: `/test onboarding & polish`
-Spec [0007-onboarding-polish](../specs/0007-onboarding-polish.md)
+Spec [0007-onboarding-polish](../specs/0007-onboarding-polish.md) · code in `src/features/onboarding/`, `src/app/onboarding.tsx`, `src/app/(app)/home.tsx`, `src/features/auth/{api,routes}.ts` · phone steps queued in the umbrella `verify.md`
 
 ### 14. Release
 EAS preview and production profiles, Android push credentials, README with setup, secrets and Expo Go limits, tag v0.1.0.

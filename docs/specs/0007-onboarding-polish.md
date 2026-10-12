@@ -40,9 +40,15 @@ A route `/onboarding` built on the existing `CardDeck`, gated by an AsyncStorage
 
 ## Build plan
 
-1. [ ] `AppKeys.onboarded`, the `onboarding` boot route, cards and the deck screen; jest, satisfies **AC-1**, **AC-2**, **AC-3**, **AC-6**.
-2. [ ] Home vault counts; jest, satisfies **AC-4**, **AC-6**.
-3. [ ] Dependency audit and removals, satisfies **AC-5**.
+1. [x] `AppKeys.onboarded`, the `onboarding` boot route, cards and the deck screen; jest, satisfies **AC-1**, **AC-2**, **AC-3**, **AC-6**.
+2. [x] Home vault counts; jest, satisfies **AC-4**, **AC-6**.
+3. [x] Dependency audit and removals, satisfies **AC-5**.
+
+## Implementation notes (2026-10-12)
+
+- **Route**: a plain `/onboarding` route rather than a `(onboarding)` group, because the typed route list of the engineer's running dev server names group index routes differently from a fresh server.
+- **Contrast**: the warm titles sit on charcoal cards (`colors.charcoal`), so orange, yellow and red all stay readable; on white, yellow would fail contrast.
+- **Dependency audit (AC-5)**: every dependency is imported, or is a peer the toolchain needs (`expo-font` for the Google fonts loader and the router, `expo-system-ui`, `react-dom` for web, `react-native-screens` for the router, `react-native-worklets` for Reanimated 4). Nothing was removed. `expo-doctor` reported one failure, `newArchEnabled` in `app.json` (not part of the SDK 57 schema, where the New Architecture is the only option); the field was removed and `expo-doctor` now passes 21 of 21.
 
 ## Consequences
 

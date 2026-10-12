@@ -166,3 +166,17 @@ Written during the autonomous run you started on 2026-10-12. Newest feature at t
 - **Tests.** The backups access database test has 5 checks, all green on the hosted project. The full jest suite is green: 61 suites, 362 tests.
 
 **Waiting for you:** link the Drives, then the 6 app steps and the 4 drill steps in `verify.md` under "Verify: backups & disaster drills". The drill needs a second Supabase project, or Docker, which this machine does not have.
+
+## Onboarding & polish (feature 13): built, closing checks open
+
+**What landed:**
+
+- **Spec 0007**, from your own brief in `doc/ui/Onboarding/working.md`.
+- **First launch deck.** Four cards you drag left or right, with orange, yellow and red titles on dark cards so the colours stay readable. The last card, or Skip, opens login.
+  - It shows only on a phone that never finished it.
+  - A PIN wipe goes straight to login, not back to the deck.
+- **Home vault counts.** Home shows "N saved" for Contacts, Credentials and Files once each list has loaded on the phone.
+- **Dependency audit.** Every package is used or is a required peer, so nothing was removed.
+- **`expo-doctor` now passes 21 of 21.** I removed `newArchEnabled` from `app.json`. It is not part of the SDK 57 schema, where the New Architecture is always on.
+
+**Waiting for your phone:** 7 steps in `verify.md` under "Verify: onboarding & polish".

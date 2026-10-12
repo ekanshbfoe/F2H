@@ -357,3 +357,25 @@ _Queued by the autonomous run of 2026-10-12. The server checks ran green; the Dr
 
 ## Acceptance-criteria coverage
 - AC-1 dump and filter · AC-2 seal to the kit · AC-3 both Drives, verified, recorded · AC-4 prune, one per day · AC-5 Backups screen · AC-6 restore script and runbook · AC-7 tests
+
+---
+
+# Verify: onboarding & polish · spec 0007 · updated 2026-10-12
+_Queued by the autonomous run of 2026-10-12. The command checks ran green; the phone steps wait for the engineer._
+
+## UI / manual (Expo Go)
+- [ ] Clear the app data (Android settings → Expo Go → storage, or a fresh install) and open F2H → the onboarding deck shows "Your family's vault" in orange on a dark card → AC-1, AC-2
+- [ ] Drag the card left, then right → each flies off and the next appears; the dots follow → AC-2
+- [ ] Drag the fourth card → the login screen opens → AC-2, AC-3
+- [ ] Close and reopen the app → straight to login, no deck → AC-3
+- [ ] With TalkBack on, each card reads its title and text, and the dots read "Card n of 4" → AC-2
+- [ ] Log in, open Contacts once, go back → Home shows "N saved" under Contacts; Credentials still shows its description until opened → AC-4
+- [ ] Forgot PIN wipe → the phone opens at login, not the deck → AC-3
+
+## Commands
+- [x] `npm test -- src/features/onboarding` → green → AC-6 _(2026-10-12)_
+- [x] `npx expo-doctor` → 21 of 21 checks passed → AC-5 _(2026-10-12, after removing `newArchEnabled`)_
+- [x] `npm run typecheck && npm run lint` → clean _(2026-10-12)_
+
+## Acceptance-criteria coverage
+- AC-1 boot gate · AC-2 deck · AC-3 flag · AC-4 Home counts · AC-5 dependency audit · AC-6 tests
