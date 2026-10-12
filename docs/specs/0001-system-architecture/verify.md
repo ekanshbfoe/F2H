@@ -182,9 +182,9 @@ _Steps derived from the child spec's acceptance criteria. `/check verify` runs t
 - [ ] Admin phone A pending, log in as the Admin on phone B → B registers and A's row becomes `expired` with `device.replaced`; A's waiting screen wipes to the expired screen → AC-8
 
 ## Commands
-- [ ] `npx supabase db query --linked -f supabase/tests/database/0004_admin_self_approval.test.sql` (pgTAP enabled, the admin uuid swapped for the real Admin's, the file ending with `select num_failed()`) → 0 failed of 33 → AC-4, AC-5, AC-6, AC-8, AC-9
-- [ ] `npm test -- challenge self-approve MnemonicEntry waiting-card storage auth` → the crypto vector, the server tag, the api mapping, the word entry, the card and the warning suites green → AC-2, AC-3, AC-5, AC-9
-- [ ] `npm run typecheck && npm run lint` → clean
+- [x] `npx supabase db query --linked -f supabase/tests/database/0004_admin_self_approval.test.sql` (pgTAP enabled, the admin uuid swapped for the real Admin's, the file ending with `select num_failed()`) → 0 failed of 33 → AC-4, AC-5, AC-6, AC-8, AC-9
+- [x] `npm test -- challenge self-approve MnemonicEntry waiting-card storage auth` → the crypto vector, the server tag, the api mapping, the word entry, the card and the warning suites green → AC-2, AC-3, AC-5, AC-9
+- [x] `npm run typecheck && npm run lint` → clean
 - [ ] `curl -X POST https://<ref>.supabase.co/functions/v1/self-approve-device` with the anon key as bearer → 401 `unauthenticated`; with a member JWT and device header → 403 `admin_required` → AC-2
 
 ## Value sourcing checks
