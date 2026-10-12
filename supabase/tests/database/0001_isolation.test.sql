@@ -1,5 +1,6 @@
 -- pgTAP: the isolation matrix from spec 0001-data-model-rls (AC-4, AC-5).
--- Run with `supabase test db` (needs the local stack).
+-- Run with `supabase test db` locally, or on the hosted project with the real Admin's id swapped in
+-- for 11111111-… (one admin rule); the admin fixture tolerates the real Admin's existing rows.
 begin;
 select plan(23);
 
@@ -8,24 +9,27 @@ select plan(23);
 create temporary table fx (name text primary key, uid uuid, token text);
 grant select on fx to authenticated; -- the pg_temp helpers read it after the role switch
 insert into fx values
-  ('admin', 'a0000000-0000-4000-8000-000000000001', encode(decode(repeat('aa', 32), 'hex'), 'base64')),
-  ('a',     '11111111-1111-4111-8111-111111111111', encode(decode(repeat('01', 32), 'hex'), 'base64')),
+  ('admin', '11111111-1111-4111-8111-111111111111', encode(decode(repeat('aa', 32), 'hex'), 'base64')),
+  ('a',     'a1111111-1111-4111-8111-111111111111', encode(decode(repeat('01', 32), 'hex'), 'base64')),
   ('a_pending', null,                               encode(decode(repeat('02', 32), 'hex'), 'base64')),
   ('b',     '22222222-2222-4222-8222-222222222222', encode(decode(repeat('03', 32), 'hex'), 'base64'));
 
-insert into auth.users (id, email) select uid, name || '@example.com' from fx where uid is not null;
+insert into auth.users (id, email) select uid, name || '@example.com' from fx where uid is not null
+on conflict (id) do nothing;
 insert into public.profiles (id, email, display_name, role, status, kdf_params)
 select uid, name || '@example.com', name, case when name = 'admin' then 'admin' else 'member' end::public.member_role,
        'active', '{"N":128,"r":8,"p":1,"dkLen":32}'::jsonb
-from fx where uid is not null;
+from fx where uid is not null
+on conflict (id) do nothing;
 insert into public.key_material (user_id, mk_wrapped_pw, mk_wrapped_admin, mk_verifier)
-select uid, 'pw-' || name, 'admin-' || name, 'ver-' || name from fx where uid is not null;
+select uid, 'pw-' || name, 'admin-' || name, 'ver-' || name from fx where uid is not null
+on conflict (user_id) do nothing;
 
-insert into public.devices (id, user_id, token_hash, registration_nonce, status)
-select gen_random_uuid(), uid, encode(sha256(decode(token, 'base64')), 'hex'), name, 'approved'
+insert into public.devices (id, user_id, token_hash, registration_nonce, status, name)
+select gen_random_uuid(), uid, encode(sha256(decode(token, 'base64')), 'hex'), name || '-pgtap', 'approved', 'pgtap-fixture'
 from fx where uid is not null;
-insert into public.devices (id, user_id, token_hash, registration_nonce, status)
-select gen_random_uuid(), (select uid from fx where name = 'a'), encode(sha256(decode(token, 'base64')), 'hex'), 'a-pending', 'pending'
+insert into public.devices (id, user_id, token_hash, registration_nonce, status, name)
+select gen_random_uuid(), (select uid from fx where name = 'a'), encode(sha256(decode(token, 'base64')), 'hex'), 'a-pending', 'pending', 'pgtap-fixture'
 from fx where name = 'a_pending';
 
 insert into public.vault_items (id, owner_id, kind, dek_wrapped, ciphertext)
@@ -86,9 +90,9 @@ reset role;
 
 -- Admin: profiles and devices yes, vault items no ---------------------------------------
 select pg_temp.login('admin', pg_temp.token('admin'));
-select is((select count(*)::int from public.vault_items), 0, 'admin cannot select vault_items directly');
-select is((select count(*)::int from public.profiles), 3, 'admin sees every profile');
-select is((select count(*)::int from public.devices), 4, 'admin sees every device');
+select is((select count(*)::int from public.vault_items where owner_id <> pg_temp.uid('admin')), 0, 'admin cannot select other members'' vault_items directly');
+select is((select count(*)::int from public.profiles where id in (select uid from fx)), 3, 'admin sees every profile');
+select is((select count(*)::int from public.devices where name = 'pgtap-fixture'), 4, 'admin sees every device');
 reset role;
 
 -- audit_log is append only for everyone ---------------------------------------------------
