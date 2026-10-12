@@ -6,6 +6,7 @@ import { Pressable, View } from 'react-native';
 import { Avatar, Badge, Button, Card, Row, Screen, Text } from '@/components/ui';
 import { listPendingDevices, subscribePendingDevices } from '@/features/admin/api';
 import { CONTACTS_HREF } from '@/features/contacts/routes';
+import { CREDENTIALS_HREF } from '@/features/credentials/routes';
 import { signOut } from '@/features/auth/api';
 import { pathFor } from '@/features/auth/routes';
 import { lockNow } from '@/features/lock/api';
@@ -134,7 +135,19 @@ export default function HomeScreen() {
               }
             />
           </Pressable>
-          <Row dashed label="Credentials" value="coming next" />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(CREDENTIALS_HREF)}
+            testID="home-credentials"
+          >
+            <Row
+              label="Credentials"
+              value="Bank, email and more"
+              trailing={
+                <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
+              }
+            />
+          </Pressable>
           <Row dashed label="Files" value="coming next" />
         </Card>
 

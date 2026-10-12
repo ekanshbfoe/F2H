@@ -187,7 +187,11 @@ export function parsePayload(raw: unknown): CredentialPayload | null {
 }
 
 function fold(s: string): string {
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }
 
 /** Title, username and website host only; never a password, a secret field or the note. */
