@@ -46,7 +46,8 @@ describe('ShowKitScreen', () => {
     await userEvent.setup().press(screen.getByRole('button', { name: 'Show the 24 words' }));
     expect(await screen.findByText('Matches the published family key')).toBeOnTheScreen();
     expect(screen.getByText('word24')).toBeOnTheScreen();
-    expect(screen.getByTestId('show-kit-fingerprint')).toHaveTextContent('2d2a 90fe cb58 1c85');
+    expect(screen.getByTestId('show-kit-fingerprint')).toHaveTextContent('2d2a90fecb581c85');
+    expect(screen.getByLabelText('Fingerprint 2d2a 90fe cb58 1c85')).toBeOnTheScreen();
   });
 
   it('warns when the stored words do not match the published key', async () => {

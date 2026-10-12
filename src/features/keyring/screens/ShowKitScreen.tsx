@@ -1,8 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
-
-import { Badge, Button, Callout, Card, Screen, Text } from '@/components/ui';
+import { Fingerprint, WordGrid } from '@/components/mnemonic';
+import { Badge, Button, Callout, Card, Medallion, Screen, Text } from '@/components/ui';
 import { fetchRecoveryPubkey } from '@/features/auth/api';
 import { withKey } from '@/features/lock/api';
 import { useScreenCaptureBlock } from '@/features/lock/hooks';
@@ -90,9 +89,10 @@ export function ShowKitScreen() {
       }
     >
       {!kit ? (
-        <Card style={{ gap: t.spacing.md }}>
+        <Card style={{ gap: t.spacing.md, alignItems: 'center' }}>
+          <Medallion icon="key" tone="primary" accessibilityLabel="Recovery kit, sealed" />
           <Badge tone="primary">Paper only</Badge>
-          <Text variant="body" color="muted">
+          <Text variant="body" color="muted" align="center">
             Make sure nobody is looking at your screen. Screenshots are blocked here. Anyone holding
             these words and your password can open every family vault.
           </Text>
@@ -105,9 +105,7 @@ export function ShowKitScreen() {
             <Text variant="label" color="primary">
               Fingerprint
             </Text>
-            <Text variant="heading" color="ink" testID="show-kit-fingerprint">
-              {kit.fingerprint}
-            </Text>
+            <Fingerprint value={kit.fingerprint} testID="show-kit-fingerprint" />
             {kit.matches === true ? (
               <Badge tone="success">Matches the published family key</Badge>
             ) : kit.matches === false ? (
@@ -122,31 +120,7 @@ export function ShowKitScreen() {
             </Text>
           </Card>
           <Card style={{ gap: t.spacing.md }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm }}>
-              {kit.words.map((word, i) => (
-                <View
-                  key={`${i}-${word}`}
-                  style={{
-                    width: '47%',
-                    flexDirection: 'row',
-                    gap: t.spacing.sm,
-                    alignItems: 'center',
-                    paddingVertical: t.spacing.xs,
-                    paddingHorizontal: t.spacing.sm,
-                    borderRadius: t.radii.md,
-                    backgroundColor: t.colors.skyTint,
-                  }}
-                  accessibilityLabel={`word ${i + 1}: ${word}`}
-                >
-                  <Text variant="caption" color="muted">
-                    {String(i + 1).padStart(2, '0')}
-                  </Text>
-                  <Text variant="label" color="ink">
-                    {word}
-                  </Text>
-                </View>
-              ))}
-            </View>
+            <WordGrid words={kit.words} testID="show-kit-words" />
           </Card>
         </>
       )}
