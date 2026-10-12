@@ -8,5 +8,6 @@ export { MorphButton } from './MorphButton';
 export type { MorphButtonProps, MorphState } from './MorphButton';
 export { RadialReveal } from './RadialReveal';
 export type { RadialRevealProps } from './RadialReveal';
+export { useRiseIn } from './rise';
 export { SegmentedToggle } from './SegmentedToggle';
 export type { SegmentedToggleProps } from './SegmentedToggle';
