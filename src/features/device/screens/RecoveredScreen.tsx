@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
-import { Badge, Button, Callout, Card, Row, Screen, Text } from '@/components/ui';
+import { useRiseIn } from '@/components/motion';
+import { Badge, Button, Callout, Card, Medallion, Row, Screen, Text } from '@/components/ui';
 import { completeApproval } from '@/features/auth/api';
 import { describeAuthError, pathFor } from '@/features/auth/routes';
 import { useSession } from '@/state/session.store';
@@ -33,6 +34,12 @@ export function RecoveredScreen() {
   const [working, setWorking] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const riseIn = useRiseIn();
+  const glide = useMemo(
+    () => LinearTransition.duration(t.motion.glideMs).easing(t.motion.easeInOut),
+    [t.motion.glideMs, t.motion.easeInOut],
+  );
+  const beat = (n: number) => riseIn(t.motion.timingEnter.duration / 2 + n * t.motion.enterStepMs);
 
   const fetchDevices = useCallback(() => {
     listOtherApprovedDevices()
@@ -86,62 +93,79 @@ export function RecoveredScreen() {
         </Button>
       }
     >
-      <Card style={{ gap: t.spacing.md }}>
+      <Card style={{ gap: t.spacing.md, alignItems: 'center' }}>
+        <Medallion icon="shield-checkmark" tone="success" accessibilityLabel="Approved" />
         <Badge tone="success">Approved with the recovery kit</Badge>
-        <Text variant="body" color="muted">
+        <Text variant="body" color="muted" align="center">
           The vault wrote an audit entry for this approval, so every member can see when the Admin
           got back in. Your other admin phones were told as well.
         </Text>
       </Card>
 
-      <Card style={{ gap: t.spacing.md }}>
-        <Text variant="heading" color="ink">
-          Other admin phones
-        </Text>
-        {devices === 'loading' ? (
-          <Text variant="body" color="muted">
-            Looking up your other phones…
+      <Animated.View entering={beat(1)} layout={glide}>
+        <Card style={{ gap: t.spacing.md }}>
+          <Text variant="heading" color="ink">
+            Other admin phones
           </Text>
-        ) : devices === 'error' ? (
-          <>
-            <Callout tone="danger">Could not list your other phones.</Callout>
-            <Button variant="secondary" size="sm" onPress={retry}>
-              Retry
-            </Button>
-          </>
-        ) : list.length === 0 ? (
-          <Row dashed label="No other phone is signed in as Admin" />
-        ) : (
-          list.map((d) => {
-            const done = signedOut.has(d.id);
-            return (
-              <View key={d.id} style={{ gap: t.spacing.xs }}>
-                <Row
-                  dashed={done}
-                  label={d.name || d.model}
-                  value={`${d.model} · ${d.os} · seen ${seen(d.last_seen_at)}`}
-                  trailing={done ? <Badge tone="neutral">Signed out</Badge> : null}
-                />
-                {!done ? (
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    loading={working === d.id}
-                    disabled={working !== null}
-                    onPress={() => void signOut(d)}
-                    testID={`recovered-signout-${d.id}`}
-                  >
-                    Sign out that phone
-                  </Button>
-                ) : null}
-              </View>
-            );
-          })
-        )}
-        <Text variant="caption" color="muted">
-          A signed out phone wipes its vault keys the next time it is opened.
-        </Text>
-      </Card>
+          {devices === 'loading' ? (
+            <Text variant="body" color="muted">
+              Looking up your other phones…
+            </Text>
+          ) : devices === 'error' ? (
+            <>
+              <Callout tone="danger">Could not list your other phones.</Callout>
+              <Button variant="secondary" size="sm" onPress={retry}>
+                Retry
+              </Button>
+            </>
+          ) : list.length === 0 ? (
+            <Row dashed label="No other phone is signed in as Admin" />
+          ) : (
+            list.map((d) => {
+              const done = signedOut.has(d.id);
+              return (
+                <Animated.View key={d.id} layout={glide} style={{ gap: t.spacing.xs }}>
+                  <Row
+                    dashed={done}
+                    label={d.name || d.model}
+                    value={`${d.model} · ${d.os} · seen ${seen(d.last_seen_at)}`}
+                    trailing={
+                      done ? (
+                        <Animated.View
+                          entering={FadeIn.duration(t.motion.transitionMs).easing(t.motion.easeOut)}
+                        >
+                          <Badge tone="neutral">Signed out</Badge>
+                        </Animated.View>
+                      ) : null
+                    }
+                  />
+                  {!done ? (
+                    <Animated.View
+                      exiting={FadeOut.duration(t.motion.transitionMs).easing(t.motion.easeOut)}
+                    >
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        loading={working === d.id}
+                        disabled={working !== null}
+                        onPress={() => void signOut(d)}
+                        testID={`recovered-signout-${d.id}`}
+                      >
+                        Sign out that phone
+                      </Button>
+                    </Animated.View>
+                  ) : null}
+                </Animated.View>
+              );
+            })
+          )}
+          <Animated.View layout={glide}>
+            <Text variant="caption" color="muted">
+              A signed out phone wipes its vault keys the next time it is opened.
+            </Text>
+          </Animated.View>
+        </Card>
+      </Animated.View>
 
       {!hasKek ? (
         <Callout>

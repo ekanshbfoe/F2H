@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Switch, View } from 'react-native';
 
-import { MNEMONIC_WORDS, MnemonicEntry } from '@/components/mnemonic';
+import { Fingerprint, MNEMONIC_WORDS, MnemonicEntry } from '@/components/mnemonic';
 import { Badge, Button, Callout, Card, Screen, Text } from '@/components/ui';
 import { fromBase64, mnemonic, recovery } from '@/crypto';
 import { fetchRecoveryPubkey } from '@/features/auth/api';
@@ -157,9 +157,11 @@ export function SelfApproveScreen() {
             <Text variant="label" color="primary">
               Family fingerprint
             </Text>
-            <Text variant="heading" color="ink" testID="kit-fingerprint">
-              {fingerprint ?? ''}
-            </Text>
+            <Fingerprint
+              value={fingerprint ?? ''}
+              label="Family fingerprint"
+              testID="kit-fingerprint"
+            />
             <Text variant="caption" color="muted">
               The same four groups are printed under the words on your paper kit.
             </Text>
