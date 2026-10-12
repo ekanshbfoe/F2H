@@ -21,7 +21,7 @@ type Shown = RecoveryKitView & { published: string | null; matches: boolean | nu
 export function ShowKitScreen() {
   const t = useTheme();
   const router = useRouter();
-  useScreenCaptureBlock();
+  useScreenCaptureBlock('f2h:show-kit');
   const isAdmin = useSession((s) => s.profile?.role === 'admin');
   const unlocked = useSession((s) => s.mk !== null);
   const [kit, setKit] = useState<Shown | null>(null);

@@ -25,7 +25,7 @@ type Published = { recovery_pub: string; fingerprint: string } | null | 'loading
 export function SelfApproveScreen() {
   const t = useTheme();
   const router = useRouter();
-  useScreenCaptureBlock();
+  useScreenCaptureBlock('f2h:recovery-words');
   const [words, setWords] = useState<string[]>(EMPTY);
   const [published, setPublished] = useState<Published>('loading');
   const [others, setOthers] = useState<number | null>(null);

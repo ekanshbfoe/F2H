@@ -78,15 +78,19 @@ export function useRevokeGuard(): void {
   }, []);
 }
 
-/** Android: no screenshots and a blank recents thumbnail on every screen, from boot (AC-9). */
-export function useScreenCaptureBlock(): void {
+/**
+ * Android: no screenshots and a blank recents thumbnail (AC-9). The root runtime holds the `f2h`
+ * key from boot; a sensitive screen passes its own key, so leaving that screen releases only its
+ * own hold and never the app wide one.
+ */
+export function useScreenCaptureBlock(key = 'f2h'): void {
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
-    ScreenCapture.preventScreenCaptureAsync('f2h').catch(() => undefined);
+    ScreenCapture.preventScreenCaptureAsync(key).catch(() => undefined);
     return () => {
-      ScreenCapture.allowScreenCaptureAsync('f2h').catch(() => undefined);
+      ScreenCapture.allowScreenCaptureAsync(key).catch(() => undefined);
     };
-  }, []);
+  }, [key]);
 }
 
 /** The current app state, for the privacy overlay (AC-9). */
