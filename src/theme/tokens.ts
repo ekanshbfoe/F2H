@@ -86,10 +86,14 @@ export const sizes = {
   sheetHandleHeight: 4,
   toggleHeight: 42,
   hairline: 1,
+  /** Thickness of a progress track. */
+  progress: 4,
   border: 2,
   focusRing: 3,
   /** Below this window height the PIN screens tighten their spacing and drop the mascot. */
   compactHeight: 680,
+  /** At or above this window width a row has room for four word chips instead of two. */
+  wideScreen: 360,
   /** The largest text scale the fixed PIN screen slots are sized for. */
   maxFontScale: 1.3,
 } as const;
