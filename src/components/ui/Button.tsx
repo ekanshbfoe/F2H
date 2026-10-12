@@ -45,11 +45,11 @@ export function Button({
   const pressed = useSharedValue(0);
   const isDisabled = Boolean(disabled) || loading;
 
+  // Plain numbers only, so the worklet never copies the whole theme to the UI thread.
+  const edge = t.sizes.buttonEdge;
+  const shrink = reduceMotion ? 0 : 1 - t.motion.pressScale;
   const face = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: pressed.get() * t.sizes.buttonEdge },
-      { scale: reduceMotion ? 1 : 1 - pressed.get() * (1 - t.motion.pressScale) },
-    ],
+    transform: [{ translateY: pressed.get() * edge }, { scale: 1 - pressed.get() * shrink }],
   }));
 
   const handleIn = useCallback<NonNullable<PressableProps['onPressIn']>>(
