@@ -17,7 +17,7 @@ export function Badge({ children, tone = 'neutral', style, ...rest }: BadgeProps
     primary: { bg: t.colors.primaryTint, text: 'primary' as const },
     success: { bg: t.colors.successTint, text: 'success' as const },
     danger: { bg: t.colors.dangerTint, text: 'danger' as const },
-    warning: { bg: '#FFF4DF', text: 'warning' as const },
+    warning: { bg: t.colors.warningTint, text: 'warning' as const },
   }[tone];
   return (
     <View

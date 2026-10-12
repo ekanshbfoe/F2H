@@ -70,7 +70,7 @@ export function Button({
   const palette = {
     primary: { face: t.colors.primary, edge: t.colors.primaryDark, text: 'onPrimary' as const },
     secondary: { face: t.colors.primaryTint, edge: t.colors.lineStrong, text: 'primary' as const },
-    danger: { face: t.colors.danger, edge: '#B91C1C', text: 'onPrimary' as const },
+    danger: { face: t.colors.danger, edge: t.colors.dangerDark, text: 'onPrimary' as const },
     ghost: { face: 'transparent', edge: 'transparent', text: 'primary' as const },
   }[variant];
 

@@ -28,8 +28,12 @@ export const colors = {
   success: '#22C55E',
   successTint: '#E8F9EF',
   danger: '#EF4444',
+  /** The darker bottom edge of a danger button. */
+  dangerDark: '#B91C1C',
   dangerTint: '#FDECEC',
   warning: '#F59E0B',
+  /** Background of a warning badge. */
+  warningTint: '#FFF4DF',
   /** Onboarding only (working.md): warm text colors. Never elsewhere. */
   warmOrange: '#FF7A1A',
   warmYellow: '#FFC53D',
