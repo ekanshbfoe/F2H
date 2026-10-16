@@ -47,6 +47,18 @@ export function scratchUri(dir: FileDir, name: string): string {
   return new File(d, name).uri;
 }
 
+/**
+ * Copies a picked file into this app's own scratch folder. The picker hands back a content URI
+ * the app may read; a copy the picker made itself lands in a cache folder that Expo Go does not
+ * let the app open. The copy is plaintext: callers remove it as soon as it is encrypted, and the
+ * scratch folders are emptied on every lock.
+ */
+export async function stageCopy(sourceUri: string, destinationUri: string): Promise<void> {
+  const destination = new File(destinationUri);
+  if (destination.exists) destination.delete();
+  await new File(sourceUri).copy(destination);
+}
+
 export function removeFile(uri: string): void {
   try {
     const f = new File(uri);

@@ -60,8 +60,9 @@ export function FilesListScreen() {
 
   const pick = async () => {
     setMessage(null);
+    // no picker copy: the upload copies the file into the app's own scratch folder itself
     const result = await DocumentPicker.getDocumentAsync({
-      copyToCacheDirectory: true,
+      copyToCacheDirectory: false,
       multiple: false,
     });
     if (result.canceled) return;

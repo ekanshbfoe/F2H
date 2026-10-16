@@ -28,6 +28,12 @@ jest.mock('@/services/file-adapter', () => ({
   removeFile: (uri: string) => {
     mockFs.files.delete(uri);
   },
+  // the picked file is copied into the scratch folder before it is encrypted
+  stageCopy: async (from: string, to: string) => {
+    const bytes = mockFs.files.get(from);
+    if (!bytes) throw new Error(`no file at ${from}`);
+    mockFs.files.set(to, bytes);
+  },
 }));
 jest.mock('expo-file-system', () => ({
   UploadType: { BINARY_CONTENT: 0 },
@@ -158,8 +164,9 @@ describe('uploadFile', () => {
       expect.arrayContaining(['encrypting', 'uploading', 'verifying', 'done']),
     );
     expect(progress.at(-1)).toMatchObject({ a: 1, b: 1 });
-    // the temporary ciphertext is gone
+    // the temporary ciphertext and the plaintext copy of the picked file are both gone
     expect([...mockFs.files.keys()].filter((k) => k.endsWith('.ct'))).toEqual([]);
+    expect([...mockFs.files.keys()].filter((k) => k.endsWith('.src'))).toEqual([]);
   });
 
   it('asks the session where it stopped after a dropped chunk and carries on', async () => {

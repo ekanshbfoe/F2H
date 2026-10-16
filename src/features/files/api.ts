@@ -14,7 +14,7 @@ import {
 } from '@/crypto';
 import { withKey } from '@/features/lock/api';
 import { listItems } from '@/features/vault/items';
-import { expoFileAdapter, removeFile, scratchUri } from '@/services/file-adapter';
+import { expoFileAdapter, removeFile, scratchUri, stageCopy } from '@/services/file-adapter';
 import { callFunction } from '@/services/functions';
 import { getDeviceToken, supabase } from '@/services/supabase';
 
@@ -137,6 +137,7 @@ export async function uploadFile(
   const blobHex = toHex(blobId);
   const itemId = randomUuid();
   const ctUri = scratchUri('f2h-upload', `${blobHex}.ct`);
+  const srcUri = scratchUri('f2h-upload', `${blobHex}.src`);
   onProgress({ phase: 'encrypting', a: null, b: null });
   try {
     return await withKey(async (mk, assertLive) => {
@@ -145,14 +146,15 @@ export async function uploadFile(
         // every failure names its step, so a development build can show where an upload stopped
         let enc: Awaited<ReturnType<typeof chunked.encryptFile>>;
         try {
-          enc = await chunked.encryptFile(picked.uri, dek, blobId, {
+          await stageCopy(picked.uri, srcUri);
+          enc = await chunked.encryptFile(srcUri, dek, blobId, {
             fs: expoFileAdapter,
             outputUri: ctUri,
           });
         } catch (e) {
           throw new FilesError(
             'upload_failed',
-            `encrypt: ${e instanceof Error ? e.message : String(e)}`,
+            `read or encrypt: ${e instanceof Error ? e.message : String(e)}`,
           );
         }
         assertLive();
@@ -238,6 +240,8 @@ export async function uploadFile(
       }
     });
   } finally {
+    // the plaintext copy and the ciphertext both go, whatever happened
+    removeFile(srcUri);
     removeFile(ctUri);
   }
 }
