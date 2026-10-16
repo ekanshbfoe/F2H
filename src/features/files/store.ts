@@ -22,6 +22,8 @@ interface FilesState {
   load: () => Promise<void>;
   add: (picked: PickedFile) => Promise<BlobState>;
   remove: (item: StoredFile) => Promise<void>;
+  /** Deletes each file in turn; the ones that failed stay in the list and come back as ids. */
+  removeMany: (items: StoredFile[]) => Promise<{ deleted: number; failed: string[] }>;
   clear: () => void;
 }
 
@@ -77,6 +79,20 @@ export const useFiles = create<FilesState>((set, get) => ({
       delete items[item.id];
       return { items };
     });
+  },
+  removeMany: async (list) => {
+    const failed: string[] = [];
+    let deleted = 0;
+    // one at a time: a cheap phone stays responsive and the Drive API is not flooded
+    for (const item of list) {
+      try {
+        await get().remove(item);
+        deleted += 1;
+      } catch {
+        failed.push(item.id);
+      }
+    }
+    return { deleted, failed };
   },
   clear: () => set({ ...EMPTY }),
 }));
