@@ -21,6 +21,11 @@ jest.mock('expo-router', () => ({
     dispatch: jest.fn(),
   }),
   useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn() }),
+  // the test stands in for a focused Home: the focus effect runs as a plain effect
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('react').useEffect(cb, [cb]);
+  },
 }));
 jest.mock('@/features/admin/api', () => ({
   listPendingDevices: () => mockPending(),

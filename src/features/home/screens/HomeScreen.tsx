@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { useFocusEffect } from 'expo-router';
 
 import {
   useCallback,
@@ -181,16 +182,20 @@ export function HomeScreen() {
     },
   );
 
-  // back retraces the pages visited before it leaves the app
-  useEffect(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      const previous = history.current.pop();
-      if (!previous || !keys.includes(previous)) return false;
-      show(previous, { record: false });
-      return true;
-    });
-    return () => sub.remove();
-  }, [keys, show]);
+  // Back retraces the pages visited before it leaves the app, but only while Home is the screen
+  // in front: under a pushed screen (Members, Change PIN) back belongs to that screen, which
+  // closes and shows Home on the page it was opened from.
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        const previous = history.current.pop();
+        if (!previous || !keys.includes(previous)) return false;
+        show(previous, { record: false });
+        return true;
+      });
+      return () => sub.remove();
+    }, [keys, show]),
+  );
 
   const page = (key: Tab): ReactNode =>
     key === 'vault' ? (
