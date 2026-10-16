@@ -80,22 +80,82 @@ export function lastByteFromRange(header: string | null): number {
   return m ? Number(m[1]) : -1;
 }
 
-/** What the file sheet can draw itself; anything else opens in another app on the phone. */
-export type PreviewKind = 'image' | 'text' | 'other';
+/** How the file sheet shows a file; `other` (Word, Excel, ZIP) opens in another app. */
+export type PreviewKind = 'image' | 'text' | 'pdf' | 'video' | 'audio' | 'other';
 
-/** Images Android and iOS both decode without help (no HEIC: older Androids cannot). */
-const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'];
-/** Larger files are not decrypted just to look at; they open on request. */
-export const IMAGE_PREVIEW_MAX = 25 * 1024 * 1024;
-export const TEXT_PREVIEW_MAX = 256 * 1024;
+/** Types each kind covers, by MIME type and, for a picker that only said "a file", by extension. */
+const KINDS: { kind: Exclude<PreviewKind, 'other'>; mimes: RegExp; ext: RegExp; max: number }[] = [
+  {
+    // what Android and iOS both decode without help (no HEIC: older Androids cannot)
+    kind: 'image',
+    mimes: /^image\/(jpeg|png|webp|gif|bmp)$/,
+    ext: /\.(jpe?g|png|webp|gif|bmp)$/,
+    max: 25 * 1024 * 1024,
+  },
+  {
+    kind: 'text',
+    mimes: /^(text\/.+|application\/json)$/,
+    ext: /\.(txt|md|csv|json|log)$/,
+    max: 256 * 1024,
+  },
+  { kind: 'pdf', mimes: /^application\/pdf$/, ext: /\.pdf$/, max: 15 * 1024 * 1024 },
+  {
+    kind: 'video',
+    mimes: /^video\/(mp4|3gpp|webm|quicktime|x-matroska)$/,
+    ext: /\.(mp4|3gp|webm|mov|mkv)$/,
+    max: 500 * 1024 * 1024,
+  },
+  {
+    kind: 'audio',
+    mimes: /^audio\/(mpeg|mp4|x-m4a|aac|ogg|wav|x-wav|flac|amr|3gpp|opus)$/,
+    ext: /\.(mp3|m4a|aac|ogg|oga|opus|wav|flac|amr)$/,
+    max: 200 * 1024 * 1024,
+  },
+];
 
-export function previewKind(p: Pick<FilePayload, 'mime' | 'size'>): PreviewKind {
+/**
+ * Above this a file waits for a tap before it is downloaded and decrypted: the sheet opens at
+ * once, and an old phone only does the slow work when asked.
+ */
+export const AUTO_OPEN_MAX = 8 * 1024 * 1024;
+
+export function previewKind(
+  p: Pick<FilePayload, 'mime' | 'size'> & { name?: string },
+): PreviewKind {
   const mime = p.mime.toLowerCase();
-  if (IMAGE_MIMES.includes(mime) && p.size <= IMAGE_PREVIEW_MAX) return 'image';
-  const text = mime.startsWith('text/') || mime === 'application/json';
-  if (text && p.size <= TEXT_PREVIEW_MAX) return 'text';
-  return 'other';
+  const name = (p.name ?? '').toLowerCase();
+  const generic = mime === '' || mime === 'application/octet-stream';
+  const match = KINDS.find((k) => k.mimes.test(mime) || (generic && k.ext.test(name)));
+  return match && p.size <= match.max ? match.kind : 'other';
 }
+
+/** The MIME type to hand a viewer: the stored one, or one guessed from the name. */
+export function viewerMime(p: Pick<FilePayload, 'mime' | 'name'>): string {
+  const mime = p.mime.toLowerCase();
+  if (mime && mime !== 'application/octet-stream') return p.mime;
+  const ext = /\.([a-z0-9]+)$/.exec(p.name.toLowerCase())?.[1] ?? '';
+  return EXT_MIMES[ext] ?? p.mime;
+}
+
+const EXT_MIMES: Record<string, string> = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  mp4: 'video/mp4',
+  mov: 'video/quicktime',
+  mp3: 'audio/mpeg',
+  m4a: 'audio/mp4',
+  txt: 'text/plain',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  zip: 'application/zip',
+  apk: 'application/vnd.android.package-archive',
+};
 
 const MIME_NAMES: Record<string, string> = {
   'application/pdf': 'PDF document',

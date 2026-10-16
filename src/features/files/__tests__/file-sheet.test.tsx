@@ -37,6 +37,17 @@ jest.mock('expo-file-system', () => ({
     }
   },
 }));
+jest.mock('../components/PdfView', () => ({
+  PdfView: () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Text } = require('react-native');
+    return <Text>pdf reader</Text>;
+  },
+}));
+jest.mock('../components/MediaViews', () => ({
+  VideoPreview: () => null,
+  AudioPreview: () => null,
+}));
 jest.mock('../open-with', () => ({
   openWith: (uri: string, mime: string) => mockOpenWith(uri, mime),
   share: jest.fn(),
@@ -105,7 +116,13 @@ describe('preview helpers', () => {
     expect(previewKind({ mime: 'image/jpeg', size: 30 * 1024 * 1024 })).toBe('other');
     expect(previewKind({ mime: 'text/plain', size: 1000 })).toBe('text');
     expect(previewKind({ mime: 'text/plain', size: 1024 * 1024 })).toBe('other');
-    expect(previewKind({ mime: 'application/pdf', size: 1000 })).toBe('other');
+    expect(previewKind({ mime: 'application/pdf', size: 1000 })).toBe('pdf');
+    expect(previewKind({ mime: 'video/mp4', size: 1000 })).toBe('video');
+    expect(previewKind({ mime: 'audio/mpeg', size: 1000 })).toBe('audio');
+    expect(previewKind({ mime: 'application/octet-stream', size: 1000, name: 'a.MP3' })).toBe(
+      'audio',
+    );
+    expect(previewKind({ mime: 'application/msword', size: 1000, name: 'a.doc' })).toBe('other');
   });
 
   it('names the type the way a person says it', () => {
@@ -134,9 +151,42 @@ describe('the file sheet', () => {
     expect(mockDownload).toHaveBeenCalledTimes(1);
   });
 
-  it('does not decrypt a PDF until asked, then opens it in another app', async () => {
+  it('reads a PDF in place', async () => {
     mockList.mockResolvedValue({
       items: [file('1', 'lease.pdf', 'application/pdf')],
+      states: {},
+      skipped: 0,
+    });
+    await renderWithProviders(<FilesListScreen />);
+    await openRow('1');
+    expect(await screen.findByText('pdf reader')).toBeOnTheScreen();
+    expect(mockDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for a tap before decrypting a big file', async () => {
+    mockList.mockResolvedValue({
+      items: [file('1', 'scan.pdf', 'application/pdf', 10 * 1024 * 1024)],
+      states: {},
+      skipped: 0,
+    });
+    await renderWithProviders(<FilesListScreen />);
+    const user = await openRow('1');
+    expect(await screen.findByText('PDF document · 10 MB')).toBeOnTheScreen();
+    expect(mockDownload).not.toHaveBeenCalled();
+    await user.press(screen.getByTestId('file-show'));
+    expect(await screen.findByText('pdf reader')).toBeOnTheScreen();
+    expect(mockDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a Word file to another app, decrypting only on request', async () => {
+    mockList.mockResolvedValue({
+      items: [
+        file(
+          '1',
+          'plan.docx',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ),
+      ],
       states: { '1': 'degraded' },
       skipped: 0,
     });
@@ -147,10 +197,13 @@ describe('the file sheet', () => {
       </>,
     );
     const user = await openRow('1');
-    expect(await screen.findByText('PDF document · 2.0 KB')).toBeOnTheScreen();
+    expect(await screen.findByText('Word document · 2.0 KB')).toBeOnTheScreen();
     expect(mockDownload).not.toHaveBeenCalled();
     await user.press(screen.getByTestId('file-open'));
-    expect(mockOpenWith).toHaveBeenCalledWith('file:///cache/f2h-open/x', 'application/pdf');
+    expect(mockOpenWith).toHaveBeenCalledWith(
+      'file:///cache/f2h-open/x',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
   });
 
   it('blooms the details and deletes after a confirm', async () => {

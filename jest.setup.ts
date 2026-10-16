@@ -29,4 +29,13 @@ jest.mock('expo-audio', () => ({
     seekTo: jest.fn(async () => undefined),
     remove: jest.fn(),
   })),
+  useAudioPlayer: jest.fn(() => ({ play: jest.fn(), pause: jest.fn(), seekTo: jest.fn() })),
+  useAudioPlayerStatus: jest.fn(() => ({ playing: false, currentTime: 0, duration: 0 })),
 }));
+
+// Video and web views have no native module in Jest: the file sheet's viewers render nothing.
+jest.mock('expo-video', () => ({
+  useVideoPlayer: jest.fn(() => ({ play: jest.fn(), pause: jest.fn() })),
+  VideoView: () => null,
+}));
+jest.mock('react-native-webview', () => ({ WebView: () => null }));

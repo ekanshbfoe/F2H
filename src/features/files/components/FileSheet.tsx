@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { File } from 'expo-file-system';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { BloomMenu, type BloomRow } from '@/components/motion';
@@ -9,9 +9,20 @@ import { useScreenCaptureBlock } from '@/features/lock/hooks';
 import { useTheme } from '@/theme';
 
 import { FilesError } from '../api';
-import { formatSize, previewKind, typeLabel, type BlobState, type StoredFile } from '../model';
+import {
+  AUTO_OPEN_MAX,
+  formatSize,
+  previewKind,
+  typeLabel,
+  viewerMime,
+  type BlobState,
+  type PreviewKind,
+  type StoredFile,
+} from '../model';
 import { openWith, share } from '../open-with';
 import { useFiles } from '../store';
+import { AudioPreview, VideoPreview } from './MediaViews';
+import { PdfView } from './PdfView';
 import { ZoomImage } from './ZoomImage';
 
 export interface FileSheetProps {
@@ -44,11 +55,11 @@ export function FileSheet({ file, state, onClose }: FileSheetProps) {
 }
 
 type Preview =
+  | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'image'; uri: string }
-  | { status: 'text'; text: string }
+  | { status: 'ready'; uri: string; text?: string }
   | { status: 'error'; message: string }
-  | { status: 'none' };
+  | { status: 'none'; note?: string };
 
 function explain(e: unknown): string {
   const code = e instanceof FilesError ? e.code : null;
@@ -66,6 +77,23 @@ const BACKUP: Record<BlobState, string> = {
   uploading: 'Uploading',
 };
 
+const KIND_ICON: Record<PreviewKind, React.ComponentProps<typeof Ionicons>['name']> = {
+  image: 'image-outline',
+  text: 'document-text-outline',
+  pdf: 'document-text-outline',
+  video: 'film-outline',
+  audio: 'musical-notes-outline',
+  other: 'document-outline',
+};
+
+const SHOW_LABEL: Record<Exclude<PreviewKind, 'other'>, string> = {
+  image: 'Show photo',
+  text: 'Show text',
+  pdf: 'Open PDF',
+  video: 'Play video',
+  audio: 'Play',
+};
+
 function FileViewer({
   file,
   state,
@@ -81,25 +109,28 @@ function FileViewer({
   const remove = useFiles((s) => s.remove);
   const offline = useFiles((s) => s.offline);
   const p = file.payload;
+  const mime = viewerMime(p);
   const kind = previewKind(p);
+  // small files open by themselves; a big one waits for a tap, so the sheet itself is instant
   const [preview, setPreview] = useState<Preview>(
-    kind === 'other' ? { status: 'none' } : { status: 'loading' },
+    kind === 'other'
+      ? { status: 'none' }
+      : p.size <= AUTO_OPEN_MAX
+        ? { status: 'loading' }
+        : { status: 'idle' },
   );
-  const [attempt, setAttempt] = useState(0);
   const [menu, setMenu] = useState(false);
   const [busy, setBusy] = useState<'open' | 'share' | 'delete' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const loading = preview.status === 'loading';
 
   useEffect(() => {
-    if (kind === 'other') return undefined;
+    if (!loading) return undefined;
     let live = true;
     openCopy(file)
       .then(async (uri) => {
-        const next: Preview =
-          kind === 'image'
-            ? { status: 'image', uri }
-            : { status: 'text', text: await new File(uri).text() };
-        if (live) setPreview(next);
+        const text = kind === 'text' ? await new File(uri).text() : undefined;
+        if (live) setPreview({ status: 'ready', uri, text });
       })
       .catch((e: unknown) => {
         if (live) setPreview({ status: 'error', message: explain(e) });
@@ -107,7 +138,16 @@ function FileViewer({
     return () => {
       live = false;
     };
-  }, [file, kind, openCopy, attempt]);
+  }, [file, kind, openCopy, loading]);
+
+  const pdfFailed = useCallback(
+    () =>
+      setPreview({
+        status: 'none',
+        note: 'This PDF could not be drawn here. Open it in another app instead.',
+      }),
+    [],
+  );
 
   const hand = async (how: 'open' | 'share') => {
     setMenu(false);
@@ -115,7 +155,7 @@ function FileViewer({
     setMessage(null);
     try {
       const uri = await openCopy(file);
-      const ok = how === 'open' ? await openWith(uri, p.mime) : await share(uri, p.mime);
+      const ok = how === 'open' ? await openWith(uri, mime) : await share(uri, mime);
       if (!ok) setMessage('Nothing on this phone can open this kind of file.');
     } catch (e) {
       setMessage(explain(e));
@@ -142,7 +182,7 @@ function FileViewer({
 
   const rows: BloomRow[] = [
     { key: 'size', label: 'Size', value: formatSize(p.size) },
-    { key: 'type', label: 'Type', value: typeLabel(p.mime) },
+    { key: 'type', label: 'Type', value: typeLabel(mime) },
     {
       key: 'added',
       label: 'Added',
@@ -156,6 +196,8 @@ function FileViewer({
     },
     ...(state ? [{ key: 'backup', label: 'Backed up', value: BACKUP[state] }] : []),
   ];
+
+  const ready = preview.status === 'ready' ? preview : null;
 
   return (
     <View style={styles.fill}>
@@ -171,18 +213,21 @@ function FileViewer({
           },
         ]}
       >
-        {preview.status === 'image' ? <ZoomImage uri={preview.uri} label={p.name} /> : null}
-        {preview.status === 'text' ? (
+        {ready && kind === 'image' ? <ZoomImage uri={ready.uri} label={p.name} /> : null}
+        {ready && kind === 'text' ? (
           <ScrollView
             style={StyleSheet.absoluteFill}
             contentContainerStyle={{ padding: t.spacing.lg, paddingBottom: t.spacing.huge }}
           >
             <Text variant="body" color="ink" testID="file-text">
-              {preview.text}
+              {ready.text ?? ''}
             </Text>
           </ScrollView>
         ) : null}
-        {preview.status === 'loading' ? (
+        {ready && kind === 'pdf' ? <PdfView uri={ready.uri} onFail={pdfFailed} /> : null}
+        {ready && kind === 'video' ? <VideoPreview uri={ready.uri} label={p.name} /> : null}
+        {ready && kind === 'audio' ? <AudioPreview uri={ready.uri} name={p.name} /> : null}
+        {loading ? (
           <View style={{ alignItems: 'center', gap: t.spacing.sm }}>
             <ActivityIndicator color={t.colors.primary} />
             <Text variant="caption" color="muted">
@@ -193,45 +238,53 @@ function FileViewer({
         {preview.status === 'error' ? (
           <View style={{ padding: t.spacing.lg, gap: t.spacing.md, alignSelf: 'stretch' }}>
             <Callout tone="danger">{preview.message}</Callout>
-            <Button
-              variant="secondary"
-              size="sm"
-              onPress={() => {
-                setPreview({ status: 'loading' });
-                setAttempt((n) => n + 1);
-              }}
-            >
+            <Button variant="secondary" size="sm" onPress={() => setPreview({ status: 'loading' })}>
               Try again
             </Button>
           </View>
         ) : null}
-        {preview.status === 'none' ? (
+        {preview.status === 'idle' || preview.status === 'none' ? (
           <View style={{ alignItems: 'center', gap: t.spacing.md, padding: t.spacing.xl }}>
-            <Ionicons
-              name={p.mime === 'application/pdf' ? 'document-text-outline' : 'document-outline'}
-              size={t.sizes.hero / 2}
-              color={t.colors.primary}
-            />
+            <Ionicons name={KIND_ICON[kind]} size={t.sizes.hero / 2} color={t.colors.primary} />
             <Text variant="heading" align="center" numberOfLines={2}>
               {p.name}
             </Text>
             <Text variant="caption" color="muted" align="center">
-              {`${typeLabel(p.mime)} · ${formatSize(p.size)}`}
+              {`${typeLabel(mime)} · ${formatSize(p.size)}`}
             </Text>
-            <Button
-              size="sm"
-              fullWidth={false}
-              loading={busy === 'open'}
-              disabled={busy !== null}
-              onPress={() => void hand('open')}
-              testID="file-open"
-            >
-              Open with…
-            </Button>
-            <Text variant="caption" color="muted" align="center">
-              Opens in another app on this phone. The decrypted copy is deleted when the vault
-              locks.
-            </Text>
+            {preview.status === 'idle' && kind !== 'other' ? (
+              <>
+                <Button
+                  size="sm"
+                  fullWidth={false}
+                  onPress={() => setPreview({ status: 'loading' })}
+                  testID="file-show"
+                >
+                  {SHOW_LABEL[kind]}
+                </Button>
+                <Text variant="caption" color="muted" align="center">
+                  A big file takes a while to decrypt on this phone.
+                </Text>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  fullWidth={false}
+                  loading={busy === 'open'}
+                  disabled={busy !== null}
+                  onPress={() => void hand('open')}
+                  testID="file-open"
+                >
+                  Open with…
+                </Button>
+                <Text variant="caption" color="muted" align="center">
+                  {preview.status === 'none' && preview.note
+                    ? preview.note
+                    : 'This kind of file opens in another app on this phone. The decrypted copy is deleted when the vault locks.'}
+                </Text>
+              </>
+            )}
           </View>
         ) : null}
         <View style={[StyleSheet.absoluteFill, { padding: t.spacing.md }]} pointerEvents="box-none">
