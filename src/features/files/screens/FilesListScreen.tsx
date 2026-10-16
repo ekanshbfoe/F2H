@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge, Button, Callout, Card, Text, TextField } from '@/components/ui';
@@ -12,6 +12,7 @@ import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 import { FilesError } from '../api';
 import { FileSheet } from '../components/FileSheet';
+import { SwipeToDelete } from '../components/SwipeToDelete';
 import { formatSize, matchesSearch, sortFiles, type StoredFile } from '../model';
 import { useFiles } from '../store';
 
@@ -43,7 +44,7 @@ export function FilesListScreen() {
   const router = useSteadyRouter();
   const insets = useSafeAreaInsets();
   const unlocked = useSession((s) => s.mk !== null);
-  const { status, items, states, skipped, offline, error, upload, load, add } = useFiles();
+  const { status, items, states, skipped, offline, error, upload, load, add, remove } = useFiles();
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,6 +61,27 @@ export function FilesListScreen() {
     () => sortFiles(Object.values(items)).filter((f) => matchesSearch(f.payload, query)),
     [items, query],
   );
+
+  const confirmDelete = (file: StoredFile, keep: () => void) => {
+    Alert.alert(
+      'Delete this file?',
+      `${file.payload.name} goes to the trash on both Drives.`,
+      [
+        { text: 'Keep', style: 'cancel', onPress: keep },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            remove(file).catch(() => {
+              keep();
+              setMessage({ tone: 'danger', text: 'Could not delete it. Check your connection.' });
+            });
+          },
+        },
+      ],
+      { cancelable: true, onDismiss: keep },
+    );
+  };
 
   const pick = async () => {
     setMessage(null);
@@ -211,7 +233,14 @@ export function FilesListScreen() {
           />
         }
         renderItem={({ item }) => (
-          <FileRow file={item} state={states[item.id]} onPress={() => setOpenId(item.id)} />
+          <SwipeToDelete
+            enabled={!offline}
+            label={`Delete ${item.payload.name}`}
+            onDelete={(keep) => confirmDelete(item, keep)}
+            testID={`file-delete-${item.id}`}
+          >
+            <FileRow file={item} state={states[item.id]} onPress={() => setOpenId(item.id)} />
+          </SwipeToDelete>
         )}
         testID="files-list"
       />

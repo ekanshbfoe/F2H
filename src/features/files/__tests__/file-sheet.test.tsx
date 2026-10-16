@@ -165,3 +165,30 @@ describe('the file sheet', () => {
     alert.mockRestore();
   });
 });
+
+describe('swipe to delete', () => {
+  it('asks before deleting from the panel under the row', async () => {
+    mockList.mockResolvedValue({
+      items: [file('1', 'lease.pdf', 'application/pdf'), file('2', 'id.pdf', 'application/pdf')],
+      states: {},
+      skipped: 0,
+    });
+    mockDelete.mockResolvedValue(undefined);
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
+    });
+    await renderWithProviders(<FilesListScreen />);
+    await userEvent.setup().press(await screen.findByLabelText('Delete lease.pdf'));
+    await act(async () => undefined);
+    expect(alert).toHaveBeenCalledWith(
+      'Delete this file?',
+      expect.stringContaining('lease.pdf'),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(mockDelete).toHaveBeenCalledWith('1');
+    expect(screen.queryByTestId('file-row-1')).toBeNull();
+    expect(screen.getByTestId('file-row-2')).toBeOnTheScreen();
+    alert.mockRestore();
+  });
+});
