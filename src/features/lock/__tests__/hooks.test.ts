@@ -32,4 +32,16 @@ describe('useScreenCaptureBlock', () => {
     await root.unmount();
     expect(allow.mock.calls.map((c) => c[0])).toEqual(['f2h:show-kit', 'f2h']);
   });
+
+  it('skips the block in development when the screenshot flag is on', async () => {
+    prevent.mockClear();
+    process.env.EXPO_PUBLIC_ALLOW_SCREENSHOTS = '1';
+    try {
+      const hook = await renderHook(() => useScreenCaptureBlock('f2h:credential'));
+      expect(prevent).not.toHaveBeenCalled();
+      await hook.unmount();
+    } finally {
+      delete process.env.EXPO_PUBLIC_ALLOW_SCREENSHOTS;
+    }
+  });
 });

@@ -79,13 +79,21 @@ export function useRevokeGuard(): void {
 }
 
 /**
+ * Screenshots are allowed only in a development bundle with `EXPO_PUBLIC_ALLOW_SCREENSHOTS=1` in
+ * `.env`, so UI work can be captured. A release build ignores the flag: `__DEV__` is false there.
+ */
+export function screenshotsAllowed(): boolean {
+  return __DEV__ && process.env.EXPO_PUBLIC_ALLOW_SCREENSHOTS === '1';
+}
+
+/**
  * Android: no screenshots and a blank recents thumbnail (AC-9). The root runtime holds the `f2h`
  * key from boot; a sensitive screen passes its own key, so leaving that screen releases only its
  * own hold and never the app wide one.
  */
 export function useScreenCaptureBlock(key = 'f2h'): void {
   useEffect(() => {
-    if (Platform.OS !== 'android') return undefined;
+    if (Platform.OS !== 'android' || screenshotsAllowed()) return undefined;
     ScreenCapture.preventScreenCaptureAsync(key).catch(() => undefined);
     return () => {
       ScreenCapture.allowScreenCaptureAsync(key).catch(() => undefined);
