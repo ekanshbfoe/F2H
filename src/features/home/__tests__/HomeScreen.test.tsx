@@ -1,6 +1,7 @@
 // covers: spec 0007 AC-4 (vault summary on home), plus the tab layout: Vault first, Family for the
 // Admin only, Settings, and Lock now on the round button
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { BackHandler } from 'react-native';
 
 import { renderWithProviders } from '@/lib/test-utils';
 import { useSession } from '@/state/session.store';
@@ -14,6 +15,11 @@ const mockLockNow = jest.fn();
 const mockPending = jest.fn(async (): Promise<unknown[]> => []);
 
 jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn() }),
 }));
 jest.mock('@/features/admin/api', () => ({
@@ -74,6 +80,36 @@ describe('HomeScreen', () => {
     expect(screen.getByRole('header', { name: 'Family' })).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('home-approvals'));
     expect(mockPush).toHaveBeenCalledWith('/(admin)/approvals');
+  });
+
+  it('walks back through the pages visited, then lets the app go back', async () => {
+    type Handler = Parameters<typeof BackHandler.addEventListener>[1];
+    const handlers: Handler[] = [];
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_e, h) => {
+      handlers.push(h);
+      return { remove: () => handlers.splice(handlers.indexOf(h), 1) };
+    });
+    const back = async () => {
+      let handled: boolean | null | undefined = false;
+      await act(async () => {
+        handled = handlers.at(-1)?.({} as never);
+      });
+      return handled;
+    };
+    try {
+      signIn('admin');
+      await renderWithProviders(<HomeScreen />);
+      await activate(/Family/);
+      await activate('Settings');
+      expect(screen.getByRole('tab', { name: 'Settings' })).toBeSelected();
+      expect(await back()).toBe(true);
+      expect(screen.getByRole('tab', { name: /Family/ })).toBeSelected();
+      expect(await back()).toBe(true);
+      expect(screen.getByRole('tab', { name: 'Vault' })).toBeSelected();
+      expect(await back()).toBe(false);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('keeps security and account on Settings, and locks from the round button', async () => {

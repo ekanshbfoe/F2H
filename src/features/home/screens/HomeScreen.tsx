@@ -1,7 +1,25 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState, type ReactNode } from 'react';
-import { BackHandler, Image, Pressable, ScrollView, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { BackHandler, Image, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import Animated, {
+  scrollTo,
+  useAnimatedReaction,
+  useAnimatedRef,
+  useAnimatedScrollHandler,
+  useReducedMotion,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { LENS_BAR_HEIGHT, LensTabBar, type LensTab } from '@/components/motion/LensTabBar';
 import { Avatar, Badge, Choice, NavGroup, NavRow, Text } from '@/components/ui';
@@ -23,20 +41,28 @@ import { DEFAULT_TIMEOUT_MS, TIMEOUT_OPTIONS } from '@/features/lock/model';
 import { readTimeoutMs, writeTimeoutMs } from '@/features/lock/storage';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 type Tab = 'vault' | 'family' | 'settings';
+
+/** `heading` values: no move in flight, or the lens is being slid by a finger. */
+const FREE = -1;
+const SLIDING = -2;
 
 /** Room the floating tab bar takes at the bottom of every page. */
 const BAR_SPACE = LENS_BAR_HEIGHT + 4 + 24;
 
 /**
- * Home: three pages behind a floating tab bar. Vault comes first and is where every visit
+ * Home: swipeable pages behind a floating tab bar. Vault comes first and is where every visit
  * starts; Family (the Admin's tools, Admin only) and Settings (security and account) hold the
- * rest. The round button beside the bar locks the vault at once.
+ * rest. Swipe between them, tap a tab, or slide the lens; the back button retraces the pages you
+ * visited before it leaves. The round button beside the bar locks the vault at once.
  */
 export function HomeScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const reduceMotion = useReducedMotion();
   const profile = useSession((s) => s.profile);
   const isAdmin = profile?.role === 'admin';
   const hasPin = useLock((s) => s.state === 'unlocked');
@@ -53,51 +79,160 @@ export function HomeScreen() {
     return subscribePendingDevices(load);
   }, [isAdmin]);
 
-  // back from another page returns to the vault before it leaves the app
+  const tabs: LensTab[] = useMemo(
+    () => [
+      {
+        key: 'vault',
+        label: 'Vault',
+        icon: 'file-tray-full-outline',
+        activeIcon: 'file-tray-full',
+      },
+      ...(isAdmin
+        ? [
+            {
+              key: 'family',
+              label: 'Family',
+              icon: 'people-outline',
+              activeIcon: 'people',
+              badge: pending ?? 0,
+            } as const,
+          ]
+        : []),
+      { key: 'settings', label: 'Settings', icon: 'settings-outline', activeIcon: 'settings' },
+    ],
+    [isAdmin, pending],
+  );
+  const keys = useMemo(() => tabs.map((x) => x.key as Tab), [tabs]);
+
+  // the pages: a native horizontal pager whose offset drives the lens frame by frame
+  const pager = useAnimatedRef<Animated.ScrollView>();
+  const position = useSharedValue(0);
+  // Where a tap or the back button is sending the pages (a page index), so the pages passed on
+  // the way are not taken for a choice; SLIDING while the lens is dragged; FREE for a swipe.
+  const heading = useSharedValue(FREE);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      position.set(width > 0 ? e.contentOffset.x / width : 0);
+    },
+    // a finger on the pages takes over from any move in flight
+    onBeginDrag: () => {
+      heading.set(FREE);
+    },
+  });
+  const scrub = useCallback(
+    (index: number, animated: boolean) => {
+      'worklet';
+      heading.set(animated ? Math.round(index) : SLIDING);
+      scrollTo(pager, index * width, 0, animated);
+    },
+    [heading, pager, width],
+  );
+
+  // the pages visited, newest last, so the back button walks back through them
+  const history = useRef<Tab[]>([]);
+  const current = useRef<Tab>('vault');
+  useLayoutEffect(() => {
+    current.current = tab;
+  }, [tab]);
+
+  const show = useCallback(
+    (next: Tab, { record = true, scroll = true }: { record?: boolean; scroll?: boolean } = {}) => {
+      const from = current.current;
+      if (next === from) return;
+      if (record) history.current = [...history.current.filter((x) => x !== next), from];
+      current.current = next;
+      setTab(next);
+      const i = keys.indexOf(next);
+      if (scroll && i >= 0) {
+        heading.set(i);
+        pager.current?.scrollTo?.({ x: i * width, y: 0, animated: !reduceMotion });
+      }
+    },
+    [keys, pager, width, reduceMotion, heading],
+  );
+
+  // a swipe that comes to rest on another page selects it, with one selection tick
+  const settle = useCallback(
+    (i: number) => {
+      const next = keys[i];
+      if (!next || next === current.current) return;
+      Haptics.selectionAsync().catch(() => undefined);
+      show(next, { scroll: false });
+    },
+    [keys, show],
+  );
+  useAnimatedReaction(
+    () => {
+      const p = position.get();
+      const r = Math.round(p);
+      return Math.abs(p - r) < 0.01 ? r : -1;
+    },
+    (rest, before) => {
+      // the first reading is where the pages start, not a choice
+      if (before === null || rest < 0 || rest === before) return;
+      const goal = heading.get();
+      if (goal === SLIDING) return;
+      if (goal !== FREE) {
+        // a tap or back is on its way: only its own page counts, and it was already chosen
+        if (rest === goal) heading.set(FREE);
+        return;
+      }
+      scheduleOnRN(settle, rest);
+    },
+  );
+
+  // back retraces the pages visited before it leaves the app
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (tab === 'vault') return false;
-      setTab('vault');
+      const previous = history.current.pop();
+      if (!previous || !keys.includes(previous)) return false;
+      show(previous, { record: false });
       return true;
     });
     return () => sub.remove();
-  }, [tab]);
+  }, [keys, show]);
 
-  const tabs: LensTab[] = [
-    { key: 'vault', label: 'Vault', icon: 'file-tray-full-outline', activeIcon: 'file-tray-full' },
-    ...(isAdmin
-      ? [
-          {
-            key: 'family',
-            label: 'Family',
-            icon: 'people-outline',
-            activeIcon: 'people',
-            badge: pending ?? 0,
-          } as const,
-        ]
-      : []),
-    { key: 'settings', label: 'Settings', icon: 'settings-outline', activeIcon: 'settings' },
-  ];
+  const page = (key: Tab): ReactNode =>
+    key === 'vault' ? (
+      <VaultPage pending={isAdmin ? pending : null} onAccount={() => show('settings')} />
+    ) : key === 'family' ? (
+      <FamilyPage pending={pending} />
+    ) : (
+      <SettingsPage />
+    );
 
   return (
     <View style={{ flex: 1, backgroundColor: t.colors.canvas }}>
-      <ScrollView
-        key={tab}
-        contentContainerStyle={{
-          paddingTop: insets.top + t.spacing.xl,
-          paddingBottom: insets.bottom + BAR_SPACE + t.spacing.lg,
-          paddingHorizontal: t.sizes.sheetInset,
-          gap: t.spacing.xl,
-        }}
+      <Animated.ScrollView
+        ref={pager}
+        horizontal
+        pagingEnabled
+        bounces={false}
+        overScrollMode="never"
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        testID="home-pages"
       >
-        {tab === 'vault' ? (
-          <VaultPage pending={isAdmin ? pending : null} onAccount={() => setTab('settings')} />
-        ) : tab === 'family' && isAdmin ? (
-          <FamilyPage pending={pending} />
-        ) : (
-          <SettingsPage />
-        )}
-      </ScrollView>
+        {keys.map((key) => (
+          <ScrollView
+            key={key}
+            style={{ width }}
+            nestedScrollEnabled
+            contentContainerStyle={{
+              paddingTop: insets.top + t.spacing.xl,
+              paddingBottom: insets.bottom + BAR_SPACE + t.spacing.lg,
+              paddingHorizontal: t.sizes.sheetInset,
+              gap: t.spacing.xl,
+            }}
+            accessibilityElementsHidden={key !== tab}
+            importantForAccessibility={key === tab ? 'auto' : 'no-hide-descendants'}
+          >
+            {page(key)}
+          </ScrollView>
+        ))}
+      </Animated.ScrollView>
       <View
         style={{
           position: 'absolute',
@@ -109,7 +244,9 @@ export function HomeScreen() {
         <LensTabBar
           tabs={tabs}
           value={tab}
-          onChange={(key) => setTab(key as Tab)}
+          onChange={(key) => show(key as Tab, { scroll: true })}
+          position={position}
+          scrub={scrub}
           action={{
             icon: 'lock-closed',
             label: 'Lock now',
@@ -206,7 +343,7 @@ function VaultBar({ name, onAccount }: { name: string; onAccount: () => void }) 
 
 function VaultPage({ pending, onAccount }: { pending: number | null; onAccount: () => void }) {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const profile = useSession((s) => s.profile);
   // vault summary (spec 0007, AC-4): counts only once a list loaded on this phone
   const contacts = useContacts((s) => (s.status === 'ready' ? Object.keys(s.items).length : null));
@@ -268,7 +405,7 @@ function VaultPage({ pending, onAccount }: { pending: number | null; onAccount: 
 
 function FamilyPage({ pending }: { pending: number | null }) {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   return (
     <>
       <PageHeader title="Family" subtitle="Only the Admin sees this page" />
@@ -329,7 +466,7 @@ function FamilyPage({ pending }: { pending: number | null }) {
 
 function SettingsPage() {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const [timeoutMs, setTimeoutMs] = useState<number>(DEFAULT_TIMEOUT_MS);
 
   useEffect(() => {
