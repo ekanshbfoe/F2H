@@ -20,6 +20,10 @@ jest.mock('expo-router', () => ({
     dispatch: jest.fn(),
   }),
   useRouter: () => ({ replace: mockReplace, push: jest.fn(), back: jest.fn() }),
+  useFocusEffect: (cb: () => void) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('react').useEffect(cb, []);
+  },
 }));
 jest.mock('@/services/supabase', () => ({ supabase: {}, setForbiddenHandler: jest.fn() }));
 jest.mock('@/services/functions', () => ({ callFunction: jest.fn() }));
