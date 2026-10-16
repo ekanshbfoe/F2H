@@ -6,6 +6,7 @@ import { setForbiddenHandler } from '@/services/supabase';
 import { useSession } from '@/state/session.store';
 
 import { checkDeviceStatus, endCooldown, lockNow, persistCooldown, wipe } from './api';
+import { awayGraceMs } from './away';
 import { monotonicNow, remainingCooldownMs, useLock } from './lock.store';
 import { shouldLock } from './model';
 import { readBackgroundAt, readTimeoutMs, writeBackgroundAt } from './storage';
@@ -54,7 +55,8 @@ async function onAppState(next: AppStateStatus): Promise<void> {
     return;
   }
   // The first step away from the foreground starts the clock; inactive then background keeps it.
-  if ((await readBackgroundAt()) === null) await writeBackgroundAt(Date.now());
+  // A trip the app itself started (the file picker) starts it later, by the away grace.
+  if ((await readBackgroundAt()) === null) await writeBackgroundAt(Date.now() + awayGraceMs());
   await persistCooldown();
 }
 

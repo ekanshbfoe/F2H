@@ -3,6 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 
 import { callFunction } from '@/services/functions';
 import { supabase } from '@/services/supabase';
+import { whileAway } from '@/features/lock/away';
 
 /**
  * Linking the two Google Drives (child spec 0001-drive-redundancy, AC-1, AC-2). The consent page
@@ -42,7 +43,7 @@ export async function linkSlot(slot: Slot): Promise<LinkOutcome> {
     slot,
     return_url: returnUrl,
   });
-  const result = await WebBrowser.openAuthSessionAsync(auth_url, returnUrl);
+  const result = await whileAway(() => WebBrowser.openAuthSessionAsync(auth_url, returnUrl));
   if (result.type !== 'success') return 'cancelled';
   return parseLinkResult(result.url);
 }

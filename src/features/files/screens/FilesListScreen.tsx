@@ -15,6 +15,7 @@ import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge, Button, Callout, Card, Text, TextField, confirm } from '@/components/ui';
+import { whileAway } from '@/features/lock/away';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
 import { useSteadyRouter } from '@/hooks/useSteadyRouter';
@@ -136,10 +137,18 @@ export function FilesListScreen() {
   const pick = async () => {
     setMessage(null);
     // no picker copy: the upload copies the file into the app's own scratch folder itself
-    const result = await DocumentPicker.getDocumentAsync({
-      copyToCacheDirectory: false,
-      multiple: false,
-    });
+    let result: DocumentPicker.DocumentPickerResult;
+    try {
+      result = await whileAway(() =>
+        DocumentPicker.getDocumentAsync({ copyToCacheDirectory: false, multiple: false }),
+      );
+    } catch {
+      setMessage({
+        tone: 'danger',
+        text: 'The file picker did not open. Close it if it is still open, then try again.',
+      });
+      return;
+    }
     if (result.canceled) return;
     const asset = result.assets[0];
     if (!asset) return;
