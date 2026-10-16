@@ -13,8 +13,8 @@ import { useTheme } from '@/theme';
 
 /**
  * Boot: decides the first screen from the session, the device status and what is in memory.
- * It is drawn exactly like the native splash (same blue, same logo, same size, centred), so the
- * hand off from the splash is invisible and opening the app reads as one step. It also shows
+ * It is drawn like the native splash (white, the same rounded logo at the same size, centred) with
+ * a soft shadow lifting the logo off the page, so opening the app reads as one step. It also shows
  * again for a moment after the PIN gate fades, while the session is checked.
  */
 export default function BootScreen() {
@@ -24,6 +24,9 @@ export default function BootScreen() {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [slow, setSlow] = useState(false);
+  const logo = t.sizes.bootLogo;
+  // the corner of the art (23 percent of the side), so the shadow follows the tile's own curve
+  const logoRadius = Math.round(logo * 0.23);
 
   useEffect(() => {
     const timer = setTimeout(() => setSlow(true), t.motion.bootSpinnerDelayMs);
@@ -65,19 +68,33 @@ export default function BootScreen() {
     <View
       style={{
         flex: 1,
-        backgroundColor: t.colors.splash,
+        backgroundColor: t.colors.surface,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <StatusBar style="light" />
-      {/* the splash image is square with the splash blue in its corners: no radius, no frame */}
-      <Image
-        source={require('../../assets/images/splash-icon.png')}
-        accessibilityRole="image"
-        accessibilityLabel="F2H"
-        style={{ width: t.sizes.hero, height: t.sizes.hero }}
-      />
+      <StatusBar style="dark" />
+      {/* The logo as a raised tile: the rounded art over a same shaped blue base that casts the
+          soft shadow (Android needs a solid shape to draw elevation from). Same place and width as
+          the native splash, so the hand off does not move it. */}
+      <View
+        style={[
+          t.shadows.floating,
+          {
+            width: logo,
+            height: logo,
+            borderRadius: logoRadius,
+            backgroundColor: t.colors.splash,
+          },
+        ]}
+      >
+        <Image
+          source={require('../../assets/images/logo-rounded.png')}
+          accessibilityRole="image"
+          accessibilityLabel="F2H"
+          style={{ width: logo, height: logo }}
+        />
+      </View>
       {/* below the logo and out of flow, so the logo never moves off the splash position */}
       <View
         style={{
@@ -85,7 +102,7 @@ export default function BootScreen() {
           left: t.sizes.sheetInset,
           right: t.sizes.sheetInset,
           top: '50%',
-          marginTop: t.sizes.hero / 2 + t.spacing.xxl,
+          marginTop: logo / 2 + t.spacing.xxl,
           alignItems: 'center',
         }}
       >
@@ -98,7 +115,7 @@ export default function BootScreen() {
           </Card>
         ) : slow ? (
           <Animated.View entering={FadeIn.duration(t.motion.glideMs).easing(t.motion.easeOut)}>
-            <ActivityIndicator color={t.colors.onPrimary} accessibilityLabel="Starting" />
+            <ActivityIndicator color={t.colors.primary} accessibilityLabel="Starting" />
           </Animated.View>
         ) : null}
       </View>
@@ -109,7 +126,7 @@ export default function BootScreen() {
             hitSlop={t.spacing.md}
             style={{ position: 'absolute', bottom: insets.bottom + t.spacing.xl }}
           >
-            <Text variant="caption" color="onPrimary">
+            <Text variant="caption" color="muted">
               Component gallery
             </Text>
           </Pressable>
