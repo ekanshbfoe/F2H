@@ -19,18 +19,16 @@ import {
   createRecoveryGrant,
   listMemberDevices,
   listMembers,
+  RELATION_MAX,
   revokeMemberDevice,
   type AllowedRow,
   type MemberDevice,
-  type MemberLabel,
   type MemberRow,
 } from '@/features/admin/api';
 import { loadRecoverySecretKey } from '@/features/keyring/admin-recovery';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
 import { useSteadyRouter } from '@/hooks/useSteadyRouter';
-
-const LABELS: MemberLabel[] = ['father', 'mother', 'brother'];
 
 /** Members (AC-5, AC-15): invite codes as text and QR, members with devices and recovery grants. */
 export default function MembersScreen() {
@@ -44,7 +42,7 @@ export default function MembersScreen() {
   const [allowed, setAllowed] = useState<AllowedRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
-  const [label, setLabel] = useState<MemberLabel>('father');
+  const [relation, setRelation] = useState('');
   const [issued, setIssued] = useState<{ email: string; code: string } | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -76,9 +74,10 @@ export default function MembersScreen() {
     setBusy(true);
     setInviteError(null);
     try {
-      const code = await createInvite(email, label);
+      const code = await createInvite(email, relation);
       setIssued({ email: email.trim().toLowerCase(), code });
       setEmail('');
+      setRelation('');
       void refresh();
     } catch (e) {
       setInviteError(e instanceof Error ? e.message : 'Could not create the invite');
@@ -181,7 +180,7 @@ export default function MembersScreen() {
   return (
     <Screen
       title="Members"
-      subtitle="Four people, no strangers. Invites are one time codes you hand over in person."
+      subtitle="Family only, no strangers. Invites are one time codes you hand over in person."
     >
       {loadError ? <Callout tone="danger">{loadError}</Callout> : null}
 
@@ -195,24 +194,19 @@ export default function MembersScreen() {
           keyboardType="email-address"
           testID="invite-email"
         />
-        <View style={{ flexDirection: 'row', gap: t.spacing.sm, flexWrap: 'wrap' }}>
-          {LABELS.map((l) => (
-            <Button
-              key={l}
-              size="sm"
-              fullWidth={false}
-              variant={label === l ? 'primary' : 'secondary'}
-              onPress={() => setLabel(l)}
-              accessibilityState={{ selected: label === l }}
-            >
-              {l[0]?.toUpperCase() + l.slice(1)}
-            </Button>
-          ))}
-        </View>
+        <TextField
+          label="Relation"
+          value={relation}
+          onChangeText={setRelation}
+          placeholder="Sister, Uncle, Mum"
+          autoCapitalize="words"
+          maxLength={RELATION_MAX}
+          testID="invite-relation"
+        />
         {inviteError ? <Callout tone="danger">{inviteError}</Callout> : null}
         <Button
           loading={busy}
-          disabled={!email.includes('@')}
+          disabled={!email.includes('@') || relation.trim() === ''}
           onPress={() => void invite()}
           testID="invite-create"
         >
@@ -265,7 +259,7 @@ export default function MembersScreen() {
             <Row
               key={a.email}
               dashed
-              label={a.email}
+              label={`${a.label} · ${a.email}`}
               value={
                 a.invite_expires_at
                   ? `until ${new Date(a.invite_expires_at).toLocaleDateString()}`

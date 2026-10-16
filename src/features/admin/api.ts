@@ -4,7 +4,6 @@ import { supabase } from '@/services/supabase';
 import type { Database, Tables } from '@/types/database.types';
 
 export type MemberDevice = Database['public']['Views']['member_devices_view']['Row'];
-export type MemberLabel = Database['public']['Enums']['member_label'];
 
 /** Pending devices across the family, newest first (admin policy + approved device). */
 export async function listPendingDevices(): Promise<MemberDevice[]> {
@@ -102,11 +101,17 @@ export async function listMembers(): Promise<{ profiles: MemberRow[]; allowed: A
   return { profiles: p.data ?? [], allowed: a.data ?? [] };
 }
 
-/** Issues (or reissues) the 8 character invite; the plain code is returned exactly once (AC-5). */
-export async function createInvite(email: string, label: MemberLabel): Promise<string> {
+/** Longest relation the Admin can type for an invite (the database checks the same). */
+export const RELATION_MAX = 30;
+
+/**
+ * Issues (or reissues) the 8 character invite; the plain code is returned exactly once (AC-5).
+ * `relation` is the Admin's own word for the person (Sister, Uncle), up to `RELATION_MAX`.
+ */
+export async function createInvite(email: string, relation: string): Promise<string> {
   const { data, error } = await supabase.rpc('create_invite', {
     p_email: email.trim().toLowerCase(),
-    p_label: label,
+    p_label: relation.trim(),
   });
   if (error) throw new Error(error.message);
   return String(data);

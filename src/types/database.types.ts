@@ -16,7 +16,7 @@ export type Database = {
           email: string;
           invite_code_hash: string | null;
           invite_expires_at: string | null;
-          label: Database['public']['Enums']['member_label'];
+          label: string;
         };
         Insert: {
           added_by?: string | null;
@@ -25,7 +25,7 @@ export type Database = {
           email: string;
           invite_code_hash?: string | null;
           invite_expires_at?: string | null;
-          label: Database['public']['Enums']['member_label'];
+          label: string;
         };
         Update: {
           added_by?: string | null;
@@ -34,7 +34,7 @@ export type Database = {
           email?: string;
           invite_code_hash?: string | null;
           invite_expires_at?: string | null;
-          label?: Database['public']['Enums']['member_label'];
+          label?: string;
         };
         Relationships: [];
       };
@@ -599,7 +599,7 @@ export type Database = {
       create_invite: {
         Args: {
           p_email: string;
-          p_label: Database['public']['Enums']['member_label'];
+          p_label: string;
         };
         Returns: string;
       };
@@ -649,7 +649,6 @@ export type Database = {
       device_status: 'pending' | 'approved' | 'rejected' | 'revoked' | 'expired';
       drive_status: 'active' | 'needs_relink';
       item_kind: 'contact' | 'credential' | 'file' | 'note';
-      member_label: 'admin' | 'father' | 'mother' | 'brother';
       member_role: 'admin' | 'member';
       profile_status: 'pending' | 'active' | 'suspended';
     };
@@ -777,7 +776,6 @@ export const Constants = {
       device_status: ['pending', 'approved', 'rejected', 'revoked', 'expired'],
       drive_status: ['active', 'needs_relink'],
       item_kind: ['contact', 'credential', 'file', 'note'],
-      member_label: ['admin', 'father', 'mother', 'brother'],
       member_role: ['admin', 'member'],
       profile_status: ['pending', 'active', 'suspended'],
     },

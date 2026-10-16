@@ -24,7 +24,6 @@ describe('generated database types', () => {
       device_status: ['pending', 'approved', 'rejected', 'revoked', 'expired'],
       drive_status: ['active', 'needs_relink'],
       item_kind: ['contact', 'credential', 'file', 'note'],
-      member_label: ['admin', 'father', 'mother', 'brother'],
       member_role: ['admin', 'member'],
       profile_status: ['pending', 'active', 'suspended'],
     });
