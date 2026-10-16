@@ -11,8 +11,8 @@ import { useTheme } from '@/theme';
 import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 import { FilesError } from '../api';
+import { FileSheet } from '../components/FileSheet';
 import { formatSize, matchesSearch, sortFiles, type StoredFile } from '../model';
-import { fileHref } from '../routes';
 import { useFiles } from '../store';
 
 function describe(e: unknown): string {
@@ -47,6 +47,8 @@ export function FilesListScreen() {
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const opened = openId ? (items[openId] ?? null) : null;
 
   useFocusEffect(
     useCallback(() => {
@@ -184,38 +186,41 @@ export function FilesListScreen() {
   );
 
   return (
-    <FlatList
-      style={{ flex: 1, backgroundColor: t.colors.canvas }}
-      contentContainerStyle={{
-        paddingTop: insets.top + t.spacing.xl,
-        paddingBottom: insets.bottom + t.spacing.xxl,
-        paddingHorizontal: t.sizes.sheetInset,
-        gap: t.spacing.sm,
-      }}
-      data={unlocked && status === 'ready' ? visible : []}
-      keyExtractor={(f) => f.id}
-      ListHeaderComponent={header}
-      ListEmptyComponent={empty}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => {
-            setRefreshing(true);
-            void load().finally(() => setRefreshing(false));
-          }}
-          tintColor={t.colors.primary}
-        />
-      }
-      renderItem={({ item }) => (
-        <FileRow
-          file={item}
-          state={states[item.id]}
-          onPress={() => router.push(fileHref(item.id))}
-        />
-      )}
-      testID="files-list"
-    />
+    <>
+      <FlatList
+        style={{ flex: 1, backgroundColor: t.colors.canvas }}
+        contentContainerStyle={{
+          paddingTop: insets.top + t.spacing.xl,
+          paddingBottom: insets.bottom + t.spacing.xxl,
+          paddingHorizontal: t.sizes.sheetInset,
+          gap: t.spacing.sm,
+        }}
+        data={unlocked && status === 'ready' ? visible : []}
+        keyExtractor={(f) => f.id}
+        ListHeaderComponent={header}
+        ListEmptyComponent={empty}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              void load().finally(() => setRefreshing(false));
+            }}
+            tintColor={t.colors.primary}
+          />
+        }
+        renderItem={({ item }) => (
+          <FileRow file={item} state={states[item.id]} onPress={() => setOpenId(item.id)} />
+        )}
+        testID="files-list"
+      />
+      <FileSheet
+        file={opened}
+        state={openId ? states[openId] : undefined}
+        onClose={() => setOpenId(null)}
+      />
+    </>
   );
 }
 

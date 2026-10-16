@@ -1,9 +1,16 @@
 import { create } from 'zustand';
 
 import { useLock } from '@/features/lock/lock.store';
-import { clearScratch } from '@/services/file-adapter';
+import { clearScratch, fileExists } from '@/services/file-adapter';
 
-import { deleteFile, listFiles, uploadFile, type PickedFile, type UploadProgress } from './api';
+import {
+  deleteFile,
+  downloadFile,
+  listFiles,
+  uploadFile,
+  type PickedFile,
+  type UploadProgress,
+} from './api';
 import type { BlobState, StoredFile } from './model';
 
 /**
@@ -19,9 +26,13 @@ interface FilesState {
   offline: boolean;
   error: string | null;
   upload: { name: string; progress: UploadProgress } | null;
+  /** Decrypted copies opened since the last lock, by item id (the files live in the scratch folder). */
+  opened: Record<string, string>;
   load: () => Promise<void>;
   add: (picked: PickedFile) => Promise<BlobState>;
   remove: (item: StoredFile) => Promise<void>;
+  /** The decrypted copy of a file: the one opened earlier this session, or a fresh download. */
+  openCopy: (item: StoredFile) => Promise<string>;
   /** Deletes each file in turn; the ones that failed stay in the list and come back as ids. */
   removeMany: (items: StoredFile[]) => Promise<{ deleted: number; failed: string[] }>;
   clear: () => void;
@@ -35,6 +46,7 @@ const EMPTY = {
   offline: false,
   error: null,
   upload: null,
+  opened: {},
 };
 
 export const useFiles = create<FilesState>((set, get) => ({
@@ -77,8 +89,25 @@ export const useFiles = create<FilesState>((set, get) => ({
     set((s) => {
       const items = { ...s.items };
       delete items[item.id];
-      return { items };
+      const opened = { ...s.opened };
+      delete opened[item.id];
+      return { items, opened };
     });
+  },
+  openCopy: async (item) => {
+    const known = get().opened[item.id];
+    if (known && fileExists(known)) return known;
+    const generation = useLock.getState().generation;
+    const uri = await downloadFile(item);
+    if (useLock.getState().generation !== generation) throw new Error('locked');
+    set((s) => ({
+      // two files with the same name share a path; the older entry no longer holds its file
+      opened: {
+        ...Object.fromEntries(Object.entries(s.opened).filter(([, u]) => u !== uri)),
+        [item.id]: uri,
+      },
+    }));
+    return uri;
   },
   removeMany: async (list) => {
     const failed: string[] = [];

@@ -79,3 +79,48 @@ export function lastByteFromRange(header: string | null): number {
   const m = /bytes=0-(\d+)/.exec(header ?? '');
   return m ? Number(m[1]) : -1;
 }
+
+/** What the file sheet can draw itself; anything else opens in another app on the phone. */
+export type PreviewKind = 'image' | 'text' | 'other';
+
+/** Images Android and iOS both decode without help (no HEIC: older Androids cannot). */
+const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'];
+/** Larger files are not decrypted just to look at; they open on request. */
+export const IMAGE_PREVIEW_MAX = 25 * 1024 * 1024;
+export const TEXT_PREVIEW_MAX = 256 * 1024;
+
+export function previewKind(p: Pick<FilePayload, 'mime' | 'size'>): PreviewKind {
+  const mime = p.mime.toLowerCase();
+  if (IMAGE_MIMES.includes(mime) && p.size <= IMAGE_PREVIEW_MAX) return 'image';
+  const text = mime.startsWith('text/') || mime === 'application/json';
+  if (text && p.size <= TEXT_PREVIEW_MAX) return 'text';
+  return 'other';
+}
+
+const MIME_NAMES: Record<string, string> = {
+  'application/pdf': 'PDF document',
+  'application/json': 'JSON text',
+  'application/zip': 'ZIP archive',
+  'application/msword': 'Word document',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word document',
+  'application/vnd.ms-excel': 'Excel sheet',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel sheet',
+  'application/vnd.ms-powerpoint': 'PowerPoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
+  'text/plain': 'Text',
+  'text/csv': 'CSV sheet',
+};
+
+/** "PNG image", "PDF document": the type as a person says it. */
+export function typeLabel(mime: string): string {
+  const m = mime.toLowerCase();
+  const known = MIME_NAMES[m];
+  if (known) return known;
+  const [group, sub = ''] = m.split('/');
+  if (sub === 'octet-stream') return 'File';
+  const short = sub.replace(/^x-/, '').split(/[.+;-]/)[0]?.toUpperCase() ?? '';
+  if (group === 'image') return `${short} image`.trim();
+  if (group === 'video') return `${short} video`.trim();
+  if (group === 'audio') return `${short} audio`.trim();
+  return short ? `${short} file` : 'File';
+}

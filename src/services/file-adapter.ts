@@ -79,3 +79,11 @@ export function clearScratch(): void {
     }
   }
 }
+
+export function fileExists(uri: string): boolean {
+  try {
+    return new File(uri).exists;
+  } catch {
+    return false;
+  }
+}
