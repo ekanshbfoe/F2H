@@ -6,7 +6,6 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,7 +37,7 @@ const DISMISS_VELOCITY = 900;
 
 /**
  * Bottom sheet from the approval reference: white, inset 20 from the edges,
- * 28 radius, grab handle, sky blue header icons. Springs up, drags down to close.
+ * 28 radius, grab handle, sky blue header icons. Glides up, drags down to close.
  */
 export function Sheet({
   open,
@@ -68,7 +67,7 @@ export function Sheet({
   useEffect(() => {
     if (open) {
       scrim.set(withTiming(1, t.motion.timingFast));
-      y.set(reduceMotion ? withTiming(0, t.motion.timingFast) : withSpring(0, t.motion.springSoft));
+      y.set(withTiming(0, reduceMotion ? t.motion.timingFast : t.motion.timingSheet));
     } else if (mounted) {
       scrim.set(withTiming(0, t.motion.timingFast));
       y.set(
@@ -77,11 +76,11 @@ export function Sheet({
         }),
       );
     }
-  }, [open, mounted, reduceMotion, scrim, screenH, t.motion.springSoft, t.motion.timingFast, y]);
+  }, [open, mounted, reduceMotion, scrim, screenH, t.motion.timingSheet, t.motion.timingFast, y]);
 
   // plain values only: a gesture callback copies what it closes over to the UI thread, and the
   // theme holds values that cannot be copied
-  const settle = t.motion.springSoft;
+  const settle = t.motion.timingSheet;
   const pan = Gesture.Pan()
     .activeOffsetY(8)
     .onUpdate((e) => {
@@ -91,7 +90,7 @@ export function Sheet({
       if (e.translationY > DISMISS_DISTANCE || e.velocityY > DISMISS_VELOCITY) {
         scheduleOnRN(onClose);
       } else {
-        y.set(withSpring(0, settle));
+        y.set(withTiming(0, settle));
       }
     });
 
@@ -145,7 +144,17 @@ export function Sheet({
           padding: t.spacing.xl,
           gap: t.spacing.lg,
         },
-        tall ? { height: Math.round(screenH * t.sizes.sheetTall) } : null,
+        // a tall sheet runs edge to edge and sits on the bottom of the screen
+        tall
+          ? {
+              height: Math.round(screenH * t.sizes.sheetTall),
+              marginHorizontal: 0,
+              marginBottom: 0,
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+              paddingBottom: insets.bottom + t.spacing.lg,
+            }
+          : null,
       ]}
     >
       {tall ? <GestureDetector gesture={pan}>{top}</GestureDetector> : top}

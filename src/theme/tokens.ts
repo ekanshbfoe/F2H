@@ -206,6 +206,8 @@ export const motion = {
   springSnappy: { damping: 14, stiffness: 180 },
   /** Soft settle for sheets and large panels. */
   springSoft: { damping: 18, stiffness: 120 },
+  /** A sheet sliding up, or back after a drag: one smooth glide, no bounce. */
+  timingSheet: { duration: 320, easing: easeOut },
   /** Button morph and most layout moves. */
   timingFast: { duration: 250, easing: Easing.out(Easing.cubic) },
   /** Radial reveal. */
