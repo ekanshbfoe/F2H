@@ -96,6 +96,10 @@ export const sizes = {
   compactHeight: 680,
   /** At or above this window width a row has room for four word chips instead of two. */
   wideScreen: 360,
+  /** The phone width the type scale is drawn for; narrower phones get proportionally smaller text. */
+  designWidth: 390,
+  /** The smallest a narrow phone shrinks the type scale to. */
+  minTypeScale: 0.86,
   /** The largest text scale the fixed PIN screen slots are sized for. */
   maxFontScale: 1.3,
 } as const;
@@ -155,14 +159,14 @@ export const typography: Record<
   'display' | 'title' | 'heading' | 'label' | 'body' | 'caption' | 'button' | 'pin',
   Type
 > = {
-  display: { fontFamily: fontFamilies.semibold, fontSize: 32, lineHeight: 40 },
-  title: { fontFamily: fontFamilies.semibold, fontSize: 24, lineHeight: 32 },
-  heading: { fontFamily: fontFamilies.semibold, fontSize: 20, lineHeight: 28 },
-  label: { fontFamily: fontFamilies.medium, fontSize: 15, lineHeight: 22 },
-  body: { fontFamily: fontFamilies.regular, fontSize: 16, lineHeight: 24 },
-  caption: { fontFamily: fontFamilies.regular, fontSize: 13, lineHeight: 18 },
-  button: { fontFamily: fontFamilies.semibold, fontSize: 15, lineHeight: 20, letterSpacing: 0.4 },
-  pin: { fontFamily: fontFamilies.semibold, fontSize: 24, lineHeight: 32 },
+  display: { fontFamily: fontFamilies.semibold, fontSize: 28, lineHeight: 36 },
+  title: { fontFamily: fontFamilies.medium, fontSize: 22, lineHeight: 30 },
+  heading: { fontFamily: fontFamilies.medium, fontSize: 18, lineHeight: 26 },
+  label: { fontFamily: fontFamilies.medium, fontSize: 14, lineHeight: 20 },
+  body: { fontFamily: fontFamilies.regular, fontSize: 15, lineHeight: 22 },
+  caption: { fontFamily: fontFamilies.regular, fontSize: 12, lineHeight: 17 },
+  button: { fontFamily: fontFamilies.semibold, fontSize: 15, lineHeight: 20, letterSpacing: 0.3 },
+  pin: { fontFamily: fontFamilies.medium, fontSize: 24, lineHeight: 32 },
 };
 
 /** Strong ease out for anything entering or answering a touch. */

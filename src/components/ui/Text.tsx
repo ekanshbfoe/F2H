@@ -11,11 +11,20 @@ export interface TextProps extends RNTextProps {
 }
 
 /** Typed text: every style comes from the typography and color tokens. */
-export function Text({ variant = 'body', color = 'ink', align, style, ...rest }: TextProps) {
+export function Text({
+  variant = 'body',
+  color = 'ink',
+  align,
+  style,
+  maxFontSizeMultiplier,
+  ...rest
+}: TextProps) {
   const t = useTheme();
   return (
     <RNText
       {...rest}
+      // a very large system font setting still grows text, but only as far as layouts can hold
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? t.sizes.maxFontScale}
       style={[
         t.typography[variant],
         { color: t.colors[color] },
