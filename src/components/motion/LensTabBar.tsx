@@ -7,11 +7,13 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
+  useDerivedValue,
   useReducedMotion,
   useSharedValue,
   withSequence,
   withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -34,6 +36,16 @@ export interface LensTabBarProps {
   tabs: readonly LensTab[];
   value: string;
   onChange: (key: string) => void;
+  /**
+   * Where the pages are, as a fractional tab index, when the bar sits over swipeable pages. The
+   * lens then rides the pages frame by frame instead of springing on its own.
+   */
+  position?: SharedValue<number>;
+  /**
+   * A worklet that moves the pages to a fractional tab index (animated or not). Sliding the lens
+   * drives the pages live through it; a tap starts the page move on the UI thread at once.
+   */
+  scrub?: (index: number, animated: boolean) => void;
   /** The round button beside the bar. */
   action?: {
     icon: IconName;
@@ -137,13 +149,21 @@ const TabIcon = memo(function TabIcon({ tab, active, width, onSelect, testID }: 
 });
 
 /**
- * A floating bar of tabs with a soft lens behind the selected one. Tap a tab and the lens
- * glides over on a spring, stretching with its speed and settling round again; hold and slide
- * along the bar and the lens follows the finger, snapping to the nearest tab on release. All of
- * it runs on the UI thread. The pages themselves switch at once: tabs are peers, so only the
- * lens moves.
+ * A floating bar of tabs with a soft lens behind the selected one, stretching with its speed and
+ * settling round again. Over swipeable pages (`position` and `scrub`) the lens rides the pages
+ * frame by frame: swipe the pages and it follows, tap a tab and the pages glide there, hold and
+ * slide the lens and the pages move under the finger. Without pages it springs on its own. All of
+ * it runs on the UI thread.
  */
-export function LensTabBar({ tabs, value, onChange, action, testID }: LensTabBarProps) {
+export function LensTabBar({
+  tabs,
+  value,
+  onChange,
+  position,
+  scrub,
+  action,
+  testID,
+}: LensTabBarProps) {
   const t = useTheme();
   const reduceMotion = useReducedMotion();
   const [barWidth, setBarWidth] = useState(0);
@@ -160,6 +180,7 @@ export function LensTabBar({ tabs, value, onChange, action, testID }: LensTabBar
   const unitSv = useSharedValue(0);
   // where the lens was when a slide began (shared: each gesture callback is its own worklet)
   const startX = useSharedValue(0);
+  const dragging = useSharedValue(0);
   const glide = useMemo(
     () => (reduceMotion ? { duration: 1 } : { duration: 380, dampingRatio: 0.72 }),
     [reduceMotion],
@@ -187,17 +208,24 @@ export function LensTabBar({ tabs, value, onChange, action, testID }: LensTabBar
   useEffect(() => {
     if (unit <= 0) return;
     unitSv.set(unit);
+    // over pages, the lens is placed by the pages' position instead
+    if (position) return;
     if (!placed.current) {
       placed.current = true;
       x.set(index * unit);
       return;
     }
     x.set(withSpring(index * unit, glide));
-  }, [index, unit, glide, x, unitSv]);
+  }, [index, unit, glide, x, unitSv, position]);
+
+  // the lens sits under the finger while it slides, otherwise where the pages are
+  const lensX = useDerivedValue(() =>
+    position && dragging.get() === 0 ? position.get() * unitSv.get() : x.get(),
+  );
 
   // stretch comes from how far the lens moved in the last frame: fast moves pull it long
   useAnimatedReaction(
-    () => x.get(),
+    () => lensX.get(),
     (now, before) => {
       speed.set(before === null ? 0 : now - before);
     },
@@ -208,7 +236,7 @@ export function LensTabBar({ tabs, value, onChange, action, testID }: LensTabBar
     const l = lift.get();
     return {
       transform: [
-        { translateX: x.get() },
+        { translateX: lensX.get() },
         { scaleX: 1 + s + 0.06 * l },
         { scaleY: 1 - s * 0.35 + 0.06 * l },
       ],
@@ -220,31 +248,39 @@ export function LensTabBar({ tabs, value, onChange, action, testID }: LensTabBar
       const u = unitSv.get();
       if (!success || u <= 0) return;
       const i = Math.min(count - 1, Math.max(0, Math.floor((e.x - PAD) / u)));
+      if (scrub) scrub(i, !reduceMotion);
       scheduleOnRN(selectIndex, i);
     });
     const pan = Gesture.Pan()
       .activeOffsetX([-8, 8])
       .failOffsetY([-16, 16])
       .onStart(() => {
-        startX.set(x.get());
+        startX.set(lensX.get());
+        x.set(lensX.get());
+        dragging.set(1);
         lift.set(withTiming(1, { duration: 120 }));
       })
       .onUpdate((e) => {
         const u = unitSv.get();
-        x.set(Math.min((count - 1) * u, Math.max(0, startX.get() + e.translationX)));
+        const nx = Math.min((count - 1) * u, Math.max(0, startX.get() + e.translationX));
+        x.set(nx);
+        // the pages follow the lens live
+        if (scrub && u > 0) scrub(nx / u, false);
       })
       .onEnd(() => {
         const u = unitSv.get();
         if (u <= 0) return;
         const i = Math.min(count - 1, Math.max(0, Math.round(x.get() / u)));
-        x.set(withSpring(i * u, glide));
+        if (scrub) scrub(i, true);
+        else x.set(withSpring(i * u, glide));
         scheduleOnRN(selectIndex, i);
       })
       .onFinalize(() => {
+        dragging.set(0);
         lift.set(withTiming(0, { duration: 160 }));
       });
     return Gesture.Exclusive(pan, tap);
-  }, [count, glide, lift, selectIndex, startX, unitSv, x]);
+  }, [count, dragging, glide, lensX, lift, reduceMotion, scrub, selectIndex, startX, unitSv, x]);
 
   const lensH = BAR - 2 * PAD;
   const edge = t.sizes.buttonEdge;
