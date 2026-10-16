@@ -118,7 +118,7 @@ export function typeLabel(mime: string): string {
   if (known) return known;
   const [group, sub = ''] = m.split('/');
   if (sub === 'octet-stream') return 'File';
-  const short = sub.replace(/^x-/, '').split(/[.+;-]/)[0]?.toUpperCase() ?? '';
+  const short = (sub.replace(/^x-/, '').split(/[.+;-]/)[0] ?? '').toUpperCase();
   if (group === 'image') return `${short} image`.trim();
   if (group === 'video') return `${short} video`.trim();
   if (group === 'audio') return `${short} audio`.trim();
