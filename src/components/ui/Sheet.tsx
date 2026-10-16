@@ -25,6 +25,11 @@ export interface SheetProps {
   children: React.ReactNode;
   /** Pinned under the content (usually a Button). */
   footer?: React.ReactNode;
+  /**
+   * Covers `sizes.sheetTall` of the window with the content filling it, and drags only by its
+   * handle and title, so the content can take its own gestures (pinch, scroll).
+   */
+  tall?: boolean;
   testID?: string;
 }
 
@@ -35,7 +40,16 @@ const DISMISS_VELOCITY = 900;
  * Bottom sheet from the approval reference: white, inset 20 from the edges,
  * 28 radius, grab handle, sky blue header icons. Springs up, drags down to close.
  */
-export function Sheet({ open, onClose, title, onBack, children, footer, testID }: SheetProps) {
+export function Sheet({
+  open,
+  onClose,
+  title,
+  onBack,
+  children,
+  footer,
+  tall = false,
+  testID,
+}: SheetProps) {
   const t = useTheme();
   const { height: screenH } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -86,6 +100,60 @@ export function Sheet({ open, onClose, title, onBack, children, footer, testID }
 
   if (!mounted) return null;
 
+  const top = (
+    <View style={{ gap: t.spacing.lg }}>
+      <View
+        accessibilityElementsHidden
+        style={{
+          alignSelf: 'center',
+          width: t.sizes.sheetHandleWidth,
+          height: t.sizes.sheetHandleHeight,
+          borderRadius: t.radii.pill,
+          backgroundColor: t.colors.lineStrong,
+        }}
+      />
+      <View style={styles.header}>
+        <HeaderIcon name="chevron-back" label="Back" onPress={onBack} />
+        <Text
+          variant="heading"
+          color="sky"
+          align="center"
+          numberOfLines={tall ? 1 : undefined}
+          style={styles.title}
+          accessibilityRole="header"
+        >
+          {title}
+        </Text>
+        <HeaderIcon name="close" label="Close" onPress={onClose} />
+      </View>
+    </View>
+  );
+
+  const panel = (
+    <Animated.View
+      accessibilityViewIsModal
+      accessibilityLabel={title}
+      style={[
+        styles.panel,
+        panelStyle,
+        t.shadows.floating,
+        {
+          backgroundColor: t.colors.surface,
+          borderRadius: t.radii.xxl,
+          marginHorizontal: t.sizes.sheetInset,
+          marginBottom: Math.max(insets.bottom, t.sizes.sheetInset),
+          padding: t.spacing.xl,
+          gap: t.spacing.lg,
+        },
+        tall ? { height: Math.round(screenH * t.sizes.sheetTall) } : null,
+      ]}
+    >
+      {tall ? <GestureDetector gesture={pan}>{top}</GestureDetector> : top}
+      <View style={[{ gap: t.spacing.md }, tall ? styles.fill : null]}>{children}</View>
+      {footer ? <View style={{ marginTop: t.spacing.sm }}>{footer}</View> : null}
+    </Animated.View>
+  );
+
   return (
     <Modal transparent visible statusBarTranslucent onRequestClose={onClose} animationType="none">
       <View style={styles.root} testID={testID}>
@@ -99,51 +167,7 @@ export function Sheet({ open, onClose, title, onBack, children, footer, testID }
             accessibilityLabel="Close sheet"
           />
         </Animated.View>
-        <GestureDetector gesture={pan}>
-          <Animated.View
-            accessibilityViewIsModal
-            accessibilityLabel={title}
-            style={[
-              styles.panel,
-              panelStyle,
-              t.shadows.floating,
-              {
-                backgroundColor: t.colors.surface,
-                borderRadius: t.radii.xxl,
-                marginHorizontal: t.sizes.sheetInset,
-                marginBottom: Math.max(insets.bottom, t.sizes.sheetInset),
-                padding: t.spacing.xl,
-                gap: t.spacing.lg,
-              },
-            ]}
-          >
-            <View
-              accessibilityElementsHidden
-              style={{
-                alignSelf: 'center',
-                width: t.sizes.sheetHandleWidth,
-                height: t.sizes.sheetHandleHeight,
-                borderRadius: t.radii.pill,
-                backgroundColor: t.colors.lineStrong,
-              }}
-            />
-            <View style={styles.header}>
-              <HeaderIcon name="chevron-back" label="Back" onPress={onBack} />
-              <Text
-                variant="heading"
-                color="sky"
-                align="center"
-                style={styles.title}
-                accessibilityRole="header"
-              >
-                {title}
-              </Text>
-              <HeaderIcon name="close" label="Close" onPress={onClose} />
-            </View>
-            <View style={{ gap: t.spacing.md }}>{children}</View>
-            {footer ? <View style={{ marginTop: t.spacing.sm }}>{footer}</View> : null}
-          </Animated.View>
-        </GestureDetector>
+        {tall ? panel : <GestureDetector gesture={pan}>{panel}</GestureDetector>}
       </View>
     </Modal>
   );
@@ -184,4 +208,5 @@ const styles = StyleSheet.create({
   panel: { overflow: 'hidden' },
   header: { flexDirection: 'row', alignItems: 'center' },
   title: { flex: 1 },
+  fill: { flex: 1 },
 });

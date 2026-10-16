@@ -88,6 +88,8 @@ export const sizes = {
   sheetInset: 20,
   sheetHandleWidth: 36,
   sheetHandleHeight: 4,
+  /** A tall sheet (a file viewer) covers this share of the window height. */
+  sheetTall: 0.8,
   toggleHeight: 42,
   hairline: 1,
   /** Thickness of a progress track. */
