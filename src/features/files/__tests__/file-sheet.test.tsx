@@ -192,3 +192,49 @@ describe('swipe to delete', () => {
     alert.mockRestore();
   });
 });
+
+describe('picking several files', () => {
+  it('long press starts picking, taps add more, one confirm deletes them all', async () => {
+    mockList.mockResolvedValue({
+      items: [
+        file('1', 'a.pdf', 'application/pdf'),
+        file('2', 'b.pdf', 'application/pdf'),
+        file('3', 'c.pdf', 'application/pdf'),
+      ],
+      states: {},
+      skipped: 0,
+    });
+    mockDelete.mockResolvedValue(undefined);
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
+    });
+    const user = userEvent.setup();
+    await renderWithProviders(<FilesListScreen />);
+    await user.longPress(await screen.findByTestId('file-row-1'));
+    expect(screen.getByText('1 selected')).toBeOnTheScreen();
+    await user.press(screen.getByTestId('file-row-3'));
+    expect(screen.getByText('2 selected')).toBeOnTheScreen();
+    expect(mockDownload).not.toHaveBeenCalled();
+    await user.press(screen.getByTestId('files-pick-delete'));
+    await act(async () => undefined);
+    expect(alert.mock.calls[0]?.[0]).toBe('Delete 2 files?');
+    expect(mockDelete.mock.calls.map((c) => c[0])).toEqual(['1', '3']);
+    expect(screen.getByText('Files')).toBeOnTheScreen();
+    expect(screen.getByTestId('file-row-2')).toBeOnTheScreen();
+    alert.mockRestore();
+  });
+
+  it('leaves picking when the last file is unticked', async () => {
+    mockList.mockResolvedValue({
+      items: [file('1', 'a.pdf', 'application/pdf')],
+      states: {},
+      skipped: 0,
+    });
+    const user = userEvent.setup();
+    await renderWithProviders(<FilesListScreen />);
+    await user.longPress(await screen.findByTestId('file-row-1'));
+    await user.press(screen.getByTestId('file-row-1'));
+    expect(screen.queryByText('1 selected')).toBeNull();
+    expect(screen.getByText('Files')).toBeOnTheScreen();
+  });
+});

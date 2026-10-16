@@ -1,8 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  View,
+} from 'react-native';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge, Button, Callout, Card, Text, TextField } from '@/components/ui';
@@ -44,12 +54,36 @@ export function FilesListScreen() {
   const router = useSteadyRouter();
   const insets = useSafeAreaInsets();
   const unlocked = useSession((s) => s.mk !== null);
-  const { status, items, states, skipped, offline, error, upload, load, add, remove } = useFiles();
+  const { status, items, states, skipped, offline, error, upload, load, add, remove, removeMany } =
+    useFiles();
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState<{ tone: 'danger' | 'success'; text: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const opened = openId ? (items[openId] ?? null) : null;
+  // long press starts picking files; the mode ends when the last one is unticked
+  const [picked, setPicked] = useState<string[]>([]);
+  const [deleting, setDeleting] = useState(false);
+  const picking = picked.length > 0;
+
+  // the system back leaves picking before it leaves the screen
+  useEffect(() => {
+    if (!picking) return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setPicked([]);
+      return true;
+    });
+    return () => sub.remove();
+  }, [picking]);
+
+  const togglePick = (id: string) =>
+    setPicked((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+
+  const startPick = (id: string) => {
+    if (picking || offline) return;
+    void Haptics.selectionAsync();
+    setPicked([id]);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -80,6 +114,36 @@ export function FilesListScreen() {
         },
       ],
       { cancelable: true, onDismiss: keep },
+    );
+  };
+
+  const deletePicked = () => {
+    const chosen = picked.map((id) => items[id]).filter((f): f is StoredFile => Boolean(f));
+    const n = chosen.length;
+    if (n === 0) return;
+    Alert.alert(
+      n === 1 ? 'Delete this file?' : `Delete ${n} files?`,
+      `${n === 1 ? 'It goes' : 'They go'} to the trash on both Drives.`,
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setDeleting(true);
+            void removeMany(chosen).then(({ failed }) => {
+              setDeleting(false);
+              setPicked(failed);
+              if (failed.length > 0) {
+                setMessage({
+                  tone: 'danger',
+                  text: `${failed.length} could not be deleted and ${failed.length === 1 ? 'is' : 'are'} still ticked. Check your connection and try again.`,
+                });
+              }
+            });
+          },
+        },
+      ],
     );
   };
 
@@ -114,20 +178,53 @@ export function FilesListScreen() {
 
   const header = (
     <View style={{ gap: t.spacing.lg, paddingBottom: t.spacing.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          onPress={() => router.back()}
-          hitSlop={12}
-        >
-          <Ionicons name="chevron-back" size={t.sizes.iconLg} color={t.colors.sky} />
-        </Pressable>
-        <Text variant="title" accessibilityRole="header" style={{ flex: 1 }}>
-          Files
-        </Text>
-        <Badge tone="primary">Two Drives</Badge>
-      </View>
+      {picking ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Stop picking"
+            onPress={() => setPicked([])}
+            hitSlop={12}
+            testID="files-pick-cancel"
+          >
+            <Ionicons name="close" size={t.sizes.iconLg} color={t.colors.sky} />
+          </Pressable>
+          <Text
+            variant="title"
+            accessibilityRole="header"
+            accessibilityLiveRegion="polite"
+            style={{ flex: 1 }}
+          >
+            {`${picked.length} selected`}
+          </Text>
+          <Button
+            variant="ghost"
+            size="sm"
+            fullWidth={false}
+            onPress={() =>
+              setPicked(picked.length === visible.length ? [] : visible.map((f) => f.id))
+            }
+            testID="files-pick-all"
+          >
+            {picked.length === visible.length ? 'None' : 'All'}
+          </Button>
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => router.back()}
+            hitSlop={12}
+          >
+            <Ionicons name="chevron-back" size={t.sizes.iconLg} color={t.colors.sky} />
+          </Pressable>
+          <Text variant="title" accessibilityRole="header" style={{ flex: 1 }}>
+            Files
+          </Text>
+          <Badge tone="primary">Two Drives</Badge>
+        </View>
+      )}
       <TextField
         label="Search"
         placeholder="File name"
@@ -213,7 +310,8 @@ export function FilesListScreen() {
         style={{ flex: 1, backgroundColor: t.colors.canvas }}
         contentContainerStyle={{
           paddingTop: insets.top + t.spacing.xl,
-          paddingBottom: insets.bottom + t.spacing.xxl,
+          paddingBottom:
+            insets.bottom + t.spacing.xxl + (picking ? t.sizes.buttonHeight + t.spacing.lg : 0),
           paddingHorizontal: t.sizes.sheetInset,
           gap: t.spacing.sm,
         }}
@@ -234,16 +332,48 @@ export function FilesListScreen() {
         }
         renderItem={({ item }) => (
           <SwipeToDelete
-            enabled={!offline}
+            enabled={!offline && !picking}
             label={`Delete ${item.payload.name}`}
             onDelete={(keep) => confirmDelete(item, keep)}
             testID={`file-delete-${item.id}`}
           >
-            <FileRow file={item} state={states[item.id]} onPress={() => setOpenId(item.id)} />
+            <FileRow
+              file={item}
+              state={states[item.id]}
+              picking={picking}
+              picked={picked.includes(item.id)}
+              onPress={() => (picking ? togglePick(item.id) : setOpenId(item.id))}
+              onLongPress={() => startPick(item.id)}
+            />
           </SwipeToDelete>
         )}
         testID="files-list"
       />
+      {picking ? (
+        <Animated.View
+          entering={FadeInDown.duration(t.motion.glideMs)}
+          exiting={FadeOutDown.duration(t.motion.transitionMs)}
+          style={{
+            position: 'absolute',
+            left: t.sizes.sheetInset,
+            right: t.sizes.sheetInset,
+            bottom: Math.max(insets.bottom, t.sizes.sheetInset),
+          }}
+        >
+          <Button
+            variant="danger"
+            loading={deleting}
+            disabled={deleting}
+            onPress={deletePicked}
+            testID="files-pick-delete"
+            leading={
+              <Ionicons name="trash-outline" size={t.sizes.icon} color={t.colors.onPrimary} />
+            }
+          >
+            {`Delete ${picked.length}`}
+          </Button>
+        </Animated.View>
+      ) : null}
       <FileSheet
         file={opened}
         state={openId ? states[openId] : undefined}
@@ -256,11 +386,17 @@ export function FilesListScreen() {
 function FileRow({
   file,
   state,
+  picking,
+  picked,
   onPress,
+  onLongPress,
 }: {
   file: StoredFile;
   state?: string;
+  picking: boolean;
+  picked: boolean;
   onPress: () => void;
+  onLongPress: () => void;
 }) {
   const t = useTheme();
   const p = file.payload;
@@ -268,7 +404,11 @@ function FileRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${p.name}, ${formatSize(p.size)}${state === 'degraded' ? ', one copy' : ''}`}
+      accessibilityState={picking ? { selected: picked } : undefined}
+      accessibilityHint={picking ? undefined : 'Long press to pick several'}
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={350}
       testID={`file-row-${file.id}`}
       style={({ pressed }) => ({
         flexDirection: 'row',
@@ -276,9 +416,9 @@ function FileRow({
         gap: t.spacing.md,
         padding: t.spacing.md,
         borderRadius: t.radii.lg,
-        backgroundColor: pressed ? t.colors.primaryTint : t.colors.surface,
+        backgroundColor: pressed || picked ? t.colors.primaryTint : t.colors.surface,
         borderWidth: t.sizes.hairline,
-        borderColor: t.colors.line,
+        borderColor: picked ? t.colors.primary : t.colors.line,
       })}
     >
       <Ionicons
@@ -302,6 +442,13 @@ function FileRow({
       </View>
       {state === 'degraded' ? <Badge tone="warning">One copy</Badge> : null}
       {state === 'missing' ? <Badge tone="danger">Missing</Badge> : null}
+      {picking ? (
+        <Ionicons
+          name={picked ? 'checkmark-circle' : 'ellipse-outline'}
+          size={t.sizes.iconLg}
+          color={picked ? t.colors.primary : t.colors.lineStrong}
+        />
+      ) : null}
     </Pressable>
   );
 }
