@@ -1,0 +1,204 @@
+<!doctype html>
+<!--
+  The PDF reader inside the file sheet. scripts/build-pdf-viewer.mjs inlines pdf.js (3.11.174,
+  legacy build, Apache 2.0) into this page and writes assets/pdfjs/viewer.html. It runs offline:
+  the app posts the decrypted PDF in as base64 and nothing is fetched from the network.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=4, user-scalable=yes"
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src blob: data:; font-src blob: data:"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f5f8ff;
+      }
+      body {
+        -webkit-tap-highlight-color: transparent;
+      }
+      #pages {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 12px 96px;
+      }
+      .page {
+        position: relative;
+        width: 100%;
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 14px rgba(20, 40, 120, 0.1);
+      }
+      .page canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      #count {
+        position: fixed;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(20, 24, 31, 0.72);
+        color: #ffffff;
+        font: 500 13px/20px sans-serif;
+        opacity: 0;
+        transition: opacity 200ms ease-out;
+        pointer-events: none;
+      }
+      #count.on {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="pages"></div>
+    <div id="count"></div>
+    <script>
+      /*PDFJS*/
+    </script>
+    <script id="pdf-worker" type="text/plain">
+      /*PDFJS_WORKER*/
+    </script>
+    <script>
+      (function () {
+        var post = function (msg) {
+          if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+        };
+        var lib = window.pdfjsLib;
+        if (!lib) {
+          post({ type: 'error', message: 'reader missing' });
+          return;
+        }
+        var workerText = document.getElementById('pdf-worker').textContent;
+        lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
+          new Blob([workerText], { type: 'text/javascript' }),
+        );
+
+        // never more than this many pages drawn at once: an old phone has little memory
+        var KEEP = 3;
+        var pagesEl = document.getElementById('pages');
+        var countEl = document.getElementById('count');
+        var drawn = [];
+        var hideCount = null;
+
+        function bytes(b64) {
+          var bin = atob(b64);
+          var out = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+          return out;
+        }
+
+        function draw(doc, n, box) {
+          if (box.dataset.state) return;
+          box.dataset.state = 'drawing';
+          doc
+            .getPage(n)
+            .then(function (page) {
+              var base = page.getViewport({ scale: 1 });
+              var ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+              var vp = page.getViewport({ scale: (box.clientWidth / base.width) * ratio });
+              var canvas = document.createElement('canvas');
+              canvas.width = Math.floor(vp.width);
+              canvas.height = Math.floor(vp.height);
+              box.appendChild(canvas);
+              return page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+            })
+            .then(function () {
+              box.dataset.state = 'drawn';
+              drawn.push(box);
+              while (drawn.length > KEEP) {
+                var old = drawn.shift();
+                var rect = old.getBoundingClientRect();
+                if (rect.bottom > -window.innerHeight && rect.top < window.innerHeight * 2) {
+                  drawn.push(old);
+                  break;
+                }
+                old.innerHTML = '';
+                delete old.dataset.state;
+              }
+            })
+            .catch(function () {
+              delete box.dataset.state;
+            });
+        }
+
+        function open(b64) {
+          lib
+            .getDocument({ data: bytes(b64), isEvalSupported: false, enableXfa: false })
+            .promise.then(function (doc) {
+              post({ type: 'loaded', pages: doc.numPages });
+              return doc.getPage(1).then(function (first) {
+                var vp = first.getViewport({ scale: 1 });
+                var watch = new IntersectionObserver(
+                  function (entries) {
+                    entries.forEach(function (e) {
+                      if (e.isIntersecting) draw(doc, Number(e.target.dataset.n), e.target);
+                    });
+                  },
+                  { rootMargin: '100% 0px' },
+                );
+                for (var n = 1; n <= doc.numPages; n++) {
+                  var box = document.createElement('div');
+                  box.className = 'page';
+                  box.dataset.n = String(n);
+                  box.style.aspectRatio = vp.width + ' / ' + vp.height;
+                  pagesEl.appendChild(box);
+                  watch.observe(box);
+                }
+                window.addEventListener(
+                  'scroll',
+                  function () {
+                    var mid = window.scrollY + window.innerHeight / 2;
+                    var boxes = pagesEl.children;
+                    for (var i = 0; i < boxes.length; i++) {
+                      var b = boxes[i];
+                      if (b.offsetTop + b.offsetHeight >= mid) {
+                        countEl.textContent = i + 1 + ' / ' + doc.numPages;
+                        break;
+                      }
+                    }
+                    countEl.className = 'on';
+                    clearTimeout(hideCount);
+                    hideCount = setTimeout(function () {
+                      countEl.className = '';
+                    }, 900);
+                  },
+                  { passive: true },
+                );
+              });
+            })
+            .catch(function (e) {
+              post({ type: 'error', message: String((e && e.name) || e) });
+            });
+        }
+
+        function onMessage(event) {
+          var msg;
+          try {
+            msg = JSON.parse(event.data);
+          } catch (e) {
+            return;
+          }
+          if (msg && msg.type === 'open' && typeof msg.data === 'string') open(msg.data);
+        }
+        document.addEventListener('message', onMessage);
+        window.addEventListener('message', onMessage);
+        post({ type: 'ready' });
+      })();
+    </script>
+  </body>
+</html>
