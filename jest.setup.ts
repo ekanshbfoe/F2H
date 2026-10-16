@@ -20,3 +20,13 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
   AndroidHaptics: { Virtual_Key: 'virtual-key' },
 }));
+
+// Audio has no native module in Jest: players are inert stand ins.
+jest.mock('expo-audio', () => ({
+  setAudioModeAsync: jest.fn(async () => undefined),
+  createAudioPlayer: jest.fn(() => ({
+    play: jest.fn(),
+    seekTo: jest.fn(async () => undefined),
+    remove: jest.fn(),
+  })),
+}));

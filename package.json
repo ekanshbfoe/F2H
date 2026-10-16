@@ -33,6 +33,7 @@
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.30",
     "expo-asset": "~57.0.19",
+    "expo-audio": "~57.0.5",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.21",
     "expo-contacts": "~57.0.8",
