@@ -10,7 +10,10 @@ import {
   strengthLabel,
 } from '../generator';
 import {
+  canonicalCategory,
+  categoryChoices,
   categoryCounts,
+  categoryLabel,
   credentialFormSchema,
   credentialPayloadSchema,
   hostOf,
@@ -26,7 +29,7 @@ import {
 
 const make = (
   title: string,
-  category: 'bank' | 'email' | 'other',
+  category: string,
   extra: Partial<CredentialPayload> = {},
 ) =>
   credentialPayloadSchema.parse({
@@ -118,13 +121,38 @@ describe('sections and search (AC-1)', () => {
     make('Wifi', 'other', { fields: [{ label: 'Key', value: 'hunter2', secret: true }] }),
   ].map(stored);
 
-  it('groups Bank, Email, Other and sorts by title', () => {
+  it('groups by category and sorts by title', () => {
     expect(toSections(list).map((s) => [s.title, s.data.map((d) => d.payload.title)])).toEqual([
       ['Bank', ['Axis', 'SBI']],
       ['Email', ['Gmail']],
       ['Other', ['Wifi']],
     ]);
     expect(categoryCounts(list)).toEqual({ bank: 2, email: 1, other: 1 });
+    expect(toSections(list, '', 'email').map((s) => s.title)).toEqual(['Email']);
+  });
+
+  it('keeps the family\'s own categories, after the presets and before Other', () => {
+    const mine = [...list, stored(make('Xbox', 'Game pass'), 9)];
+    expect(toSections(mine).map((s) => s.title)).toEqual(['Bank', 'Email', 'Game pass', 'Other']);
+    expect(categoryChoices(mine).slice(-2)).toEqual(['Game pass', 'other']);
+    expect(categoryLabel('Game pass')).toBe('Game pass');
+    expect(categoryLabel('wifi')).toBe('Wi-Fi');
+  });
+
+  it('turns a typed preset name into the preset and tidies the rest', () => {
+    expect(canonicalCategory('  BANK ')).toBe('bank');
+    expect(canonicalCategory('Wi Fi')).toBe('wifi');
+    expect(canonicalCategory('  Game   pass ')).toBe('Game pass');
+    expect(
+      credentialPayloadSchema.safeParse({
+        v: 1,
+        type: 'credential',
+        category: 'x'.repeat(31),
+        title: 't',
+        password: 'p',
+        fields: [],
+      }).success,
+    ).toBe(false);
   });
 
   it('searches title, username and host but never secrets', () => {

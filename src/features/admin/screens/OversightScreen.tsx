@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Badge, Button, Callout, Card, Row, Screen, Text } from '@/components/ui';
 import { formatPhone, sortContacts } from '@/features/contacts/model';
 import { SecretRow, ValueRow } from '@/features/credentials/components';
-import { CATEGORY_LABEL, hostOf, toSections } from '@/features/credentials/model';
+import { hostOf, toSections } from '@/features/credentials/model';
 import { formatSize, sortFiles } from '@/features/files/model';
 import { useScreenCaptureBlock } from '@/features/lock/hooks';
 import { useLock } from '@/features/lock/lock.store';
@@ -166,7 +166,7 @@ export function OversightScreen() {
               sections.map((s) => (
                 <View key={s.category} style={{ gap: t.spacing.sm }}>
                   <Text variant="label" color="primary">
-                    {CATEGORY_LABEL[s.category]}
+                    {s.title}
                   </Text>
                   {s.data.map((c) => (
                     <Card key={c.id} style={{ gap: t.spacing.sm }}>

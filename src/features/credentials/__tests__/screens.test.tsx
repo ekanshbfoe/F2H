@@ -94,8 +94,12 @@ beforeEach(() => {
 describe('CredentialsListScreen', () => {
   it('groups into sections and searches by host, never by password (AC-1)', async () => {
     await renderWithProviders(<CredentialsListScreen />);
-    expect(await screen.findByText('Bank · 1')).toBeOnTheScreen();
-    expect(screen.getByText('Email · 1')).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Bank · 1' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Email · 1' })).toBeOnTheScreen();
+    // a chip per category filters the list down to it
+    await userEvent.setup().press(screen.getByTestId('credentials-filter-email'));
+    expect(screen.queryByRole('header', { name: 'Bank · 1' })).toBeNull();
+    await userEvent.setup().press(screen.getByTestId('credentials-filter-all'));
     await fireEvent.changeText(screen.getByTestId('credentials-search'), 'google');
     expect(screen.getByText('Gmail')).toBeOnTheScreen();
     expect(screen.queryByText('SBI')).toBeNull();
@@ -172,6 +176,24 @@ describe('CredentialFormScreen', () => {
     await renderWithProviders(<CredentialFormScreen />);
     await userEvent.setup().press(screen.getByTestId('credential-category-email'));
     expect(screen.queryByTestId('credential-field-label-0')).toBeNull();
+  });
+
+  it('saves under a category the family names itself', async () => {
+    mockCreate.mockImplementation(async (ps: CredentialPayload[]) =>
+      ps.map((p, i) => ({ id: `n${i}`, version: 1, payload: p })),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<CredentialFormScreen />);
+    expect(screen.getByTestId('credential-category-games')).toBeOnTheScreen();
+    await user.press(screen.getByTestId('credential-category-new'));
+    await fireEvent.changeText(screen.getByTestId('credential-category-name'), '  Game  pass ');
+    await user.press(screen.getByTestId('credential-category-add'));
+    expect(screen.getByRole('radio', { name: 'Game pass' })).toBeSelected();
+    await fireEvent.changeText(screen.getByTestId('credential-title'), 'Xbox');
+    await fireEvent.changeText(screen.getByTestId('credential-password-input'), 'secret');
+    await user.press(screen.getByTestId('credential-save'));
+    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1));
+    expect((mockCreate.mock.calls[0]?.[0] as CredentialPayload[])[0]?.category).toBe('Game pass');
   });
 
   it('fills the password from the generator and saves (AC-3)', async () => {

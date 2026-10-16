@@ -5,7 +5,23 @@ import { Pressable, View } from 'react-native';
 import { Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 
-import { MASK } from './model';
+import { MASK, type Category, type PresetKey } from './model';
+
+const CATEGORY_ICON: Record<PresetKey, keyof typeof Ionicons.glyphMap> = {
+  bank: 'business-outline',
+  email: 'mail-outline',
+  social: 'chatbubbles-outline',
+  shopping: 'cart-outline',
+  games: 'game-controller-outline',
+  work: 'briefcase-outline',
+  wifi: 'wifi-outline',
+  other: 'key-outline',
+};
+
+/** A preset's own icon; a category the family named gets a tag. */
+export function categoryIcon(category: Category): keyof typeof Ionicons.glyphMap {
+  return CATEGORY_ICON[category as PresetKey] ?? 'pricetag-outline';
+}
 
 /**
  * Credential value rows (spec 0004, AC-4), shared by the credential detail and the read only

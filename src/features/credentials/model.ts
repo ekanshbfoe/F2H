@@ -4,13 +4,63 @@ import type { StoredItem } from '@/features/vault/items';
 
 /** Credential vault model (spec 0004). Pure functions only. */
 
-export const CATEGORIES = ['bank', 'email', 'other'] as const;
-export type Category = (typeof CATEGORIES)[number];
-export const CATEGORY_LABEL: Record<Category, string> = {
-  bank: 'Bank',
-  email: 'Email',
-  other: 'Other',
-};
+/**
+ * Ready made categories, in the order they are offered. A family member can also name their own
+ * ("Game pass", "School"); that name is stored as typed, inside the encrypted item, so it travels
+ * to every phone with the item and needs no list of its own.
+ */
+export const PRESETS = [
+  { key: 'bank', label: 'Bank', hint: 'SBI net banking' },
+  { key: 'email', label: 'Email', hint: 'Gmail' },
+  { key: 'social', label: 'Social', hint: 'Instagram' },
+  { key: 'shopping', label: 'Shopping', hint: 'Amazon' },
+  { key: 'games', label: 'Games', hint: 'Xbox Game Pass' },
+  { key: 'work', label: 'Work', hint: 'Office laptop' },
+  { key: 'wifi', label: 'Wi-Fi', hint: 'Home wifi' },
+  { key: 'other', label: 'Other', hint: 'Locker code' },
+] as const;
+export type PresetKey = (typeof PRESETS)[number]['key'];
+/** A preset key, or a category name a family member typed. */
+export type Category = string;
+export const CATEGORY_MAX = 30;
+
+const squash = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+/** A typed name that matches a preset ("wifi", "Wi Fi", "BANK") becomes that preset. */
+export function canonicalCategory(raw: string): Category {
+  const name = raw.trim().replace(/\s+/g, ' ');
+  const key = squash(name);
+  const preset = PRESETS.find((p) => squash(p.key) === key || squash(p.label) === key);
+  return preset ? preset.key : name;
+}
+
+export function presetOf(category: Category) {
+  return PRESETS.find((p) => p.key === category);
+}
+
+export function categoryLabel(category: Category): string {
+  return presetOf(category)?.label ?? category;
+}
+
+/** The example title for a category's title box. */
+export function categoryHint(category: Category): string {
+  return presetOf(category)?.hint ?? 'A name you will recognise';
+}
+
+/** Presets first in their order, then the family's own names A to Z, Other always last. */
+export function compareCategories(a: Category, b: Category): number {
+  const rank = (c: Category) => {
+    if (c === 'other') return PRESETS.length + 1;
+    const i = PRESETS.findIndex((p) => p.key === c);
+    return i >= 0 ? i : PRESETS.length;
+  };
+  return rank(a) - rank(b) || a.localeCompare(b, undefined, { sensitivity: 'base' });
+}
 
 export const TITLE_MAX = 80;
 export const USERNAME_MAX = 200;
@@ -55,7 +105,12 @@ export const credentialPayloadSchema = z
   .object({
     v: z.literal(1),
     type: z.literal('credential'),
-    category: z.enum(CATEGORIES),
+    category: z
+      .string()
+      .trim()
+      .min(1, 'Pick or name a category')
+      .max(CATEGORY_MAX, `Up to ${CATEGORY_MAX} characters`)
+      .transform(canonicalCategory),
     title: z
       .string()
       .trim()
@@ -132,7 +187,7 @@ export function toPayloadInput(f: CredentialForm): CredentialInput {
 
 export const credentialFormSchema = z
   .object({
-    category: z.enum(CATEGORIES),
+    category: z.string(),
     title: z.string(),
     username: z.string(),
     password: z.string(),
@@ -207,21 +262,39 @@ export interface Section {
   data: StoredCredential[];
 }
 
-/** Bank, Email, Other in that order, each sorted by title; empty sections are left out. */
-export function toSections(list: StoredCredential[], query = ''): Section[] {
-  return CATEGORIES.map((category) => ({
-    category,
-    title: CATEGORY_LABEL[category],
-    data: list
-      .filter((c) => c.payload.category === category && matchesSearch(c.payload, query))
-      .sort((a, b) =>
-        a.payload.title.localeCompare(b.payload.title, undefined, { sensitivity: 'base' }),
-      ),
-  })).filter((s) => s.data.length > 0);
+/** Every category in use, ordered (presets, then the family's own, then Other). */
+export function usedCategories(list: StoredCredential[]): Category[] {
+  return [...new Set(list.map((c) => c.payload.category))].sort(compareCategories);
+}
+
+/** The choices on the form: every preset, then the names already used in this vault. */
+export function categoryChoices(list: StoredCredential[]): Category[] {
+  return [...new Set<Category>([...PRESETS.map((p) => p.key), ...usedCategories(list)])].sort(
+    compareCategories,
+  );
+}
+
+/**
+ * One section per category in use, in category order, each sorted by title. `only` keeps one
+ * category; empty sections are left out.
+ */
+export function toSections(list: StoredCredential[], query = '', only?: Category): Section[] {
+  return usedCategories(list)
+    .filter((category) => !only || category === only)
+    .map((category) => ({
+      category,
+      title: categoryLabel(category),
+      data: list
+        .filter((c) => c.payload.category === category && matchesSearch(c.payload, query))
+        .sort((a, b) =>
+          a.payload.title.localeCompare(b.payload.title, undefined, { sensitivity: 'base' }),
+        ),
+    }))
+    .filter((s) => s.data.length > 0);
 }
 
 export function categoryCounts(list: StoredCredential[]): Record<Category, number> {
-  const out: Record<Category, number> = { bank: 0, email: 0, other: 0 };
-  for (const c of list) out[c.payload.category] += 1;
+  const out: Record<Category, number> = {};
+  for (const c of list) out[c.payload.category] = (out[c.payload.category] ?? 0) + 1;
   return out;
 }

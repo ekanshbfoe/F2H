@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Pressable, Switch, View } from 'react-native';
 
@@ -20,9 +20,13 @@ import {
   type GeneratorOptions,
   type SetName,
 } from '../generator';
+import { categoryIcon } from '../components';
 import {
-  CATEGORIES,
-  CATEGORY_LABEL,
+  canonicalCategory,
+  CATEGORY_MAX,
+  categoryChoices,
+  categoryHint,
+  categoryLabel,
   credentialFormSchema,
   credentialPayloadSchema,
   FIELD_MAX,
@@ -49,7 +53,10 @@ export function CredentialFormScreen() {
   useScreenCaptureBlock('f2h:credential-form');
   const { id } = useLocalSearchParams<{ id?: string }>();
   const existing = useCredentials((s) => (id ? s.items[id] : undefined));
+  const items = useCredentials((s) => s.items);
   const save = useCredentials((s) => s.save);
+  const [naming, setNaming] = useState(false);
+  const [newName, setNewName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
@@ -61,6 +68,20 @@ export function CredentialFormScreen() {
   });
   const fields = useFieldArray({ control: form.control, name: 'fields' });
   const category = useWatch({ control: form.control, name: 'category' });
+
+  // every preset and every name the family already used; a name typed just now joins them
+  const choices = useMemo(() => {
+    const list = categoryChoices(Object.values(items));
+    return list.includes(category) ? list : [...list, category];
+  }, [items, category]);
+
+  const addCategory = () => {
+    const name = canonicalCategory(newName);
+    if (!name) return;
+    pickCategory(name);
+    setNaming(false);
+    setNewName('');
+  };
 
   const pickCategory = (c: Category) => {
     const before = form.getValues();
@@ -125,49 +146,104 @@ export function CredentialFormScreen() {
     >
       <Card style={{ gap: t.spacing.md }}>
         <Text variant="label" color="primary">
-          Type
+          Category
         </Text>
-        <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', gap: t.spacing.sm }}>
-          {CATEGORIES.map((c) => {
+        <View
+          accessibilityRole="radiogroup"
+          accessibilityLabel="Category"
+          style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm }}
+        >
+          {choices.map((c) => {
             const selected = c === category;
             return (
               <Pressable
                 key={c}
                 accessibilityRole="radio"
                 accessibilityState={{ selected, checked: selected }}
+                accessibilityLabel={categoryLabel(c)}
                 onPress={() => pickCategory(c)}
                 testID={`credential-category-${c}`}
                 style={{
-                  flex: 1,
-                  minHeight: t.sizes.touch,
-                  borderRadius: t.radii.pill,
+                  flexDirection: 'row',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  gap: t.spacing.xs,
+                  minHeight: t.sizes.touch,
+                  paddingHorizontal: t.spacing.md,
+                  borderRadius: t.radii.pill,
                   backgroundColor: selected ? t.colors.primary : t.colors.canvas,
                   borderWidth: t.sizes.hairline,
                   borderColor: selected ? t.colors.primary : t.colors.line,
                 }}
               >
+                <Ionicons
+                  name={categoryIcon(c)}
+                  size={t.sizes.icon}
+                  color={selected ? t.colors.onPrimary : t.colors.primary}
+                />
                 <Text variant="label" color={selected ? 'onPrimary' : 'ink'}>
-                  {CATEGORY_LABEL[c]}
+                  {categoryLabel(c)}
                 </Text>
               </Pressable>
             );
           })}
+          {naming ? null : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="New category"
+              onPress={() => setNaming(true)}
+              testID="credential-category-new"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: t.spacing.xs,
+                minHeight: t.sizes.touch,
+                paddingHorizontal: t.spacing.md,
+                borderRadius: t.radii.pill,
+                borderWidth: t.sizes.hairline,
+                borderStyle: 'dashed',
+                borderColor: t.colors.lineStrong,
+              }}
+            >
+              <Ionicons name="add" size={t.sizes.icon} color={t.colors.primary} />
+              <Text variant="label" color="primary">
+                New
+              </Text>
+            </Pressable>
+          )}
         </View>
+        {naming ? (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: t.spacing.sm }}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label="Category name"
+                placeholder="Game pass, School, Insurance"
+                value={newName}
+                onChangeText={setNewName}
+                maxLength={CATEGORY_MAX}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={addCategory}
+                testID="credential-category-name"
+              />
+            </View>
+            <Button
+              size="sm"
+              fullWidth={false}
+              onPress={addCategory}
+              disabled={!newName.trim()}
+              testID="credential-category-add"
+            >
+              Add
+            </Button>
+          </View>
+        ) : null}
         <Controller
           control={form.control}
           name="title"
           render={({ field, fieldState }) => (
             <TextField
               label="Title"
-              placeholder={
-                category === 'bank'
-                  ? 'SBI net banking'
-                  : category === 'email'
-                    ? 'Gmail'
-                    : 'Home wifi'
-              }
+              placeholder={categoryHint(category)}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}

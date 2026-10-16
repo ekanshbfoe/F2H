@@ -9,7 +9,7 @@ import { copySecret } from '@/services/clipboard';
 import { useTheme } from '@/theme';
 
 import { SecretRow, ValueRow } from '../components';
-import { CATEGORY_LABEL, hostOf } from '../model';
+import { categoryLabel, hostOf } from '../model';
 import { credentialEditHref } from '../routes';
 import { useCredentials } from '../store';
 
@@ -117,7 +117,7 @@ export function CredentialDetailScreen() {
       }
     >
       <View style={{ flexDirection: 'row', gap: t.spacing.sm }}>
-        <Badge tone="primary">{CATEGORY_LABEL[p.category]}</Badge>
+        <Badge tone="primary">{categoryLabel(p.category)}</Badge>
         <Badge tone="neutral">Encrypted</Badge>
       </View>
 

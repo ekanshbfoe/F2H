@@ -1,24 +1,34 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, SectionList, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  SectionList,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge, Button, Callout, Card, Text, TextField } from '@/components/ui';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
 
-import { categoryCounts, hostOf, toSections, type Category, type StoredCredential } from '../model';
+import { categoryIcon } from '../components';
+import {
+  categoryCounts,
+  categoryLabel,
+  hostOf,
+  toSections,
+  usedCategories,
+  type Category,
+  type StoredCredential,
+} from '../model';
 import { credentialEditHref, credentialHref } from '../routes';
 import { useCredentials } from '../store';
 
-const ICON: Record<Category, keyof typeof Ionicons.glyphMap> = {
-  bank: 'business-outline',
-  email: 'mail-outline',
-  other: 'key-outline',
-};
-
-/** Credentials (spec 0004, AC-1, AC-9): Bank, Email and Other sections over one encrypted list. */
+/** Credentials (spec 0004, AC-1, AC-9): a section per category, filterable, over one encrypted list. */
 export function CredentialsListScreen() {
   const t = useTheme();
   const router = useRouter();
@@ -31,6 +41,7 @@ export function CredentialsListScreen() {
   const error = useCredentials((s) => s.error);
   const load = useCredentials((s) => s.load);
   const [query, setQuery] = useState('');
+  const [only, setOnly] = useState<Category | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
@@ -40,8 +51,11 @@ export function CredentialsListScreen() {
   );
 
   const all = useMemo(() => Object.values(items), [items]);
-  const sections = useMemo(() => toSections(all, query), [all, query]);
   const counts = useMemo(() => categoryCounts(all), [all]);
+  const used = useMemo(() => usedCategories(all), [all]);
+  // a filter whose last item was deleted falls back to everything
+  const filter = only && counts[only] ? only : null;
+  const sections = useMemo(() => toSections(all, query, filter ?? undefined), [all, query, filter]);
 
   const header = (
     <View style={{ gap: t.spacing.lg, paddingBottom: t.spacing.md }}>
@@ -59,11 +73,45 @@ export function CredentialsListScreen() {
         </Text>
         <Badge tone="primary">Encrypted</Badge>
       </View>
-      <View style={{ flexDirection: 'row', gap: t.spacing.sm }}>
-        <Badge tone="neutral">{`Bank ${counts.bank}`}</Badge>
-        <Badge tone="neutral">{`Email ${counts.email}`}</Badge>
-        <Badge tone="neutral">{`Other ${counts.other}`}</Badge>
-      </View>
+      {used.length > 1 ? (
+        // one chip per category in use: a quick filter, with its count
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          accessibilityRole="radiogroup"
+          contentContainerStyle={{ gap: t.spacing.sm }}
+          testID="credentials-filter"
+        >
+          {[null, ...used].map((c) => {
+            const selected = c === filter;
+            const label = c === null ? 'All' : categoryLabel(c);
+            const n = c === null ? all.length : (counts[c] ?? 0);
+            return (
+              <Pressable
+                key={c ?? 'all'}
+                accessibilityRole="radio"
+                accessibilityState={{ selected, checked: selected }}
+                accessibilityLabel={`${label}, ${n}`}
+                onPress={() => setOnly(c)}
+                testID={`credentials-filter-${c ?? 'all'}`}
+                style={{
+                  minHeight: t.sizes.touch - t.spacing.xs,
+                  paddingHorizontal: t.spacing.lg,
+                  borderRadius: t.radii.pill,
+                  justifyContent: 'center',
+                  backgroundColor: selected ? t.colors.primary : t.colors.surface,
+                  borderWidth: t.sizes.hairline,
+                  borderColor: selected ? t.colors.primary : t.colors.line,
+                }}
+              >
+                <Text variant="label" color={selected ? 'onPrimary' : 'ink'}>
+                  {`${label} · ${n}`}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
       <TextField
         label="Search"
         placeholder="Title, username or website"
@@ -195,7 +243,7 @@ function CredentialRow({
         borderColor: t.colors.line,
       })}
     >
-      <Ionicons name={ICON[p.category]} size={t.sizes.iconLg} color={t.colors.primary} />
+      <Ionicons name={categoryIcon(p.category)} size={t.sizes.iconLg} color={t.colors.primary} />
       <View style={{ flex: 1, gap: t.spacing.xxs }}>
         <Text variant="label" numberOfLines={1}>
           {p.title}
