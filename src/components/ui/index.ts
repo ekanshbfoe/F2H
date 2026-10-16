@@ -8,6 +8,8 @@ export { Callout } from './Callout';
 export type { CalloutProps } from './Callout';
 export { Card } from './Card';
 export { Choice } from './Choice';
+export { ConfirmHost, confirm, dismissConfirm } from './Confirm';
+export type { ConfirmOptions } from './Confirm';
 export type { ChoiceOption, ChoiceProps } from './Choice';
 export type { CardProps } from './Card';
 export { Medallion } from './Medallion';

@@ -7,7 +7,9 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ConfirmHost, dismissConfirm } from '@/components/ui';
 import { LockRuntime } from '@/features/lock/LockRuntime';
+import { useLock } from '@/features/lock/lock.store';
 import { usePushNavigation } from '@/services/push';
 import { ThemeProvider, colors, useAppFonts } from '@/theme';
 
@@ -43,6 +45,15 @@ export default function RootLayout() {
     if (ready) SplashScreen.hideAsync().catch(() => undefined);
   }, [ready]);
 
+  // a lock takes any open question with it, unanswered
+  useEffect(
+    () =>
+      useLock.subscribe((st, prev) => {
+        if (st.generation !== prev.generation) dismissConfirm();
+      }),
+    [],
+  );
+
   if (!ready) return null;
 
   return (
@@ -67,6 +78,7 @@ export default function RootLayout() {
               <Stack.Screen key={name} name={name} options={{ animation: 'fade' }} />
             ))}
           </Stack>
+          <ConfirmHost />
           <LockRuntime />
         </ThemeProvider>
       </SafeAreaProvider>
