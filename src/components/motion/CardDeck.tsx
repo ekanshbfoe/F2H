@@ -3,13 +3,13 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolate,
-  runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { useTheme } from '@/theme';
 
@@ -60,6 +60,9 @@ export function CardDeck<T>({
     [cards, index, onEmpty, onSwipe, x, y],
   );
 
+  // plain values only: a gesture callback copies what it closes over to the UI thread, and the
+  // theme holds values that cannot be copied
+  const snap = t.motion.springSnappy;
   const pan = Gesture.Pan()
     .withTestId('card-deck-pan')
     .onUpdate((e) => {
@@ -73,12 +76,12 @@ export function CardDeck<T>({
         const dir = e.translationX > 0 || e.velocityX > 0 ? 'right' : 'left';
         x.set(
           withTiming(dir === 'right' ? width * 1.5 : -width * 1.5, { duration: 220 }, (done) => {
-            if (done) runOnJS(advance)(dir);
+            if (done) scheduleOnRN(advance, dir);
           }),
         );
       } else {
-        x.set(withSpring(0, t.motion.springSnappy));
-        y.set(withSpring(0, t.motion.springSnappy));
+        x.set(withSpring(0, snap));
+        y.set(withSpring(0, snap));
       }
     });
 

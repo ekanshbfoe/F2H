@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -11,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { useTheme } from '@/theme';
 
@@ -59,12 +59,15 @@ export function Sheet({ open, onClose, title, onBack, children, footer, testID }
       scrim.set(withTiming(0, t.motion.timingFast));
       y.set(
         withTiming(screenH, t.motion.timingFast, (done) => {
-          if (done) runOnJS(setMounted)(false);
+          if (done) scheduleOnRN(setMounted, false);
         }),
       );
     }
   }, [open, mounted, reduceMotion, scrim, screenH, t.motion.springSoft, t.motion.timingFast, y]);
 
+  // plain values only: a gesture callback copies what it closes over to the UI thread, and the
+  // theme holds values that cannot be copied
+  const settle = t.motion.springSoft;
   const pan = Gesture.Pan()
     .activeOffsetY(8)
     .onUpdate((e) => {
@@ -72,9 +75,9 @@ export function Sheet({ open, onClose, title, onBack, children, footer, testID }
     })
     .onEnd((e) => {
       if (e.translationY > DISMISS_DISTANCE || e.velocityY > DISMISS_VELOCITY) {
-        runOnJS(onClose)();
+        scheduleOnRN(onClose);
       } else {
-        y.set(withSpring(0, t.motion.springSoft));
+        y.set(withSpring(0, settle));
       }
     });
 
