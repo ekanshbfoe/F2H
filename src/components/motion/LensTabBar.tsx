@@ -46,7 +46,8 @@ export interface LensTabBarProps {
 }
 
 /** Bar height: an icon over a one line label, with room for the lens around them. */
-const BAR = 64;
+export const LENS_BAR_HEIGHT = 58;
+const BAR = LENS_BAR_HEIGHT;
 const PAD = 4;
 /** How much the lens stretches per pixel it moved in the last frame, and its cap. */
 const STRETCH_PER_PX = 1 / 60;
@@ -98,7 +99,7 @@ const TabIcon = memo(function TabIcon({ tab, active, width, onSelect, testID }: 
       style={[styles.center, { width, height: BAR - 2 * PAD, gap: t.spacing.xxs }]}
     >
       <Animated.View style={iconStyle}>
-        <Ionicons name={active ? tab.activeIcon : tab.icon} size={t.sizes.iconLg} color={color} />
+        <Ionicons name={active ? tab.activeIcon : tab.icon} size={t.sizes.icon + 2} color={color} />
         {badge > 0 ? (
           <View
             style={[
@@ -283,21 +284,7 @@ export function LensTabBar({ tabs, value, onChange, action, testID }: LensTabBar
                 },
                 lensStyle,
               ]}
-            >
-              {/* the sheen across the top half that makes the lens read as glass */}
-              <View
-                style={{
-                  position: 'absolute',
-                  top: t.sizes.hairline,
-                  left: lensH / 4,
-                  right: lensH / 4,
-                  height: lensH / 2.5,
-                  borderRadius: t.radii.pill,
-                  backgroundColor: t.colors.surface,
-                  opacity: 0.55,
-                }}
-              />
-            </Animated.View>
+            />
           ) : null}
           <View
             style={{
