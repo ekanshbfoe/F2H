@@ -84,7 +84,7 @@ export const sizes = {
   /** Mascot and hero illustrations. */
   hero: 120,
   /** The rounded logo tile on the start up screen; the native splash draws it at the same width. */
-  bootLogo: 200,
+  bootLogo: 140,
   sheetInset: 20,
   sheetHandleWidth: 36,
   sheetHandleHeight: 4,

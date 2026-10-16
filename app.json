@@ -27,7 +27,7 @@
         {
           "backgroundColor": "#FFFFFF",
           "image": "./assets/images/logo-rounded.png",
-          "imageWidth": 200
+          "imageWidth": 140
         }
       ],
       "expo-asset",
