@@ -11,3 +11,5 @@ export type { RadialRevealProps } from './RadialReveal';
 export { useRiseIn } from './rise';
 export { SegmentedToggle } from './SegmentedToggle';
 export type { SegmentedToggleProps } from './SegmentedToggle';
+export { LensTabBar } from './LensTabBar';
+export type { LensTab, LensTabBarProps } from './LensTabBar';
