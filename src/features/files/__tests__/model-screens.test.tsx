@@ -16,6 +16,11 @@ const mockLink = jest.fn();
 const mockList = jest.fn();
 
 jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({}),
   useFocusEffect: (cb: () => void) => {

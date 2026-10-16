@@ -27,11 +27,7 @@ import {
   type StoredCredential,
 } from '../model';
 
-const make = (
-  title: string,
-  category: string,
-  extra: Partial<CredentialPayload> = {},
-) =>
+const make = (title: string, category: string, extra: Partial<CredentialPayload> = {}) =>
   credentialPayloadSchema.parse({
     v: 1,
     type: 'credential',
@@ -131,7 +127,7 @@ describe('sections and search (AC-1)', () => {
     expect(toSections(list, '', 'email').map((s) => s.title)).toEqual(['Email']);
   });
 
-  it('keeps the family\'s own categories, after the presets and before Other', () => {
+  it("keeps the family's own categories, after the presets and before Other", () => {
     const mine = [...list, stored(make('Xbox', 'Game pass'), 9)];
     expect(toSections(mine).map((s) => s.title)).toEqual(['Bank', 'Email', 'Game pass', 'Other']);
     expect(categoryChoices(mine).slice(-2)).toEqual(['Game pass', 'other']);

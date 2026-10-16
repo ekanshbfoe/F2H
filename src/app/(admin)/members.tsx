@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -29,13 +28,14 @@ import {
 import { loadRecoverySecretKey } from '@/features/keyring/admin-recovery';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 const LABELS: MemberLabel[] = ['father', 'mother', 'brother'];
 
 /** Members (AC-5, AC-15): invite codes as text and QR, members with devices and recovery grants. */
 export default function MembersScreen() {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const mk = useSession((s) => s.mk);
   const myDeviceId = useSession((s) => s.deviceId);
   const [revoking, setRevoking] = useState<string | null>(null);

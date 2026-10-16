@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
+
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Image, Pressable, View } from 'react-native';
@@ -13,6 +13,7 @@ import { loginSchema, signupSchema, type LoginForm, type SignupForm } from '@/fe
 import { describeAuthError, pathFor } from '@/features/auth/routes';
 import { getDeviceInfo } from '@/services/device-info';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 type Mode = 0 | 1; // 0 = Login, 1 = Sign up
 
@@ -20,7 +21,7 @@ type Mode = 0 | 1; // 0 = Login, 1 = Sign up
 export default function LoginScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const [mode, setMode] = useState<Mode>(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

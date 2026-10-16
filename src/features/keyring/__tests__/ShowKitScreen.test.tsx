@@ -11,7 +11,14 @@ const WORDS = Array.from({ length: 24 }, (_, i) => `word${i + 1}`);
 const mockExport = jest.fn();
 const mockFetchPub = jest.fn();
 
-jest.mock('expo-router', () => ({ useRouter: () => ({ back: jest.fn(), replace: jest.fn() }) }));
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
+  useRouter: () => ({ back: jest.fn(), replace: jest.fn() }),
+}));
 jest.mock('@/features/lock/hooks', () => ({ useScreenCaptureBlock: () => undefined }));
 jest.mock('@/features/lock/api', () => ({
   withKey: (fn: (mk: Uint8Array) => Promise<unknown>) => fn(new Uint8Array(32)),

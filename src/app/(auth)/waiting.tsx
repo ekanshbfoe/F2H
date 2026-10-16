@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -14,6 +13,7 @@ import { countMyApprovedDevices } from '@/features/device/approved-count';
 import { useApprovalWatch } from '@/features/device/useApprovalWatch';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 function since(iso: string | null | undefined): string {
   if (!iso) return 'just now';
@@ -27,7 +27,7 @@ function since(iso: string | null | undefined): string {
 /** Waiting for the Admin (AC-7): live over Realtime, polled every 10 s as the fallback. */
 export default function WaitingScreen() {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const deviceId = useSession((s) => s.deviceId);
   const profile = useSession((s) => s.profile);
   const selfApproving = useSession((s) => s.selfApproving);

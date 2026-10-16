@@ -8,7 +8,15 @@ import { useLock } from '../lock.store';
 
 let mockMounts = 0;
 
-jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
+  router: { replace: jest.fn() },
+}));
 jest.mock('../hooks', () => ({
   useAutoLock: () => undefined,
   useRevokeGuard: () => undefined,

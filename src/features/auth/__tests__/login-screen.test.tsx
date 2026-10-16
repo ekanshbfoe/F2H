@@ -8,6 +8,11 @@ const mockSignUp = jest.fn();
 const mockReplace = jest.fn();
 
 jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useRouter: () => ({ replace: mockReplace, push: jest.fn(), back: jest.fn() }),
 }));
 jest.mock('@/features/auth/api', () => ({

@@ -14,6 +14,11 @@ const mockComplete = jest.fn(async () => 'set-pin' as const);
 let mockDevice: { id: string; status: string; model: string; os: string } | null = null;
 
 jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useRouter: () => ({ replace: mockReplace, push: mockPush, back: jest.fn() }),
 }));
 jest.mock('@/features/auth/api', () => ({

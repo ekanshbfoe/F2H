@@ -14,6 +14,11 @@ import { OnboardingScreen } from '../screens/OnboardingScreen';
 
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useRouter: () => ({ replace: mockReplace, push: jest.fn(), back: jest.fn() }),
 }));
 jest.mock('@/services/supabase', () => ({ supabase: {}, setForbiddenHandler: jest.fn() }));

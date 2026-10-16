@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Linking, View } from 'react-native';
 
 import { Avatar, Button, Callout, Card, Screen, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 import { ContactsError } from '../api';
 import { formatPhone, telUrl, whatsappUrl } from '../model';
@@ -14,7 +15,7 @@ import { useContacts } from '../store';
 /** One contact (spec 0003, AC-3, AC-6): call, open in WhatsApp, edit, delete. */
 export function ContactDetailScreen() {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const contact = useContacts((s) => (id ? s.items[id] : undefined));
   const status = useContacts((s) => s.status);

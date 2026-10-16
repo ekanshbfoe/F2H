@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Button, Callout, Card, Text, TextField } from '@/components/ui';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 import { categoryIcon } from '../components';
 import {
@@ -31,7 +32,7 @@ import { useCredentials } from '../store';
 /** Credentials (spec 0004, AC-1, AC-9): a section per category, filterable, over one encrypted list. */
 export function CredentialsListScreen() {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const insets = useSafeAreaInsets();
   const unlocked = useSession((s) => s.mk !== null);
   const status = useCredentials((s) => s.status);

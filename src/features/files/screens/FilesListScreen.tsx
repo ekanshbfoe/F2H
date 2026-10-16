@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Button, Callout, Card, Text, TextField } from '@/components/ui';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 import { FilesError } from '../api';
 import { formatSize, matchesSearch, sortFiles, type StoredFile } from '../model';
@@ -39,7 +40,7 @@ function explain(e: unknown): string {
 /** Files (child spec 0001-drive-redundancy, AC-10): list, badges, upload progress, states. */
 export function FilesListScreen() {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const insets = useSafeAreaInsets();
   const unlocked = useSession((s) => s.mk !== null);
   const { status, items, states, skipped, offline, error, upload, load, add } = useFiles();

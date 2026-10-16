@@ -11,6 +11,11 @@ const mockResolve = jest.fn<Promise<string>, []>();
 const mockAfterUnlock = jest.fn<Promise<string>, []>();
 
 jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useRouter: () => ({ replace: mockReplace, push: jest.fn(), back: jest.fn() }),
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));

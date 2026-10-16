@@ -10,6 +10,12 @@ const mockList = jest.fn();
 const mockRun = jest.fn();
 jest.mock('../api', () => ({ listBackups: () => mockList(), backUpNow: () => mockRun() }));
 jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useFocusEffect: (cb: () => void) => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('react').useEffect(cb, []);

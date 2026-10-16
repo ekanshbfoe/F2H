@@ -22,6 +22,11 @@ const mockCreateMany = jest.fn();
 const mockRead = jest.fn();
 
 jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useRouter: () => ({ push: mockPush, replace: mockReplace, back: jest.fn() }),
   useLocalSearchParams: () => mockParams,
   useFocusEffect: (cb: () => void) => {

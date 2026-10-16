@@ -19,6 +19,12 @@ jest.mock('@/services/functions', () => ({ callFunction: jest.fn() }));
 jest.mock('@/features/keyring/admin-recovery', () => ({ loadRecoverySecretKey: jest.fn() }));
 jest.mock('../../audit/api', () => ({ ACTIVITY_LIMIT: 100, listActivity: () => mockActivity() }));
 jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    addListener: jest.fn(() => () => undefined),
+    dispatch: jest.fn(),
+  }),
   useFocusEffect: (cb: () => void) => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('react').useEffect(cb, []);

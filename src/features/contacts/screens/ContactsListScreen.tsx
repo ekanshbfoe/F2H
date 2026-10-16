@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, Badge, Button, Callout, Card, Text, TextField } from '@/components/ui';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 import { formatPhone, visibleContacts, type StoredContact } from '../model';
 import { CONTACTS_IMPORT_HREF, contactEditHref, contactHref } from '../routes';
@@ -15,7 +16,7 @@ import { useContacts } from '../store';
 /** Contacts (spec 0003, AC-1, AC-5, AC-9): one encrypted list, searchable by name or number. */
 export function ContactsListScreen() {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   const insets = useSafeAreaInsets();
   const unlocked = useSession((s) => s.mk !== null);
   const status = useContacts((s) => s.status);

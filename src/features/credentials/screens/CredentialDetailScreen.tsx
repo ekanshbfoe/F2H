@@ -1,4 +1,4 @@
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, View } from 'react-native';
 
@@ -7,6 +7,7 @@ import { useScreenCaptureBlock } from '@/features/lock/hooks';
 import { VaultItemError } from '@/features/vault/items';
 import { copySecret } from '@/services/clipboard';
 import { useTheme } from '@/theme';
+import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 import { SecretRow, ValueRow } from '../components';
 import { categoryLabel, hostOf } from '../model';
@@ -18,7 +19,7 @@ export { REVEAL_MS } from '../components';
 /** One credential (spec 0004, AC-4, AC-5, AC-6): masked secrets, timed reveal, timed copy. */
 export function CredentialDetailScreen() {
   const t = useTheme();
-  const router = useRouter();
+  const router = useSteadyRouter();
   useScreenCaptureBlock('f2h:credential');
   const { id } = useLocalSearchParams<{ id: string }>();
   const credential = useCredentials((s) => (id ? s.items[id] : undefined));
