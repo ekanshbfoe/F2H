@@ -27,11 +27,11 @@ beforeEach(() => {
 });
 
 describe('BootScreen', () => {
-  it('renders the brand while booting and routes to the resolved screen', async () => {
+  it('draws the splash logo while booting and routes to the resolved screen', async () => {
     mockResolve.mockResolvedValue('login');
     await renderWithProviders(<BootScreen />);
-    expect(screen.getByRole('header', { name: 'F2H' })).toBeOnTheScreen();
-    expect(screen.getByText(/private vault/i)).toBeOnTheScreen();
+    expect(screen.getByLabelText('F2H')).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Starting')).toBeNull();
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(auth)/login'));
   });
 
