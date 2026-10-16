@@ -40,6 +40,8 @@ export const colors = {
   warmRed: '#F0443C',
   scrim: 'rgba(20, 24, 31, 0.55)',
   onPrimary: '#FFFFFF',
+  /** The native splash background (app.json) and the logo's own field; the boot screen matches it. */
+  splash: '#3575DF',
   focus: '#1E3FB8',
 } as const;
 
@@ -215,6 +217,8 @@ export const motion = {
   /** Flash overlay on tap (login reference). */
   flashInMs: 60,
   flashOutMs: 180,
+  /** A boot that runs longer than this shows a spinner under the logo; a quick one never does. */
+  bootSpinnerDelayMs: 600,
 } as const;
 
 export const opacity = {
