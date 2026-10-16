@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import Animated, {
   useReducedMotion,
@@ -14,13 +14,34 @@ import { useAppStateStatus, useAutoLock, useRevokeGuard, useScreenCaptureBlock }
 import { useLock } from './lock.store';
 import { UnlockScreen } from './screens/UnlockScreen';
 
+/** The longest the gate waits for its success sequence before it leaves anyway. */
+const GATE_HOLD_MAX_MS = 1500;
+
 /**
  * Mounted once in the root layout, inside the providers: the Unlock overlay, the auto lock, the
  * revoke guard, the Android screenshot block, the privacy overlay and the wiped navigation.
  */
 export function LockRuntime() {
   const state = useLock((s) => s.state);
+  // bumped by every lock: a lock during the success hold mounts a fresh gate, never the
+  // finished one with its keys at rest
+  const generation = useLock((s) => s.generation);
   const gateExit = useGateExit();
+  const gated = state === 'locked' || state === 'cooling_down';
+  // The right PIN unlocks at once, but the gate stays up while its boxes play the success
+  // sequence, then leaves. The vault and the next screen load underneath meanwhile.
+  const [holding, setHolding] = useState(false);
+  const [wasGated, setWasGated] = useState(gated);
+  if (gated !== wasGated) {
+    setWasGated(gated);
+    setHolding(!gated && state === 'unlocked');
+  }
+  // never trapped behind the gate if the sequence is cut short
+  useEffect(() => {
+    if (!holding) return undefined;
+    const timer = setTimeout(() => setHolding(false), GATE_HOLD_MAX_MS);
+    return () => clearTimeout(timer);
+  }, [holding]);
   useAutoLock();
   useRevokeGuard();
   useScreenCaptureBlock();
@@ -40,9 +61,9 @@ export function LockRuntime() {
 
   return (
     <>
-      {state === 'locked' || state === 'cooling_down' ? (
-        <Animated.View style={StyleSheet.absoluteFill} exiting={gateExit}>
-          <UnlockScreen />
+      {gated || holding ? (
+        <Animated.View key={generation} style={StyleSheet.absoluteFill} exiting={gateExit}>
+          <UnlockScreen onOpened={() => setHolding(false)} />
         </Animated.View>
       ) : null}
       <PrivacyOverlay />

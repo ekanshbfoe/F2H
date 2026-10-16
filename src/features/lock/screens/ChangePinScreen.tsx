@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { PinScreen, type PinBoxesState } from '@/components/lock';
 import { Badge, Button, Callout, Card, Screen } from '@/components/ui';
@@ -70,10 +71,8 @@ export function ChangePinScreen() {
     }
     setSaving(true);
     rewrapPin(entered)
-      .then(() => {
-        setBoxes('success');
-        setStep('done');
-      })
+      // the boxes play their success sequence, then onSuccessDone shows the done card
+      .then(() => setBoxes('success'))
       .catch((e: unknown) => {
         setFirst('');
         fail(
@@ -106,10 +105,13 @@ export function ChangePinScreen() {
         subtitle={copy.done[1]}
         footer={<Button onPress={() => router.back()}>Done</Button>}
       >
-        <Card style={{ gap: t.spacing.sm }}>
-          <Badge tone="success">New PIN saved</Badge>
-          <Callout>Use the new PIN the next time this phone locks.</Callout>
-        </Card>
+        {/* follows the seal: it fades in rather than cutting in */}
+        <Animated.View entering={FadeIn.duration(t.motion.glideMs).easing(t.motion.easeOut)}>
+          <Card style={{ gap: t.spacing.sm }}>
+            <Badge tone="success">New PIN saved</Badge>
+            <Callout>Use the new PIN the next time this phone locks.</Callout>
+          </Card>
+        </Animated.View>
       </Screen>
     );
   }
@@ -117,6 +119,9 @@ export function ChangePinScreen() {
   const order: Step[] = ['current', 'new', 'confirm'];
   return (
     <PinScreen
+      headline="Change your PIN"
+      compactHeadline="Change PIN"
+      onBack={() => router.back()}
       title={copy[step][0]}
       subtitle={copy[step][1]}
       compactSubtitle={short[step]}
@@ -129,8 +134,9 @@ export function ChangePinScreen() {
           if (boxes !== 'idle') setBoxes('idle');
         },
         onComplete: complete,
+        onSuccessDone: () => setStep('done'),
+        awaitsCheck: step !== 'new',
         state: boxes,
-        disabled: busy || saving,
         busy: busy || saving,
         busyLabel: saving ? 'Saving your PIN' : undefined,
         status: message ? { tone: 'danger', text: message } : null,

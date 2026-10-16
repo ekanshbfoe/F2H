@@ -1,5 +1,5 @@
 // covers: AC-2 (the gate renders over everything), AC-4 (countdown copy), AC-6 (forgot PIN asks first)
-import { fireEvent, screen, userEvent } from '@testing-library/react-native';
+import { fireEvent, screen, userEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 
 import { renderWithProviders } from '@/lib/test-utils';
@@ -40,6 +40,15 @@ describe('UnlockScreen', () => {
     expect(await screen.findByText(/4 tries left before this phone wipes/)).toBeOnTheScreen();
     expect(mockUnlock).toHaveBeenCalledWith('000000');
     expect(screen.getByLabelText('0 of 6 digits entered')).toBeOnTheScreen();
+  });
+
+  it('plays the accepted sequence on the right PIN, then reports the gate open', async () => {
+    mockUnlock.mockResolvedValue({ kind: 'ok' });
+    const onOpened = jest.fn();
+    await renderWithProviders(<UnlockScreen onOpened={onOpened} />);
+    await fireEvent.changeText(screen.getByTestId('unlock-input'), '123456');
+    expect(await screen.findByLabelText('PIN accepted')).toBeOnTheScreen();
+    await waitFor(() => expect(onOpened).toHaveBeenCalledTimes(1), { timeout: 2000 });
   });
 
   it('shows the countdown and blocks the pad while cooling down (AC-4)', async () => {

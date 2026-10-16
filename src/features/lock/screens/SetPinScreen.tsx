@@ -60,10 +60,8 @@ export function SetPinScreen() {
     setBusy(true);
     setMessage(null);
     setPin(entered)
-      .then(() => {
-        setBoxes('success');
-        router.replace(pathFor('home'));
-      })
+      // the boxes play their success sequence, then onSuccessDone opens the vault
+      .then(() => setBoxes('success'))
       .catch((e: unknown) => {
         setBusy(false);
         restart(
@@ -76,6 +74,8 @@ export function SetPinScreen() {
 
   return (
     <PinScreen
+      headline="Lock this phone with a PIN"
+      compactHeadline="Set a PIN"
       title={step === 'enter' ? 'Choose a PIN' : 'Confirm your PIN'}
       subtitle={
         step === 'enter'
@@ -94,9 +94,10 @@ export function SetPinScreen() {
           if (boxes !== 'idle') setBoxes('idle');
         },
         onComplete: complete,
+        onSuccessDone: () => router.replace(pathFor('home')),
+        awaitsCheck: step === 'confirm',
         state: boxes,
-        disabled: busy,
-        busy,
+        busy: busy && boxes !== 'success',
         busyLabel: 'Saving your PIN',
         status: message ? { tone: 'danger', text: message } : null,
         testID: 'set-pin',

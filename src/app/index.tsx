@@ -70,7 +70,7 @@ export default function BootScreen() {
         justifyContent: 'center',
       }}
     >
-      <BootStatusBar />
+      <StatusBar style="light" />
       {/* the splash image is square with the splash blue in its corners: no radius, no frame */}
       <Image
         source={require('../../assets/images/splash-icon.png')}
@@ -117,13 +117,4 @@ export default function BootScreen() {
       ) : null}
     </View>
   );
-}
-
-/**
- * Light icons on the splash blue, dark while the PIN gate (on the light canvas) covers it. Its own
- * component, so a lock change re-renders only the bar and never restarts the boot check above.
- */
-function BootStatusBar() {
-  const gated = useLock((s) => s.state === 'locked' || s.state === 'cooling_down');
-  return <StatusBar style={gated ? 'dark' : 'light'} />;
 }

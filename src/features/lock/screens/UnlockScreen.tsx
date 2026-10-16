@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, BackHandler, Image, useWindowDimensions, View } from 'react-native';
+import { Alert, BackHandler, Pressable, useWindowDimensions } from 'react-native';
 
 import { PinScreen, type PinBoxesState } from '@/components/lock';
-import { Button } from '@/components/ui';
+import { Button, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 
 import { unlock, wipe } from '../api';
@@ -11,11 +11,16 @@ import { formatCountdown, useCooldown } from '../hooks';
 import { MAX_FAILURES } from '../model';
 import { isLastAdminPhone } from '../storage';
 
+export interface UnlockScreenProps {
+  /** The right PIN's success sequence has played: the gate may leave. */
+  onOpened?: () => void;
+}
+
 /**
  * The Unlock gate (AC-2, AC-4, AC-6): rendered by the root layout as an overlay whenever the lock
  * store says `locked` or `cooling_down`, so the route underneath survives the lock (AC-3).
  */
-export function UnlockScreen() {
+export function UnlockScreen({ onOpened }: UnlockScreenProps = {}) {
   const t = useTheme();
   const { height } = useWindowDimensions();
   const busy = useLock((s) => s.busy);
@@ -78,12 +83,14 @@ export function UnlockScreen() {
     });
   };
 
-  // on a short phone the mascot steps aside so the pad keeps its full size keys
+  // on a short phone the footer button shrinks so the pad keeps its full size keys
   const tall = height >= t.sizes.compactHeight;
   return (
     <PinScreen
       overlay
       testID="unlock-screen"
+      headline={cooling ? 'Too many wrong tries' : 'Welcome back to your family vault'}
+      compactHeadline={cooling ? 'Too many tries' : 'Welcome back'}
       title={cooling ? 'Locked for now' : 'Enter your PIN'}
       subtitle={
         cooling
@@ -93,30 +100,6 @@ export function UnlockScreen() {
       compactSubtitle={
         cooling ? `Try again in ${formatCountdown(remaining)}` : 'Six digits open your vault.'
       }
-      accessory={
-        tall ? (
-          <View
-            style={[
-              t.shadows.raised,
-              {
-                padding: t.spacing.xs,
-                borderRadius: t.radii.xl,
-                backgroundColor: t.colors.surface,
-              },
-            ]}
-          >
-            <Image
-              source={require('../../../../assets/images/splash-icon.png')}
-              accessibilityLabel="F2H bear mascot"
-              style={{
-                width: t.sizes.hero * 0.5,
-                height: t.sizes.hero * 0.5,
-                borderRadius: t.radii.lg,
-              }}
-            />
-          </View>
-        ) : null
-      }
       entry={{
         value: pin,
         onChange: (v) => {
@@ -124,8 +107,29 @@ export function UnlockScreen() {
           if (boxes !== 'idle') setBoxes('idle');
         },
         onComplete: submit,
+        onSuccessDone: onOpened,
+        // a short phone keeps every row for the keys: Forgot sits in the pad's empty corner
+        padCorner: tall ? undefined : (
+          <Pressable
+            onPress={forgot}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Forgot your PIN?"
+            testID="unlock-forgot"
+            style={{
+              alignSelf: 'stretch',
+              flex: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text variant="caption" color="primary" maxFontSizeMultiplier={t.sizes.maxFontScale}>
+              Forgot?
+            </Text>
+          </Pressable>
+        ),
         state: boxes,
-        disabled: busy || cooling,
+        disabled: cooling,
         busy,
         status: message
           ? { tone: 'danger', text: message }
@@ -135,16 +139,11 @@ export function UnlockScreen() {
         testID: 'unlock',
       }}
       footer={
-        <Button
-          variant="ghost"
-          size={tall ? 'md' : 'sm'}
-          fullWidth={tall}
-          onPress={forgot}
-          disabled={busy}
-          testID="unlock-forgot"
-        >
-          Forgot your PIN?
-        </Button>
+        tall ? (
+          <Button variant="ghost" onPress={forgot} disabled={busy} testID="unlock-forgot">
+            Forgot your PIN?
+          </Button>
+        ) : undefined
       }
     />
   );
