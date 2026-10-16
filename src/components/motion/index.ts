@@ -13,3 +13,5 @@ export { SegmentedToggle } from './SegmentedToggle';
 export type { SegmentedToggleProps } from './SegmentedToggle';
 export { LensTabBar } from './LensTabBar';
 export type { LensTab, LensTabBarProps } from './LensTabBar';
+export { BloomMenu } from './BloomMenu';
+export type { BloomAction, BloomMenuProps, BloomRow } from './BloomMenu';
