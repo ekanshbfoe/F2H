@@ -8,6 +8,7 @@ import { Badge, Button, Callout, Card, Screen, TextField } from '@/components/ui
 import { changePassword } from '@/features/auth/api';
 import { changePasswordSchema, type ChangePasswordForm } from '@/features/auth/model';
 import { describeAuthError } from '@/features/auth/routes';
+import { useDiscardGuard } from '@/hooks/useDiscardGuard';
 import { useTheme } from '@/theme';
 
 /** Change password while unlocked (AC-16). */
@@ -21,6 +22,8 @@ export default function ChangePasswordScreen() {
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { current: '', password: '', confirm: '' },
   });
+  // a password half typed is worth a question; a changed one is not
+  useDiscardGuard(form.formState.isDirty && !done);
 
   const submit = form.handleSubmit(async (values) => {
     setBusy(true);

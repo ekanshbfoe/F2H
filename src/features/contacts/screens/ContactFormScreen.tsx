@@ -6,6 +6,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { Pressable, View } from 'react-native';
 
 import { Button, Callout, Card, Screen, Text, TextField } from '@/components/ui';
+import { useDiscardGuard } from '@/hooks/useDiscardGuard';
 import { useTheme } from '@/theme';
 
 import { ContactsError } from '../api';
@@ -34,6 +35,7 @@ export function ContactFormScreen() {
     defaultValues: toForm(existing?.payload ?? null),
   });
   const phones = useFieldArray({ control: form.control, name: 'phones' });
+  const { release } = useDiscardGuard(form.formState.isDirty);
 
   const submit = form.handleSubmit(async (values) => {
     setBusy(true);
@@ -43,6 +45,7 @@ export function ContactFormScreen() {
         toPayloadInput(values, existing?.payload.source ?? 'manual'),
       );
       const saved = await save(payload, existing);
+      release();
       router.replace(contactHref(saved.id));
     } catch (e) {
       setError(

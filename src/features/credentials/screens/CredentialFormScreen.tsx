@@ -8,6 +8,7 @@ import { Pressable, Switch, View } from 'react-native';
 import { Badge, Button, Callout, Card, Screen, Text, TextField } from '@/components/ui';
 import { useScreenCaptureBlock } from '@/features/lock/hooks';
 import { VaultItemError } from '@/features/vault/items';
+import { useDiscardGuard } from '@/hooks/useDiscardGuard';
 import { useTheme } from '@/theme';
 
 import {
@@ -67,6 +68,7 @@ export function CredentialFormScreen() {
     defaultValues: toForm(existing?.payload ?? null),
   });
   const fields = useFieldArray({ control: form.control, name: 'fields' });
+  const { release } = useDiscardGuard(form.formState.isDirty);
   const category = useWatch({ control: form.control, name: 'category' });
 
   // every preset and every name the family already used; a name typed just now joins them
@@ -102,6 +104,7 @@ export function CredentialFormScreen() {
     try {
       const payload = credentialPayloadSchema.parse(toPayloadInput(values));
       const saved = await save(payload, existing);
+      release();
       router.replace(credentialHref(saved.id));
     } catch (e) {
       setError(
