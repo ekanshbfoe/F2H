@@ -15,6 +15,21 @@ SplashScreen.preventAutoHideAsync().catch(() => {
   /* already hidden (fast refresh); nothing to do */
 });
 
+/**
+ * Screens reached by replacing the whole stack (start up, sign in, the vault opening, a wipe):
+ * there is nothing to go back to, so they fade in instead of sliding as if pushed.
+ */
+const FADE_IN = [
+  'index',
+  'onboarding',
+  '(auth)/login',
+  '(auth)/waiting',
+  '(auth)/denied',
+  '(app)/home',
+  '(lock)/set-pin',
+  '(lock)/wiped',
+] as const;
+
 /** Opens the screen a tapped push names. Rendered inside the providers so the router exists. */
 function PushNavigation() {
   usePushNavigation();
@@ -37,8 +52,21 @@ export default function RootLayout() {
           <StatusBar style="dark" />
           <PushNavigation />
           <Stack
-            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}
-          />
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.canvas },
+              // iPhone style everywhere: a screen slides in from the right over a parallax of
+              // the one below, and a swipe from the left edge takes it back
+              animation: 'ios_from_right',
+              gestureEnabled: true,
+              fullScreenGestureEnabled: true,
+            }}
+          >
+            {/* hand offs, not steps forward: these arrive with a short fade */}
+            {FADE_IN.map((name) => (
+              <Stack.Screen key={name} name={name} options={{ animation: 'fade' }} />
+            ))}
+          </Stack>
           <LockRuntime />
         </ThemeProvider>
       </SafeAreaProvider>
