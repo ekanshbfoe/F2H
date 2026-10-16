@@ -1,5 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View, type ViewProps } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+  type ViewProps,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
@@ -15,6 +24,23 @@ export interface ScreenProps extends ViewProps {
   footer?: ReactNode;
   /** Draws nothing above the content; the screen owns its header band. */
   bare?: boolean;
+  /**
+   * The back chevron beside the title. Shown by default whenever there is a screen to go back
+   * to, so no pushed screen strands an iPhone without a way back; `false` hides it.
+   */
+  back?: boolean;
+}
+
+/** Whether the stack has a screen under this one (false outside a navigator, as in a test). */
+function useCanGoBack(): { canGoBack: boolean; goBack: () => void } {
+  const router = useRouter();
+  let canGoBack = false;
+  try {
+    canGoBack = typeof router?.canGoBack === 'function' && router.canGoBack();
+  } catch {
+    canGoBack = false;
+  }
+  return { canGoBack, goBack: () => router.back() };
 }
 
 /** Canvas background, safe area, 20 px gutters, `spacing.lg` rhythm, keyboard aware. */
@@ -24,11 +50,14 @@ export function Screen({
   children,
   footer,
   bare = false,
+  back = true,
   style,
   ...rest
 }: ScreenProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const { canGoBack, goBack } = useCanGoBack();
+  const showBack = back && canGoBack;
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -49,9 +78,23 @@ export function Screen({
       >
         {title ? (
           <View style={{ gap: t.spacing.xs }}>
-            <Text variant="title" accessibilityRole="header">
-              {title}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs }}>
+              {showBack ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Back"
+                  onPress={goBack}
+                  hitSlop={t.spacing.md}
+                  testID="screen-back"
+                  style={{ marginLeft: -t.spacing.xs }}
+                >
+                  <Ionicons name="chevron-back" size={t.sizes.iconLg} color={t.colors.sky} />
+                </Pressable>
+              ) : null}
+              <Text variant="title" accessibilityRole="header" style={{ flex: 1 }}>
+                {title}
+              </Text>
+            </View>
             {subtitle ? (
               <Text variant="body" color="muted">
                 {subtitle}
