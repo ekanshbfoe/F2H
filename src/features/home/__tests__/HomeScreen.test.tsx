@@ -52,7 +52,8 @@ describe('HomeScreen', () => {
   it('opens on the vault with a tile per category', async () => {
     signIn('member');
     await renderWithProviders(<HomeScreen />);
-    expect(screen.getByRole('header', { name: 'Hi Asha' })).toBeOnTheScreen();
+    expect(screen.getByLabelText('F2H family vault')).toBeOnTheScreen();
+    expect(screen.queryByText(/Hi Asha/)).toBeNull();
     expect(screen.getByRole('tab', { name: 'Vault' })).toBeSelected();
     await fireEvent.press(screen.getByTestId('home-credentials'));
     expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('credentials'));
@@ -78,7 +79,8 @@ describe('HomeScreen', () => {
   it('keeps security and account on Settings, and locks from the round button', async () => {
     signIn('member');
     await renderWithProviders(<HomeScreen />);
-    await activate('Settings');
+    // your initial in the top bar opens Settings
+    await fireEvent.press(screen.getByRole('button', { name: 'Your account, Asha' }));
     expect(screen.getByRole('tab', { name: 'Settings' })).toBeSelected();
     await waitFor(() =>
       expect(screen.getByRole('radio', { name: 'Lock after 1 min' })).toBeSelected(),

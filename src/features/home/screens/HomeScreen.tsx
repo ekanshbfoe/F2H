@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { BackHandler, ScrollView, View } from 'react-native';
+import { BackHandler, Image, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LensTabBar, type LensTab } from '@/components/motion/LensTabBar';
+import { LENS_BAR_HEIGHT, LensTabBar, type LensTab } from '@/components/motion/LensTabBar';
 import { Avatar, Badge, Choice, NavGroup, NavRow, Text } from '@/components/ui';
 import { CategoryTile } from '@/components/vault/CategoryTile';
 import { listPendingDevices, subscribePendingDevices } from '@/features/admin/api';
@@ -27,7 +27,7 @@ import { useTheme } from '@/theme';
 type Tab = 'vault' | 'family' | 'settings';
 
 /** Room the floating tab bar takes at the bottom of every page. */
-const BAR_SPACE = 64 + 4 + 24;
+const BAR_SPACE = LENS_BAR_HEIGHT + 4 + 24;
 
 /**
  * Home: three pages behind a floating tab bar. Vault comes first and is where every visit
@@ -91,7 +91,7 @@ export function HomeScreen() {
         }}
       >
         {tab === 'vault' ? (
-          <VaultPage pending={isAdmin ? pending : null} />
+          <VaultPage pending={isAdmin ? pending : null} onAccount={() => setTab('settings')} />
         ) : tab === 'family' && isAdmin ? (
           <FamilyPage pending={pending} />
         ) : (
@@ -149,7 +149,62 @@ function PageHeader({
   );
 }
 
-function VaultPage({ pending }: { pending: number | null }) {
+const BEAR = require('../../../../assets/images/bear.png');
+/** The cut out bear's height over its width. */
+const BEAR_RATIO = 109 / 96;
+
+/**
+ * The vault's top bar, icons only: the family bear on the left (who this app belongs to) and
+ * your own initial on the right, which opens Settings.
+ */
+function VaultBar({ name, onAccount }: { name: string; onAccount: () => void }) {
+  const t = useTheme();
+  const badge = t.sizes.touch + t.spacing.xs;
+  const bear = Math.round(badge * 0.84);
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* the bear peeks up out of a blue coin, its arms resting on the rim */}
+      <View
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel="F2H family vault"
+        style={[
+          t.shadows.raised,
+          {
+            width: badge,
+            height: badge,
+            borderRadius: t.radii.pill,
+            backgroundColor: t.colors.primary,
+            overflow: 'hidden',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+          },
+        ]}
+      >
+        <Image
+          source={BEAR}
+          style={{
+            width: bear,
+            height: Math.round(bear * BEAR_RATIO),
+            marginBottom: -t.spacing.xs,
+          }}
+          resizeMode="contain"
+        />
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Your account, ${name}`}
+        onPress={onAccount}
+        hitSlop={t.spacing.xs}
+        testID="home-account"
+      >
+        <Avatar name={name} />
+      </Pressable>
+    </View>
+  );
+}
+
+function VaultPage({ pending, onAccount }: { pending: number | null; onAccount: () => void }) {
   const t = useTheme();
   const router = useRouter();
   const profile = useSession((s) => s.profile);
@@ -160,15 +215,11 @@ function VaultPage({ pending }: { pending: number | null }) {
   );
   const files = useFiles((s) => (s.status === 'ready' ? Object.keys(s.items).length : null));
   const saved = (n: number | null, hint: string) => (n === null ? hint : `${n} saved`);
-  const name = profile?.display_name ?? 'there';
+  const name = profile?.display_name ?? 'F2H';
 
   return (
     <>
-      <PageHeader
-        title={`Hi ${name}`}
-        subtitle="Your family vault"
-        side={<Avatar name={profile?.display_name ?? 'F2H'} size="lg" />}
-      />
+      <VaultBar name={name} onAccount={onAccount} />
       {pending ? (
         <NavGroup>
           <NavRow
