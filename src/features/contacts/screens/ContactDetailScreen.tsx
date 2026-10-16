@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Linking, View } from 'react-native';
 
-import { Avatar, Badge, Button, Callout, Card, Screen, Text } from '@/components/ui';
+import { Avatar, Button, Callout, Card, Screen, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 
 import { ContactsError } from '../api';
@@ -107,10 +107,6 @@ export function ContactDetailScreen() {
         <Text variant="title" accessibilityRole="header" align="center">
           {p.name}
         </Text>
-        <View style={{ flexDirection: 'row', gap: t.spacing.sm }}>
-          {p.channels.call ? <Badge tone="primary">Call</Badge> : null}
-          {p.channels.whatsapp ? <Badge tone="success">WhatsApp</Badge> : null}
-        </View>
       </View>
 
       {p.phones.map((phone, i) => {

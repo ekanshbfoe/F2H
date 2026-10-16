@@ -67,32 +67,31 @@ const phoneSchema = z.object({
     .transform((v) => v || 'mobile'),
 });
 
-export const contactPayloadSchema = z
-  .object({
-    v: z.literal(1),
-    type: z.literal('contact'),
-    name: z
-      .string()
-      .trim()
-      .min(1, 'Enter a name')
-      .max(NAME_MAX, `Keep the name under ${NAME_MAX} characters`),
-    phones: z
-      .array(phoneSchema)
-      .min(1, 'Add at least one number')
-      .max(MAX_PHONES, `Up to ${MAX_PHONES} numbers`),
-    channels: z.object({ call: z.boolean(), whatsapp: z.boolean() }),
-    note: z
-      .string()
-      .trim()
-      .max(NOTE_MAX, `Keep the note under ${NOTE_MAX} characters`)
-      .optional()
-      .transform((v) => (v ? v : undefined)),
-    source: z.enum(['manual', 'device']),
-  })
-  .refine((c) => c.channels.call || c.channels.whatsapp, {
-    path: ['channels'],
-    message: 'Tag the contact for Call, WhatsApp or both',
-  });
+export const contactPayloadSchema = z.object({
+  v: z.literal(1),
+  type: z.literal('contact'),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Enter a name')
+    .max(NAME_MAX, `Keep the name under ${NAME_MAX} characters`),
+  phones: z
+    .array(phoneSchema)
+    .min(1, 'Add at least one number')
+    .max(MAX_PHONES, `Up to ${MAX_PHONES} numbers`),
+  /**
+   * Legacy: contacts saved before the WhatsApp list was dropped carry Call and WhatsApp tags.
+   * Still read so those contacts open; new contacts are saved without it.
+   */
+  channels: z.object({ call: z.boolean(), whatsapp: z.boolean() }).optional(),
+  note: z
+    .string()
+    .trim()
+    .max(NOTE_MAX, `Keep the note under ${NOTE_MAX} characters`)
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+  source: z.enum(['manual', 'device']),
+});
 
 export type ContactPayload = z.output<typeof contactPayloadSchema>;
 export type ContactInput = z.input<typeof contactPayloadSchema>;
@@ -102,8 +101,6 @@ export const contactFormSchema = z
   .object({
     name: z.string(),
     phones: z.array(z.object({ number: z.string(), label: z.string() })),
-    call: z.boolean(),
-    whatsapp: z.boolean(),
     note: z.string(),
   })
   .superRefine((f, ctx) => {
@@ -112,11 +109,9 @@ export const contactFormSchema = z
     for (const issue of r.error.issues) {
       const [head, index, field] = issue.path;
       const path =
-        head === 'channels'
-          ? ['call']
-          : head === 'phones' && index !== undefined
-            ? ['phones', index, field ?? 'number']
-            : [head ?? 'name'];
+        head === 'phones' && index !== undefined
+          ? ['phones', index, field ?? 'number']
+          : [head ?? 'name'];
       ctx.addIssue({ code: 'custom', message: issue.message, path: path as (string | number)[] });
     }
   });
@@ -128,7 +123,6 @@ export function toPayloadInput(f: ContactForm, source: 'manual' | 'device'): Con
     type: 'contact',
     name: f.name,
     phones: f.phones.filter((p) => p.number.trim().length > 0),
-    channels: { call: f.call, whatsapp: f.whatsapp },
     note: f.note,
     source,
   };
@@ -139,15 +133,11 @@ export function toForm(p: ContactPayload | null): ContactForm {
     return {
       name: '',
       phones: [{ number: '', label: 'mobile' }],
-      call: true,
-      whatsapp: false,
       note: '',
     };
   return {
     name: p.name,
     phones: p.phones.map((x) => ({ number: x.number, label: x.label })),
-    call: p.channels.call,
-    whatsapp: p.channels.whatsapp,
     note: p.note ?? '',
   };
 }
@@ -181,29 +171,15 @@ export interface StoredContact {
   payload: ContactPayload;
 }
 
-export type ContactTab = 'call' | 'whatsapp';
-
 export function sortContacts<T extends { payload: ContactPayload }>(list: T[]): T[] {
   return [...list].sort((a, b) =>
     a.payload.name.localeCompare(b.payload.name, undefined, { sensitivity: 'base' }),
   );
 }
 
-export function contactsForTab(
-  list: StoredContact[],
-  tab: ContactTab,
-  query = '',
-): StoredContact[] {
-  return sortContacts(
-    list.filter((c) => c.payload.channels[tab] && matchesSearch(c.payload, query)),
-  );
-}
-
-export function tabCounts(list: StoredContact[]): Record<ContactTab, number> {
-  return {
-    call: list.filter((c) => c.payload.channels.call).length,
-    whatsapp: list.filter((c) => c.payload.channels.whatsapp).length,
-  };
+/** The one contacts list: every contact matching the search, sorted by name. */
+export function visibleContacts(list: StoredContact[], query = ''): StoredContact[] {
+  return sortContacts(list.filter((c) => matchesSearch(c.payload, query)));
 }
 
 /** Every normalized number of the vault, for the import duplicate check. */

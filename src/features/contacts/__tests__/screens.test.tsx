@@ -59,13 +59,7 @@ jest.mock('../import', () => {
   return { ...actual, readDeviceContacts: () => mockRead() };
 });
 
-const make = (
-  id: string,
-  name: string,
-  number: string,
-  call: boolean,
-  whatsapp: boolean,
-): StoredContact => ({
+const make = (id: string, name: string, number: string): StoredContact => ({
   id,
   version: 1,
   payload: contactPayloadSchema.parse({
@@ -73,15 +67,14 @@ const make = (
     type: 'contact',
     name,
     phones: [{ number, label: 'mobile' }],
-    channels: { call, whatsapp },
     source: 'manual',
   }),
 });
 
 const book = [
-  make('1', 'Papa', '98111 11111', true, true),
-  make('2', 'Bhai', '98222 22222', false, true),
-  make('3', 'Clinic', '0261 2345678', true, false),
+  make('1', 'Papa', '98111 11111'),
+  make('2', 'Bhai', '98222 22222'),
+  make('3', 'Clinic', '0261 2345678'),
 ];
 
 beforeEach(() => {
@@ -101,16 +94,13 @@ beforeEach(() => {
 });
 
 describe('ContactsListScreen', () => {
-  it('shows both tabs with counts, sorted, and switches tabs (AC-1)', async () => {
+  it('shows every contact in one list with the count (AC-1)', async () => {
     await renderWithProviders(<ContactsListScreen />);
     expect(await screen.findByText('Papa')).toBeOnTheScreen();
-    expect(screen.getByText('Call · 2')).toBeOnTheScreen();
-    expect(screen.getByText('WhatsApp · 2')).toBeOnTheScreen();
+    expect(screen.getByText('Bhai')).toBeOnTheScreen();
     expect(screen.getByText('Clinic')).toBeOnTheScreen();
-    expect(screen.queryByText('Bhai')).toBeNull();
-    await userEvent.setup().press(screen.getByText('WhatsApp · 2'));
-    expect(await screen.findByText('Bhai')).toBeOnTheScreen();
-    expect(screen.queryByText('Clinic')).toBeNull();
+    expect(screen.getByTestId('contacts-count')).toHaveTextContent('3 saved');
+    expect(screen.queryByText(/WhatsApp ·/)).toBeNull();
   });
 
   it('filters by name and by digits, and says when nothing matches (AC-5)', async () => {
@@ -203,8 +193,8 @@ describe('ContactFormScreen (AC-2)', () => {
     expect(mockCreate.mock.calls[0]?.[0]).toMatchObject({
       name: 'Mummy',
       phones: [{ number: '+919833333333', label: 'mobile' }],
-      channels: { call: true, whatsapp: false },
     });
+    expect(mockCreate.mock.calls[0]?.[0]).not.toHaveProperty('channels');
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/(app)/contacts/[id]',
       params: { id: 'new' },
@@ -221,7 +211,7 @@ describe('ImportContactsScreen (AC-4)', () => {
     expect(await screen.findByTestId('import-settings')).toBeOnTheScreen();
   });
 
-  it('reviews, marks duplicates, selects all and imports with the chosen tags', async () => {
+  it('reviews, marks duplicates, selects all and imports them', async () => {
     mockRead.mockResolvedValue({
       entries: [
         { fullName: 'Papa', phones: [{ number: '98111 11111' }] },
@@ -238,14 +228,12 @@ describe('ImportContactsScreen (AC-4)', () => {
     await renderWithProviders(<ImportContactsScreen />);
     await user.press(screen.getByTestId('import-start'));
     expect(await screen.findByText('Already in your vault')).toBeOnTheScreen();
-    await fireEvent(screen.getByTestId('import-whatsapp'), 'valueChange', true);
+    expect(screen.queryByText('Tag the ones you import')).toBeNull();
     await user.press(screen.getByTestId('import-select-all'));
     await user.press(screen.getByRole('button', { name: 'Import 2' }));
     expect(await screen.findByText('2 contacts imported')).toBeOnTheScreen();
     const sent = mockCreateMany.mock.calls[0]?.[0] as ContactPayload[];
     expect(sent.map((p) => p.name)).toEqual(['Neighbour', 'Shop']);
-    expect(sent.every((p) => p.channels.call && p.channels.whatsapp && p.source === 'device')).toBe(
-      true,
-    );
+    expect(sent.every((p) => p.source === 'device' && p.channels === undefined)).toBe(true);
   });
 });

@@ -78,16 +78,12 @@ export function toCandidates(entries: DeviceEntry[], known: Set<string>): Candid
   return out.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 }
 
-export function toPayload(
-  c: Candidate,
-  channels: { call: boolean; whatsapp: boolean },
-): ContactPayload {
+export function toPayload(c: Candidate): ContactPayload {
   return contactPayloadSchema.parse({
     v: 1,
     type: 'contact',
     name: c.name,
     phones: c.phones,
-    channels,
     source: 'device',
   });
 }

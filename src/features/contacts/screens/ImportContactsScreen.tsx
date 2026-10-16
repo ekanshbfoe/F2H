@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Linking, Pressable, Switch, View } from 'react-native';
+import { FlatList, Linking, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge, Button, Callout, Card, Text } from '@/components/ui';
@@ -26,7 +26,7 @@ type Phase =
   | { kind: 'saving'; done: number; total: number }
   | { kind: 'done'; count: number; failedAfter?: number };
 
-/** Import from this phone (spec 0003, AC-4): permission, review with bulk tags, batched save. */
+/** Import from this phone (spec 0003, AC-4): permission, review and pick, batched save. */
 export function ImportContactsScreen() {
   const t = useTheme();
   const router = useRouter();
@@ -36,8 +36,6 @@ export function ImportContactsScreen() {
   const saveMany = useContacts((s) => s.saveMany);
   const [phase, setPhase] = useState<Phase>({ kind: 'intro' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [call, setCall] = useState(true);
-  const [whatsapp, setWhatsapp] = useState(false);
 
   const start = async () => {
     setPhase({ kind: 'reading' });
@@ -75,7 +73,7 @@ export function ImportContactsScreen() {
   const save = async () => {
     if (!review) return;
     const picked = review.candidates.filter((c) => selected.has(c.key) && !c.duplicate);
-    const payloads = picked.map((c) => toPayload(c, { call, whatsapp }));
+    const payloads = picked.map(toPayload);
     setPhase({ kind: 'saving', done: 0, total: payloads.length });
     try {
       const n = await saveMany(payloads, (done) =>
@@ -201,38 +199,6 @@ export function ImportContactsScreen() {
             {review.capped ? (
               <Callout>{`Only the first ${review.candidates.length} entries were read to keep this phone fast.`}</Callout>
             ) : null}
-            <Card style={{ gap: t.spacing.sm }}>
-              <Text variant="label" color="primary">
-                Tag the ones you import
-              </Text>
-              {(
-                [
-                  ['Call directory', call, setCall, 'import-call'],
-                  ['WhatsApp list', whatsapp, setWhatsapp, 'import-whatsapp'],
-                ] as const
-              ).map(([label, value, set, id]) => (
-                <View
-                  key={id}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.md }}
-                >
-                  <Text variant="label" style={{ flex: 1 }}>
-                    {label}
-                  </Text>
-                  <Switch
-                    value={value}
-                    onValueChange={set}
-                    accessibilityLabel={`Tag imported contacts for ${label}`}
-                    trackColor={{ true: t.colors.primary, false: t.colors.lineStrong }}
-                    testID={id}
-                  />
-                </View>
-              ))}
-              {!call && !whatsapp ? (
-                <Text variant="caption" color="danger">
-                  Turn on at least one tag.
-                </Text>
-              ) : null}
-            </Card>
             {selectable.length > 0 ? (
               <Button
                 variant="ghost"
@@ -304,11 +270,7 @@ export function ImportContactsScreen() {
           backgroundColor: t.colors.canvas,
         }}
       >
-        <Button
-          onPress={() => void save()}
-          disabled={selected.size === 0 || (!call && !whatsapp)}
-          testID="import-save"
-        >
+        <Button onPress={() => void save()} disabled={selected.size === 0} testID="import-save">
           {selected.size === 0 ? 'Pick contacts to import' : `Import ${selected.size}`}
         </Button>
       </View>

@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Button, Callout, Card, Screen, Text, TextField } from '@/components/ui';
 import { useTheme } from '@/theme';
@@ -34,7 +34,6 @@ export function ContactFormScreen() {
     defaultValues: toForm(existing?.payload ?? null),
   });
   const phones = useFieldArray({ control: form.control, name: 'phones' });
-  const channelError = form.formState.errors.call?.message;
 
   const submit = form.handleSubmit(async (values) => {
     setBusy(true);
@@ -171,38 +170,6 @@ export function ContactFormScreen() {
           >
             Add another number
           </Button>
-        ) : null}
-      </Card>
-
-      <Card style={{ gap: t.spacing.md }}>
-        <Text variant="heading">Show in</Text>
-        {(['call', 'whatsapp'] as const).map((key) => (
-          <Controller
-            key={key}
-            control={form.control}
-            name={key}
-            render={({ field }) => (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.md }}>
-                <Text variant="label" style={{ flex: 1 }}>
-                  {key === 'call' ? 'Call directory' : 'WhatsApp list'}
-                </Text>
-                <Switch
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  accessibilityLabel={
-                    key === 'call' ? 'Show in Call directory' : 'Show in WhatsApp list'
-                  }
-                  trackColor={{ true: t.colors.primary, false: t.colors.lineStrong }}
-                  testID={`contact-${key}`}
-                />
-              </View>
-            )}
-          />
-        ))}
-        {channelError ? (
-          <Text variant="caption" color="danger">
-            {channelError}
-          </Text>
         ) : null}
       </Card>
 

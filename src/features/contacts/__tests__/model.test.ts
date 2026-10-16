@@ -2,14 +2,12 @@
 // AC-1 (tabs, counts, sort), AC-4 (duplicate rule) of spec 0003
 import {
   contactFormSchema,
-  contactsForTab,
   formatPhone,
   isDuplicate,
   isInternational,
   matchesSearch,
   normalizePhone,
   parsePayload,
-  tabCounts,
   telUrl,
   toForm,
   toPayloadInput,
@@ -17,16 +15,16 @@ import {
   whatsappUrl,
   contactPayloadSchema,
   type ContactPayload,
+  visibleContacts,
   type StoredContact,
 } from '../model';
 
-const contact = (name: string, numbers: string[], call = true, whatsapp = false): ContactPayload =>
+const contact = (name: string, numbers: string[]): ContactPayload =>
   contactPayloadSchema.parse({
     v: 1,
     type: 'contact',
     name,
     phones: numbers.map((number) => ({ number, label: 'mobile' })),
-    channels: { call, whatsapp },
     source: 'manual',
   });
 const stored = (p: ContactPayload, i: number): StoredContact => ({
@@ -86,17 +84,27 @@ describe('payload validation (AC-2)', () => {
     });
   });
 
+  it('still reads a contact saved with the old Call and WhatsApp tags', () => {
+    const legacy = parsePayload({
+      v: 1,
+      type: 'contact',
+      name: 'Old',
+      phones: [{ number: '+919811111111', label: 'mobile' }],
+      channels: { call: false, whatsapp: true },
+      source: 'manual',
+    });
+    expect(legacy?.name).toBe('Old');
+  });
+
   it('maps form errors onto the fields the person typed in', () => {
     const r = contactFormSchema.safeParse({
       name: '',
       phones: [{ number: 'x', label: 'mobile' }],
-      call: false,
-      whatsapp: false,
       note: 'n'.repeat(501),
     });
     expect(r.success).toBe(false);
     const paths = r.success ? [] : r.error.issues.map((i) => i.path.join('.'));
-    expect(paths).toEqual(expect.arrayContaining(['name', 'call', 'note']));
+    expect(paths).toEqual(expect.arrayContaining(['name', 'note']));
     // the error lands on the number box the person typed in
     expect(paths).toEqual(expect.arrayContaining(['phones.0.number']));
   });
@@ -106,15 +114,13 @@ describe('payload validation (AC-2)', () => {
     const r = contactFormSchema.safeParse({
       name: 'n'.repeat(81),
       phones: many,
-      call: true,
-      whatsapp: false,
       note: '',
     });
     expect(r.success).toBe(false);
   });
 
   it('round trips through the form shape', () => {
-    const p = contact('Mummy', ['+919811111111'], true, true);
+    const p = contact('Mummy', ['+919811111111']);
     const back = contactPayloadSchema.parse(toPayloadInput(toForm(p), 'manual'));
     expect(back).toEqual(p);
     expect(toForm(null).phones).toHaveLength(1);
@@ -126,11 +132,11 @@ describe('payload validation (AC-2)', () => {
   });
 });
 
-describe('search, tabs and duplicates (AC-1, AC-4, AC-5)', () => {
+describe('search, the list and duplicates (AC-1, AC-4, AC-5)', () => {
   const book = [
-    contact('Ëkansh', ['+919811111111'], true, true),
-    contact('bhai', ['+919822222222'], false, true),
-    contact('Aai', ['02612345678'], true, false),
+    contact('Ëkansh', ['+919811111111']),
+    contact('bhai', ['+919822222222']),
+    contact('Aai', ['02612345678']),
   ].map(stored);
 
   it('searches names without case or accents and numbers by 3 or more digits', () => {
@@ -140,11 +146,9 @@ describe('search, tabs and duplicates (AC-1, AC-4, AC-5)', () => {
     expect(matchesSearch(book[1]!.payload, '')).toBe(true);
   });
 
-  it('splits into tabs, counts both and sorts by name', () => {
-    expect(contactsForTab(book, 'call').map((c) => c.payload.name)).toEqual(['Aai', 'Ëkansh']);
-    expect(contactsForTab(book, 'whatsapp').map((c) => c.payload.name)).toEqual(['bhai', 'Ëkansh']);
-    expect(tabCounts(book)).toEqual({ call: 2, whatsapp: 2 });
-    expect(contactsForTab(book, 'whatsapp', 'bh').map((c) => c.payload.name)).toEqual(['bhai']);
+  it('lists every contact sorted by name, filtered by the search', () => {
+    expect(visibleContacts(book).map((c) => c.payload.name)).toEqual(['Aai', 'bhai', 'Ëkansh']);
+    expect(visibleContacts(book, 'bh').map((c) => c.payload.name)).toEqual(['bhai']);
   });
 
   it('marks a candidate duplicate only when every number is already in the vault', () => {

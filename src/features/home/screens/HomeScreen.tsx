@@ -187,7 +187,7 @@ function VaultPage({ pending }: { pending: number | null }) {
             icon="people"
             tone="sky"
             title="Contacts"
-            detail={saved(contacts, 'Call and WhatsApp')}
+            detail={saved(contacts, 'Names and numbers')}
             onPress={() => router.push(CONTACTS_HREF)}
             testID="home-contacts"
           />

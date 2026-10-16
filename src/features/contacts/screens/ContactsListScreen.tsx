@@ -4,24 +4,15 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SegmentedToggle } from '@/components/motion';
 import { Avatar, Badge, Button, Callout, Card, Text, TextField } from '@/components/ui';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
 
-import {
-  contactsForTab,
-  formatPhone,
-  tabCounts,
-  type ContactTab,
-  type StoredContact,
-} from '../model';
+import { formatPhone, visibleContacts, type StoredContact } from '../model';
 import { CONTACTS_IMPORT_HREF, contactEditHref, contactHref } from '../routes';
 import { useContacts } from '../store';
 
-const TABS: readonly ContactTab[] = ['call', 'whatsapp'];
-
-/** Contacts (spec 0003, AC-1, AC-5, AC-9): Call and WhatsApp tabs over one encrypted list. */
+/** Contacts (spec 0003, AC-1, AC-5, AC-9): one encrypted list, searchable by name or number. */
 export function ContactsListScreen() {
   const t = useTheme();
   const router = useRouter();
@@ -33,7 +24,6 @@ export function ContactsListScreen() {
   const offline = useContacts((s) => s.offline);
   const error = useContacts((s) => s.error);
   const load = useContacts((s) => s.load);
-  const [tab, setTab] = useState<0 | 1>(0);
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -44,9 +34,7 @@ export function ContactsListScreen() {
   );
 
   const all = useMemo(() => Object.values(items), [items]);
-  const counts = useMemo(() => tabCounts(all), [all]);
-  const active = TABS[tab] ?? 'call';
-  const visible = useMemo(() => contactsForTab(all, active, query), [all, active, query]);
+  const visible = useMemo(() => visibleContacts(all, query), [all, query]);
 
   const refresh = () => {
     setRefreshing(true);
@@ -64,17 +52,18 @@ export function ContactsListScreen() {
         >
           <Ionicons name="chevron-back" size={t.sizes.iconLg} color={t.colors.sky} />
         </Pressable>
-        <Text variant="title" accessibilityRole="header" style={{ flex: 1 }}>
-          Contacts
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text variant="title" accessibilityRole="header">
+            Contacts
+          </Text>
+          {unlocked && status === 'ready' ? (
+            <Text variant="caption" color="muted" testID="contacts-count">
+              {`${all.length} saved`}
+            </Text>
+          ) : null}
+        </View>
         <Badge tone="primary">Encrypted</Badge>
       </View>
-      <SegmentedToggle
-        options={[`Call · ${counts.call}`, `WhatsApp · ${counts.whatsapp}`]}
-        value={tab}
-        onChange={setTab}
-        testID="contacts-tabs"
-      />
       <TextField
         label="Search"
         placeholder="Name or at least 3 digits"
@@ -151,9 +140,7 @@ export function ContactsListScreen() {
     </Card>
   ) : (
     <Text variant="body" color="muted" align="center" testID="contacts-no-results">
-      {query.trim()
-        ? `Nothing matches "${query.trim()}" in ${active === 'call' ? 'Call' : 'WhatsApp'}.`
-        : `No contact is tagged for ${active === 'call' ? 'Call' : 'WhatsApp'} yet.`}
+      {`Nothing matches "${query.trim()}".`}
     </Text>
   );
 
@@ -215,7 +202,6 @@ function ContactRow({ contact, onPress }: { contact: StoredContact; onPress: () 
           {p.phones.length > 1 ? ` · +${p.phones.length - 1}` : ''}
         </Text>
       </View>
-      {p.channels.call && p.channels.whatsapp ? <Badge tone="neutral">Both</Badge> : null}
       <Ionicons name="chevron-forward" size={t.spacing.xl} color={t.colors.sky} />
     </Pressable>
   );

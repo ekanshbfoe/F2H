@@ -54,9 +54,9 @@ describe('toCandidates', () => {
     const phones = Array.from({ length: 7 }, (_, i) => ({ number: `98765432${10 + i}` }));
     const [c] = toCandidates([{ fullName: 'Many', phones }], new Set());
     expect(c?.phones).toHaveLength(5);
-    const p = toPayload(c!, { call: false, whatsapp: true });
+    const p = toPayload(c!);
     expect(p.source).toBe('device');
-    expect(p.channels).toEqual({ call: false, whatsapp: true });
+    expect(p.channels).toBeUndefined();
   });
 });
 
