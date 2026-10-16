@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { File } from 'expo-file-system';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { BloomMenu, type BloomRow } from '@/components/motion';
-import { Button, Callout, Sheet, Text } from '@/components/ui';
+import { Button, Callout, Sheet, Text, confirm } from '@/components/ui';
 import { useScreenCaptureBlock } from '@/features/lock/hooks';
 import { useTheme } from '@/theme';
 
@@ -124,24 +124,20 @@ function FileViewer({
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     setMenu(false);
-    Alert.alert('Delete this file?', `${p.name} goes to the trash on both Drives.`, [
-      { text: 'Keep', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          setBusy('delete');
-          remove(file)
-            .then(onClose)
-            .catch(() => {
-              setBusy(null);
-              setMessage('Could not delete it. Check your connection.');
-            });
-        },
-      },
-    ]);
+    const ok = await confirm({
+      title: 'Delete this file?',
+      message: `${p.name} goes to the trash on both Drives.`,
+    });
+    if (!ok) return;
+    setBusy('delete');
+    remove(file)
+      .then(onClose)
+      .catch(() => {
+        setBusy(null);
+        setMessage('Could not delete it. Check your connection.');
+      });
   };
 
   const rows: BloomRow[] = [
@@ -266,7 +262,7 @@ function FileViewer({
                   icon: 'trash-outline',
                   label: 'Delete',
                   tone: 'danger',
-                  onPress: confirmDelete,
+                  onPress: () => void confirmDelete(),
                   disabled: busy !== null || offline,
                 },
               ]}

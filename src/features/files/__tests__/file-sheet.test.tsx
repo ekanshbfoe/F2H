@@ -1,8 +1,8 @@
 // covers: AC-9, AC-11 of child spec 0001-drive-redundancy (open after a hash check, delete),
 // through the sheet the files list opens a file in
 import { act, screen, userEvent } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 
+import { ConfirmHost } from '@/components/ui';
 import { renderWithProviders } from '@/lib/test-utils';
 import { useSession } from '@/state/session.store';
 
@@ -123,7 +123,12 @@ describe('the file sheet', () => {
       states: { '1': 'ok' },
       skipped: 0,
     });
-    await renderWithProviders(<FilesListScreen />);
+    await renderWithProviders(
+      <>
+        <FilesListScreen />
+        <ConfirmHost />
+      </>,
+    );
     await openRow('1');
     expect(await screen.findByText('wifi password is on the fridge')).toBeOnTheScreen();
     expect(mockDownload).toHaveBeenCalledTimes(1);
@@ -135,7 +140,12 @@ describe('the file sheet', () => {
       states: { '1': 'degraded' },
       skipped: 0,
     });
-    await renderWithProviders(<FilesListScreen />);
+    await renderWithProviders(
+      <>
+        <FilesListScreen />
+        <ConfirmHost />
+      </>,
+    );
     const user = await openRow('1');
     expect(await screen.findByText('PDF document · 2.0 KB')).toBeOnTheScreen();
     expect(mockDownload).not.toHaveBeenCalled();
@@ -150,19 +160,22 @@ describe('the file sheet', () => {
       skipped: 0,
     });
     mockDelete.mockResolvedValue(undefined);
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
-    });
-    await renderWithProviders(<FilesListScreen />);
+    await renderWithProviders(
+      <>
+        <FilesListScreen />
+        <ConfirmHost />
+      </>,
+    );
     const user = await openRow('1');
     await user.press(await screen.findByTestId('file-menu-toggle'));
     expect(screen.getByText('One Drive')).toBeOnTheScreen();
     await user.press(screen.getByTestId('file-menu-delete'));
+    expect(await screen.findByText('Delete this file?')).toBeOnTheScreen();
+    expect(mockDelete).not.toHaveBeenCalled();
+    await user.press(screen.getByTestId('confirm-accept'));
     await act(async () => undefined);
-    expect(alert).toHaveBeenCalledTimes(1);
     expect(mockDelete).toHaveBeenCalledWith('1');
     expect(useFiles.getState().items['1']).toBeUndefined();
-    alert.mockRestore();
   });
 });
 
@@ -174,22 +187,20 @@ describe('swipe to delete', () => {
       skipped: 0,
     });
     mockDelete.mockResolvedValue(undefined);
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
-    });
-    await renderWithProviders(<FilesListScreen />);
-    await userEvent.setup().press(await screen.findByLabelText('Delete lease.pdf'));
-    await act(async () => undefined);
-    expect(alert).toHaveBeenCalledWith(
-      'Delete this file?',
-      expect.stringContaining('lease.pdf'),
-      expect.anything(),
-      expect.anything(),
+    await renderWithProviders(
+      <>
+        <FilesListScreen />
+        <ConfirmHost />
+      </>,
     );
+    const user = userEvent.setup();
+    await user.press(await screen.findByLabelText('Delete lease.pdf'));
+    expect(await screen.findByText(/lease\.pdf goes to the trash/)).toBeOnTheScreen();
+    await user.press(screen.getByTestId('confirm-accept'));
+    await act(async () => undefined);
     expect(mockDelete).toHaveBeenCalledWith('1');
     expect(screen.queryByTestId('file-row-1')).toBeNull();
     expect(screen.getByTestId('file-row-2')).toBeOnTheScreen();
-    alert.mockRestore();
   });
 });
 
@@ -205,23 +216,25 @@ describe('picking several files', () => {
       skipped: 0,
     });
     mockDelete.mockResolvedValue(undefined);
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      buttons?.find((b) => b.style === 'destructive')?.onPress?.();
-    });
     const user = userEvent.setup();
-    await renderWithProviders(<FilesListScreen />);
+    await renderWithProviders(
+      <>
+        <FilesListScreen />
+        <ConfirmHost />
+      </>,
+    );
     await user.longPress(await screen.findByTestId('file-row-1'));
     expect(screen.getByText('1 selected')).toBeOnTheScreen();
     await user.press(screen.getByTestId('file-row-3'));
     expect(screen.getByText('2 selected')).toBeOnTheScreen();
     expect(mockDownload).not.toHaveBeenCalled();
     await user.press(screen.getByTestId('files-pick-delete'));
+    expect(await screen.findByText('Delete 2 files?')).toBeOnTheScreen();
+    await user.press(screen.getByTestId('confirm-accept'));
     await act(async () => undefined);
-    expect(alert.mock.calls[0]?.[0]).toBe('Delete 2 files?');
     expect(mockDelete.mock.calls.map((c) => c[0])).toEqual(['1', '3']);
     expect(screen.getByText('Files')).toBeOnTheScreen();
     expect(screen.getByTestId('file-row-2')).toBeOnTheScreen();
-    alert.mockRestore();
   });
 
   it('leaves picking when the last file is unticked', async () => {
@@ -231,10 +244,37 @@ describe('picking several files', () => {
       skipped: 0,
     });
     const user = userEvent.setup();
-    await renderWithProviders(<FilesListScreen />);
+    await renderWithProviders(
+      <>
+        <FilesListScreen />
+        <ConfirmHost />
+      </>,
+    );
     await user.longPress(await screen.findByTestId('file-row-1'));
     await user.press(screen.getByTestId('file-row-1'));
     expect(screen.queryByText('1 selected')).toBeNull();
     expect(screen.getByText('Files')).toBeOnTheScreen();
+  });
+});
+
+describe('the delete card', () => {
+  it('keeps the file when the person taps Keep', async () => {
+    mockList.mockResolvedValue({
+      items: [file('1', 'lease.pdf', 'application/pdf')],
+      states: {},
+      skipped: 0,
+    });
+    const user = userEvent.setup();
+    await renderWithProviders(
+      <>
+        <FilesListScreen />
+        <ConfirmHost />
+      </>,
+    );
+    await user.press(await screen.findByLabelText('Delete lease.pdf'));
+    await user.press(await screen.findByTestId('confirm-cancel'));
+    await act(async () => undefined);
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(screen.getByTestId('file-row-1')).toBeOnTheScreen();
   });
 });

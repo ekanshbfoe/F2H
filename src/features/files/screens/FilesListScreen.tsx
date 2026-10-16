@@ -5,7 +5,6 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   BackHandler,
   FlatList,
   Pressable,
@@ -15,7 +14,7 @@ import {
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge, Button, Callout, Card, Text, TextField } from '@/components/ui';
+import { Badge, Button, Callout, Card, Text, TextField, confirm } from '@/components/ui';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
 import { useSteadyRouter } from '@/hooks/useSteadyRouter';
@@ -96,55 +95,42 @@ export function FilesListScreen() {
     [items, query],
   );
 
-  const confirmDelete = (file: StoredFile, keep: () => void) => {
-    Alert.alert(
-      'Delete this file?',
-      `${file.payload.name} goes to the trash on both Drives.`,
-      [
-        { text: 'Keep', style: 'cancel', onPress: keep },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            remove(file).catch(() => {
-              keep();
-              setMessage({ tone: 'danger', text: 'Could not delete it. Check your connection.' });
-            });
-          },
-        },
-      ],
-      { cancelable: true, onDismiss: keep },
-    );
+  const confirmDelete = async (file: StoredFile, keep: () => void) => {
+    const ok = await confirm({
+      title: 'Delete this file?',
+      message: `${file.payload.name} goes to the trash on both Drives.`,
+    });
+    if (!ok) {
+      keep();
+      return;
+    }
+    remove(file).catch(() => {
+      keep();
+      setMessage({ tone: 'danger', text: 'Could not delete it. Check your connection.' });
+    });
   };
 
   const deletePicked = () => {
     const chosen = picked.map((id) => items[id]).filter((f): f is StoredFile => Boolean(f));
     const n = chosen.length;
     if (n === 0) return;
-    Alert.alert(
-      n === 1 ? 'Delete this file?' : `Delete ${n} files?`,
-      `${n === 1 ? 'It goes' : 'They go'} to the trash on both Drives.`,
-      [
-        { text: 'Keep', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            setDeleting(true);
-            void removeMany(chosen).then(({ failed }) => {
-              setDeleting(false);
-              setPicked(failed);
-              if (failed.length > 0) {
-                setMessage({
-                  tone: 'danger',
-                  text: `${failed.length} could not be deleted and ${failed.length === 1 ? 'is' : 'are'} still ticked. Check your connection and try again.`,
-                });
-              }
-            });
-          },
-        },
-      ],
-    );
+    void confirm({
+      title: n === 1 ? 'Delete this file?' : `Delete ${n} files?`,
+      message: `${n === 1 ? 'It goes' : 'They go'} to the trash on both Drives.`,
+      confirmLabel: n === 1 ? 'Delete' : `Delete ${n}`,
+    }).then(async (ok) => {
+      if (!ok) return;
+      setDeleting(true);
+      const { failed } = await removeMany(chosen);
+      setDeleting(false);
+      setPicked(failed);
+      if (failed.length > 0) {
+        setMessage({
+          tone: 'danger',
+          text: `${failed.length} could not be deleted and ${failed.length === 1 ? 'is' : 'are'} still ticked. Check your connection and try again.`,
+        });
+      }
+    });
   };
 
   const pick = async () => {
@@ -334,7 +320,7 @@ export function FilesListScreen() {
           <SwipeToDelete
             enabled={!offline && !picking}
             label={`Delete ${item.payload.name}`}
-            onDelete={(keep) => confirmDelete(item, keep)}
+            onDelete={(keep) => void confirmDelete(item, keep)}
             testID={`file-delete-${item.id}`}
           >
             <FileRow
