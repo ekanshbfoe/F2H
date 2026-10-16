@@ -255,10 +255,7 @@ export function BloomMenu({
         </View>
       ) : null}
       <GestureDetector gesture={drag}>
-        <Animated.View
-          style={[box ? styles.free : styles.corner, box ? buttonStyle : null]}
-          pointerEvents="box-none"
-        >
+        <Animated.View style={[box ? styles.free : styles.corner, box ? buttonStyle : null]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={label}

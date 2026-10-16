@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -165,7 +165,9 @@ export function Sheet({
 
   return (
     <Modal transparent visible statusBarTranslucent onRequestClose={onClose} animationType="none">
-      <View style={styles.root} testID={testID}>
+      {/* Android draws a Modal in its own window, outside the app's gesture root: without a
+          root of its own here, no drag, pinch or swipe inside the sheet is ever seen */}
+      <GestureHandlerRootView style={styles.root} testID={testID}>
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrim }, scrimStyle]}
         >
@@ -177,7 +179,7 @@ export function Sheet({
           />
         </Animated.View>
         {tall ? panel : <GestureDetector gesture={pan}>{panel}</GestureDetector>}
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
