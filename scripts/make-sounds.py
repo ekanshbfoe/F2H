@@ -9,7 +9,8 @@ Both are made from scratch here (no samples, nothing licensed):
   burst of filtered noise gives it the click of a real key. About 45 ms.
 - unlock.wav: the right PIN. An airy swell rises while the boxes glow, then a glassy bell
   arpeggio lands as they stack into one, timed to the success animation (the bells start at
-  300 ms, when the boxes meet). About 1.2 s.
+  180 ms; with the 80 to 150 ms an old Android adds before playback they ring as the boxes meet
+  at about 260 ms). About 1.2 s.
 """
 
 import os
@@ -98,11 +99,11 @@ def unlock():
     # the landing: a low, soft thump as the boxes stack
     thump_t = t(0.09)
     thump = np.sin(2 * np.pi * 150 * thump_t) * np.exp(-thump_t / 0.025) * 0.55
-    place(buf, thump, 0.31)
+    place(buf, thump, 0.19)
 
     # the chime: a quick rising arpeggio (E6, G#6, B6, E7), each note a beat after the last
     for i, f in enumerate((1318.5, 1661.2, 1975.5, 2637.0)):
-        place(buf, bell(f, 0.9, 0.30 - i * 0.03) * (0.55 - i * 0.07), 0.30 + i * 0.055)
+        place(buf, bell(f, 0.9, 0.30 - i * 0.03) * (0.55 - i * 0.07), 0.18 + i * 0.055)
 
     return fade_edges(buf, 8)
 

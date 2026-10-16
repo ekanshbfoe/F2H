@@ -163,6 +163,26 @@ describe('PinEntry', () => {
     expect(screen.getByText('The two PINs do not match. Start again.')).toBeTruthy();
   });
 
+  it('shows the check and rests the pad from the frame the sixth digit lands', async () => {
+    const onChange = jest.fn();
+    const { rerender } = await render(
+      <PinEntry value="123456" onChange={onChange} onComplete={jest.fn()} fill />,
+    );
+    expect(screen.getByText('Checking your PIN')).toBeTruthy();
+    await activate('1');
+    expect(onChange).not.toHaveBeenCalled();
+    // a step that only records the digits never shows a check
+    await rerender(
+      <PinEntry value="123456" onChange={jest.fn()} onComplete={jest.fn()} awaitsCheck={false} />,
+    );
+    expect(screen.queryByText('Checking your PIN')).toBeNull();
+  });
+
+  it('draws a corner action in the empty pad cell', async () => {
+    await render(<PinEntry value="" onChange={jest.fn()} padCorner={<Text>Forgot?</Text>} />);
+    expect(screen.getByText('Forgot?')).toBeTruthy();
+  });
+
   it('ignores taps and screen reader actions while disabled', async () => {
     const onChange = jest.fn();
     await render(<PinEntry value="" onChange={onChange} disabled />);

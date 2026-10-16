@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, type ReactNode } from 'react';
 import {
   Platform,
   StyleSheet,
@@ -21,12 +21,21 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Text } from '@/components/ui';
+import { playSound, preloadSounds } from '@/services/sounds';
 import { useTheme } from '@/theme';
 
 export interface PinPadProps {
   /** Keep these stable (useCallback); every key is memoised on them. */
   onDigit: (digit: string) => void;
   onDelete: () => void;
+  /** Drawn in the empty bottom left cell (a small text action); it never dims with the keys. */
+  corner?: ReactNode;
+  /**
+   * The keys step back (a soft fade) while a full PIN is checked. Unlike `disabled` the gestures
+   * stay as they are, so nothing is rebuilt in the frame the sixth digit lands; the entry above
+   * already ignores digits past six.
+   */
+  dimmed?: boolean;
   /** Long press on delete. */
   onClear?: () => void;
   disabled?: boolean;
@@ -42,8 +51,12 @@ const ROWS = [
   ['', '0', 'delete'],
 ] as const;
 
-/** Key down feedback; on Android the system keyboard's own tick, not a vibrator buzz. */
+/**
+ * Key down feedback: a soft key click (muted when the phone is on silent or vibrate) and, on
+ * Android, the system keyboard's own tick instead of a vibrator buzz.
+ */
 function tick() {
+  playSound('key');
   const done =
     Platform.OS === 'android'
       ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Virtual_Key)
@@ -274,6 +287,8 @@ export function PinPad({
   onDigit,
   onDelete,
   onClear,
+  corner,
+  dimmed = false,
   disabled = false,
   keySize,
   testID,
@@ -281,34 +296,53 @@ export function PinPad({
   const t = useTheme();
   const fallback = usePinKeySize();
   const size = keySize ?? fallback;
+  // loaded with the pad, so the first key press is not the one that waits for the player
+  useEffect(() => preloadSounds(['key', 'unlock']), []);
   return (
-    <View
-      testID={testID}
-      style={{
-        gap: t.spacing.md,
-        alignSelf: 'center',
-        opacity: disabled ? t.opacity.disabled : 1,
-      }}
-    >
-      {ROWS.map((row, r) => (
-        <View key={r} style={{ flexDirection: 'row', gap: t.spacing.xxl }}>
-          {row.map((k, c) => {
-            if (k === '') return <View key={c} style={{ width: size }} />;
-            if (k === 'delete') {
+    <View testID={testID} style={{ alignSelf: 'center' }}>
+      <Animated.View
+        style={{
+          gap: t.spacing.md,
+          opacity: disabled ? t.opacity.disabled : dimmed ? t.opacity.resting : 1,
+          transitionProperty: 'opacity',
+          transitionDuration: t.motion.transitionMs,
+          transitionTimingFunction: t.motion.cssEaseOut,
+        }}
+      >
+        {ROWS.map((row, r) => (
+          <View key={r} style={{ flexDirection: 'row', gap: t.spacing.xxl }}>
+            {row.map((k, c) => {
+              if (k === '') return <View key={c} style={{ width: size }} />;
+              if (k === 'delete') {
+                return (
+                  <DeleteKey
+                    key={c}
+                    size={size}
+                    disabled={disabled}
+                    onDelete={onDelete}
+                    onClear={onClear}
+                  />
+                );
+              }
               return (
-                <DeleteKey
-                  key={c}
-                  size={size}
-                  disabled={disabled}
-                  onDelete={onDelete}
-                  onClear={onClear}
-                />
+                <DigitKey key={c} size={size} label={k} disabled={disabled} onDigit={onDigit} />
               );
-            }
-            return <DigitKey key={c} size={size} label={k} disabled={disabled} onDigit={onDigit} />;
-          })}
+            })}
+          </View>
+        ))}
+      </Animated.View>
+      {corner ? (
+        // over the empty cell, the size of a key with its edge, outside the keys' fade
+        <View
+          style={[
+            styles.layer,
+            styles.center,
+            { bottom: 0, width: size, height: size + t.sizes.buttonEdge },
+          ]}
+        >
+          {corner}
         </View>
-      ))}
+      ) : null}
     </View>
   );
 }

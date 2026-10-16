@@ -225,6 +225,8 @@ export const opacity = {
   disabled: 0.45,
   pressed: 0.85,
   placeholder: 0.6,
+  /** The pad while a full PIN is being checked: it still reads, it just steps back. */
+  resting: 0.6,
 } as const;
 
 export const tokens = {

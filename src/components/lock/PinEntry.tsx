@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -8,7 +8,6 @@ import { useTheme } from '@/theme';
 
 import { PinBoxes, type PinBoxesState } from './PinBoxes';
 import { PinPad, pinPadHeight, usePinKeySize } from './PinPad';
-import { PinProgress } from './PinProgress';
 
 export interface PinEntryProps {
   value: string;
@@ -31,6 +30,16 @@ export interface PinEntryProps {
   busyLabel?: string;
   /** One short line under the boxes: an error, or a quiet note like the tries left. */
   status?: PinStatus | null;
+  /** Called once the success sequence of the boxes has played out. */
+  onSuccessDone?: () => void;
+  /**
+   * Whether a complete PIN goes off to be checked or saved (default). The boxes then show the
+   * checking light from the very frame the sixth digit lands, and the pad rests until the parent
+   * answers. False for a step that only records the digits (choosing a new PIN).
+   */
+  awaitsCheck?: boolean;
+  /** A small action in the pad's empty corner cell. */
+  padCorner?: ReactNode;
   testID?: string;
 }
 
@@ -54,6 +63,9 @@ export function PinEntry({
   busy = false,
   busyLabel,
   status = null,
+  onSuccessDone,
+  awaitsCheck = true,
+  padCorner,
   testID,
 }: PinEntryProps) {
   const t = useTheme();
@@ -91,10 +103,14 @@ export function PinEntry({
   const onDelete = useCallback(() => set(latest.current.value.slice(0, -1)), [set]);
   const onClear = useCallback(() => set(''), [set]);
 
+  const busyText = busyLabel ?? 'Checking your PIN';
+  const checking = state === 'idle' && submits && awaitsCheck && value.length === length;
+  const resting = checking || state === 'success';
   const { fontScale, height } = useWindowDimensions();
   const compact = height < t.sizes.compactHeight;
+  const statusLines = compact ? 1 : 2;
   const statusHeight = Math.ceil(
-    2 * t.typography.caption.lineHeight! * Math.min(fontScale, t.sizes.maxFontScale),
+    statusLines * t.typography.caption.lineHeight! * Math.min(fontScale, t.sizes.maxFontScale),
   );
   const [padArea, setPadArea] = useState<number | undefined>(undefined);
   const keySize = usePinKeySize(fill ? padArea : undefined);
@@ -102,6 +118,8 @@ export function PinEntry({
   const pad = (
     <PinPad
       disabled={disabled}
+      dimmed={resting}
+      corner={padCorner}
       onDigit={onDigit}
       onDelete={onDelete}
       onClear={onClear}
@@ -124,7 +142,9 @@ export function PinEntry({
       <PinBoxes
         value={value}
         length={length}
-        state={state}
+        // a full PIN being checked or saved: the boxes carry the waiting motion
+        state={checking ? 'checking' : state}
+        onSuccessDone={onSuccessDone}
         testID={testID ? `${testID}-boxes` : undefined}
       />
       <TextInput
@@ -147,8 +167,17 @@ export function PinEntry({
         // A fixed two line slot: progress, an error or a note swap in place and never move the
         // pad, so the keys stay put while a PIN is being checked.
         <View style={[styles.between, { height: statusHeight }]}>
-          {busy ? (
-            <PinProgress visible label={busyLabel} />
+          {busy || checking ? (
+            <View accessible accessibilityRole="progressbar" accessibilityLabel={busyText}>
+              <Text
+                variant="caption"
+                color="muted"
+                align="center"
+                maxFontSizeMultiplier={t.sizes.maxFontScale}
+              >
+                {busyText}
+              </Text>
+            </View>
           ) : status ? (
             <Animated.View
               key={status.text}
@@ -158,7 +187,7 @@ export function PinEntry({
                 variant="caption"
                 color={status.tone}
                 align="center"
-                numberOfLines={2}
+                numberOfLines={statusLines}
                 maxFontSizeMultiplier={t.sizes.maxFontScale}
                 accessibilityLiveRegion="polite"
                 accessibilityLabel={status.text}
