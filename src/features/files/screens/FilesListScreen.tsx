@@ -15,6 +15,14 @@ import { fileHref } from '../routes';
 import { useFiles } from '../store';
 
 function describe(e: unknown): string {
+  const text = explain(e);
+  // a development build adds the step and reason an upload stopped at; a release build never does
+  if (!__DEV__) return text;
+  const detail = e instanceof Error ? e.message : String(e);
+  return detail && detail !== text ? `${text}\n\n(${detail})` : text;
+}
+
+function explain(e: unknown): string {
   const code = e instanceof FilesError ? e.code : null;
   switch (code) {
     case 'no_drive_linked':

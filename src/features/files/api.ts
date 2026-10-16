@@ -142,10 +142,19 @@ export async function uploadFile(
     return await withKey(async (mk, assertLive) => {
       const dek = envelope.generateDek();
       try {
-        const enc = await chunked.encryptFile(picked.uri, dek, blobId, {
-          fs: expoFileAdapter,
-          outputUri: ctUri,
-        });
+        // every failure names its step, so a development build can show where an upload stopped
+        let enc: Awaited<ReturnType<typeof chunked.encryptFile>>;
+        try {
+          enc = await chunked.encryptFile(picked.uri, dek, blobId, {
+            fs: expoFileAdapter,
+            outputUri: ctUri,
+          });
+        } catch (e) {
+          throw new FilesError(
+            'upload_failed',
+            `encrypt: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
         assertLive();
         let session: SessionResponse;
         try {
@@ -161,7 +170,10 @@ export async function uploadFile(
           if (code === 'no_drive_linked' || code === 'no_drive_reachable')
             throw new FilesError('no_drive_linked');
           if (code === 'too_large') throw new FilesError('too_large');
-          throw new FilesError('upload_failed', code);
+          throw new FilesError(
+            'upload_failed',
+            `session: ${code ?? (e instanceof Error ? e.message : String(e))}`,
+          );
         }
         const progress: UploadProgress = {
           phase: 'uploading',
@@ -170,6 +182,7 @@ export async function uploadFile(
         };
         onProgress({ ...progress });
         // One Drive failing is tolerated: the server marks the blob degraded and reconcile repairs it.
+        const sendErrors: string[] = [];
         for (const slot of ['a', 'b'] as const) {
           const url = slot === 'a' ? session.session_a : session.session_b;
           if (!url) continue;
@@ -178,12 +191,15 @@ export async function uploadFile(
               progress[slot] = f;
               onProgress({ ...progress });
             });
-          } catch {
+          } catch (e) {
+            sendErrors.push(`${slot}: ${e instanceof Error ? e.message : String(e)}`);
             progress[slot] = null;
             onProgress({ ...progress });
           }
         }
-        if (progress.a === null && progress.b === null) throw new FilesError('upload_failed');
+        if (progress.a === null && progress.b === null) {
+          throw new FilesError('upload_failed', `drive ${sendErrors.join('; ') || 'no session'}`);
+        }
         onProgress({ ...progress, phase: 'verifying' });
         const payload: FilePayload = {
           v: 1,
@@ -210,7 +226,10 @@ export async function uploadFile(
         } catch (e) {
           if ((e as { code?: string }).code === 'hash_mismatch')
             throw new FilesError('hash_mismatch');
-          throw new FilesError('upload_failed', (e as { code?: string }).code);
+          throw new FilesError(
+            'upload_failed',
+            `complete: ${(e as { code?: string }).code ?? (e instanceof Error ? e.message : String(e))}`,
+          );
         }
         onProgress({ ...progress, phase: 'done' });
         return { item: { id: done.item_id, version: 1, payload }, state: done.state };
