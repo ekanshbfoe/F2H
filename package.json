@@ -18,7 +18,8 @@
     "db:types": "npx supabase gen types typescript --linked --schema public > src/types/database.types.ts",
     "bootstrap:admin": "node scripts/bootstrap-admin.ts",
     "restore:backup": "node scripts/restore-backup.ts",
-    "eas:env": "node scripts/push-eas-env.ts"
+    "eas:env": "node scripts/push-eas-env.ts",
+    "setup:backend": "node scripts/setup-backend.ts"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
