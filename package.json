@@ -15,7 +15,7 @@
     "prepare": "husky",
     "db:push": "supabase db push",
     "db:test": "supabase test db",
-    "db:types": "npx supabase gen types typescript --project-id abkjryjrwvnutwmzbkex --schema public > src/types/database.types.ts",
+    "db:types": "npx supabase gen types typescript --linked --schema public > src/types/database.types.ts",
     "bootstrap:admin": "node scripts/bootstrap-admin.ts",
     "restore:backup": "node scripts/restore-backup.ts",
     "eas:env": "node scripts/push-eas-env.ts"
