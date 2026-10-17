@@ -98,7 +98,8 @@ const KINDS: { kind: Exclude<PreviewKind, 'other'>; mimes: RegExp; ext: RegExp; 
     ext: /\.(txt|md|csv|json|log)$/,
     max: 256 * 1024,
   },
-  { kind: 'pdf', mimes: /^application\/pdf$/, ext: /\.pdf$/, max: 15 * 1024 * 1024 },
+  // the reader holds the whole PDF in memory while drawing it: kept small for a 1 GB phone
+  { kind: 'pdf', mimes: /^application\/pdf$/, ext: /\.pdf$/, max: 8 * 1024 * 1024 },
   {
     kind: 'video',
     mimes: /^video\/(mp4|3gpp|webm|quicktime|x-matroska)$/,

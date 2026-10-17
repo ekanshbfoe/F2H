@@ -169,17 +169,29 @@ describe('the file sheet', () => {
 
   it('waits for a tap before decrypting a big file', async () => {
     mockList.mockResolvedValue({
-      items: [file('1', 'scan.pdf', 'application/pdf', 10 * 1024 * 1024)],
+      items: [file('1', 'clip.mp4', 'video/mp4', 20 * 1024 * 1024)],
       states: {},
       skipped: 0,
     });
     await renderWithProviders(<FilesListScreen />);
     const user = await openRow('1');
-    expect(await screen.findByText('PDF document · 10 MB')).toBeOnTheScreen();
+    expect(await screen.findByText('MP4 video · 20 MB')).toBeOnTheScreen();
     expect(mockDownload).not.toHaveBeenCalled();
     await user.press(screen.getByTestId('file-show'));
-    expect(await screen.findByText('pdf reader')).toBeOnTheScreen();
+    await act(async () => undefined);
     expect(mockDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a PDF too big for the reader to another app', async () => {
+    mockList.mockResolvedValue({
+      items: [file('1', 'scan.pdf', 'application/pdf', 10 * 1024 * 1024)],
+      states: {},
+      skipped: 0,
+    });
+    await renderWithProviders(<FilesListScreen />);
+    await openRow('1');
+    expect(await screen.findByTestId('file-open')).toBeOnTheScreen();
+    expect(mockDownload).not.toHaveBeenCalled();
   });
 
   it('sends a Word file to another app, decrypting only on request', async () => {

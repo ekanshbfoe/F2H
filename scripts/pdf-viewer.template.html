@@ -43,7 +43,7 @@
       .page canvas {
         display: block;
         width: 100%;
-        height: 100%;
+        height: auto;
       }
       #count {
         position: fixed;
@@ -95,11 +95,16 @@
         var drawn = [];
         var hideCount = null;
 
-        function bytes(b64) {
+        // the file arrives in small base64 parts written into one buffer, so the phone never
+        // holds the whole file as text as well as bytes
+        var incoming = null;
+        var filled = 0;
+
+        function receive(b64) {
           var bin = atob(b64);
-          var out = new Uint8Array(bin.length);
-          for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-          return out;
+          for (var i = 0; i < bin.length && filled < incoming.length; i++) {
+            incoming[filled++] = bin.charCodeAt(i);
+          }
         }
 
         function draw(doc, n, box) {
@@ -109,13 +114,20 @@
             .getPage(n)
             .then(function (page) {
               var base = page.getViewport({ scale: 1 });
+              // each page takes its own shape: a landscape page in a portrait file is not stretched
+              box.style.aspectRatio = base.width + ' / ' + base.height;
               var ratio = Math.min(window.devicePixelRatio || 1, 1.5);
               var vp = page.getViewport({ scale: (box.clientWidth / base.width) * ratio });
               var canvas = document.createElement('canvas');
               canvas.width = Math.floor(vp.width);
               canvas.height = Math.floor(vp.height);
               box.appendChild(canvas);
-              return page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+              return page
+                .render({ canvasContext: canvas.getContext('2d'), viewport: vp })
+                .promise.then(function () {
+                  // the pixels stay on the canvas; the page's decoded fonts and images can go
+                  page.cleanup();
+                });
             })
             .then(function () {
               box.dataset.state = 'drawn';
@@ -136,9 +148,9 @@
             });
         }
 
-        function open(b64) {
+        function open(data) {
           lib
-            .getDocument({ data: bytes(b64), isEvalSupported: false, enableXfa: false })
+            .getDocument({ data: data, isEvalSupported: false, enableXfa: false })
             .promise.then(function (doc) {
               post({ type: 'loaded', pages: doc.numPages });
               return doc.getPage(1).then(function (first) {
@@ -193,7 +205,19 @@
           } catch (e) {
             return;
           }
-          if (msg && msg.type === 'open' && typeof msg.data === 'string') open(msg.data);
+          if (!msg) return;
+          if (msg.type === 'begin' && typeof msg.size === 'number') {
+            incoming = new Uint8Array(msg.size);
+            filled = 0;
+            post({ type: 'next' });
+          } else if (msg.type === 'part' && incoming && typeof msg.data === 'string') {
+            receive(msg.data);
+            post({ type: 'next' });
+          } else if (msg.type === 'end' && incoming) {
+            var data = incoming;
+            incoming = null;
+            open(data);
+          }
         }
         document.addEventListener('message', onMessage);
         window.addEventListener('message', onMessage);
