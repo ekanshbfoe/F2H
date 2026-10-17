@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ConfirmHost, dismissConfirm } from '@/components/ui';
+import { ApprovalSheet } from '@/features/admin/approval/ApprovalSheet';
 import { LockRuntime } from '@/features/lock/LockRuntime';
 import { useLock } from '@/features/lock/lock.store';
 import { clearScratch } from '@/services/file-adapter';
@@ -84,6 +85,7 @@ export default function RootLayout() {
               <Stack.Screen key={name} name={name} options={{ animation: 'fade' }} />
             ))}
           </Stack>
+          <ApprovalSheet />
           <ConfirmHost />
           <LockRuntime />
         </ThemeProvider>
