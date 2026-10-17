@@ -7,7 +7,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 
-/** A decrypted video with the phone's own controls; it waits for a tap to play. */
+/**
+ * A decrypted video with the phone's own controls; it waits for a tap to play. No fullscreen:
+ * Android plays that in a separate screen without the screenshot block or the lock clock.
+ */
 export function VideoPreview({ uri, label }: { uri: string; label: string }) {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = false;
@@ -18,7 +21,7 @@ export function VideoPreview({ uri, label }: { uri: string; label: string }) {
       style={StyleSheet.absoluteFill}
       contentFit="contain"
       nativeControls
-      fullscreenOptions={{ enable: true }}
+      fullscreenOptions={{ enable: false }}
       allowsPictureInPicture={false}
       accessibilityLabel={label}
       testID="file-video"
