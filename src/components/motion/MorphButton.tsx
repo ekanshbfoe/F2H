@@ -7,6 +7,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -117,19 +118,21 @@ export function MorphButton({
                   {pendingSubtitle}
                 </Text>
               ) : null}
-              <Card
-                dashed
-                elevation="flat"
-                style={[
-                  styles.placeholder,
-                  {
-                    backgroundColor: 'rgba(255,255,255,0.15)',
-                    borderColor: 'rgba(255,255,255,0.6)',
-                  },
-                ]}
-              >
-                <View />
-              </Card>
+              <Floating still={reduceMotion}>
+                <Card
+                  dashed
+                  elevation="flat"
+                  style={[
+                    styles.placeholder,
+                    {
+                      backgroundColor: 'rgba(255,255,255,0.15)',
+                      borderColor: 'rgba(255,255,255,0.6)',
+                    },
+                  ]}
+                >
+                  <View />
+                </Card>
+              </Floating>
               {onStop ? (
                 <Animated.View entering={FadeIn.delay(300)}>
                   <Button
@@ -155,8 +158,37 @@ export function MorphButton({
   );
 }
 
+/** How far the waiting card drifts up and turns, and how long one drift takes. */
+const FLOAT_RISE = 6;
+const FLOAT_TURN_DEG = 3;
+const FLOAT_MS = 1400;
+
+/**
+ * The waiting card from the reference: it drifts up and turns a little, then back, for as long
+ * as the work runs, so the wait reads as alive. Reduced motion keeps it still.
+ */
+function Floating({ still, children }: { still: boolean; children: ReactNode }) {
+  const t = useTheme();
+  const drift = useSharedValue(0);
+  useEffect(() => {
+    if (still) return;
+    drift.set(
+      withRepeat(withTiming(1, { duration: FLOAT_MS, easing: t.motion.easeInOut }), -1, true),
+    );
+  }, [drift, still, t.motion.easeInOut]);
+  const style = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 800 },
+      { translateY: -FLOAT_RISE * drift.get() },
+      { rotateY: `${FLOAT_TURN_DEG * (drift.get() * 2 - 1)}deg` },
+    ],
+  }));
+  return <Animated.View style={[styles.floating, style]}>{children}</Animated.View>;
+}
+
 const styles = StyleSheet.create({
   root: { position: 'relative' },
+  floating: { width: '100%', alignItems: 'center' },
   buttonSlot: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   panel: { position: 'absolute', left: 0, right: 0, bottom: 0, overflow: 'hidden' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },

@@ -1,5 +1,7 @@
 export { CardDeck } from './CardDeck';
 export type { CardDeckProps } from './CardDeck';
+export { CardFan } from './CardFan';
+export type { CardFanProps } from './CardFan';
 export { CascadeList } from './CascadeList';
 export type { CascadeListProps } from './CascadeList';
 export { GlowBox } from './GlowBox';
