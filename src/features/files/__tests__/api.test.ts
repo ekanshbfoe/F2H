@@ -2,6 +2,7 @@
 // encryption into a memory file system, 1 MiB Content-Range PUTs to both sessions, resume after a
 // dropped chunk, one Drive failing, the completion payload, and the download hash check.
 import { createMemoryFs, createSha256, envelope, fromBase64, toHex, utf8ToBytes } from '@/crypto';
+import { useLock } from '@/features/lock/lock.store';
 import { useSession } from '@/state/session.store';
 
 import { downloadFile, uploadFile, type UploadProgress } from '../api';
@@ -263,5 +264,20 @@ describe('downloadFile', () => {
     await expect(downloadFile(item)).rejects.toMatchObject({ code: 'hash_mismatch' });
     expect(mockFs.files.has('mem://f2h-open/photo.jpg')).toBe(false);
     expect(utf8ToBytes('x')).toHaveLength(1);
+  });
+
+  it('a lock mid decrypt stops and leaves no plaintext behind', async () => {
+    const { item, ct, dekWrapped } = await uploaded();
+    mockDownload = ct;
+    mockItemRow = { dek_wrapped: dekWrapped };
+    mockCall.mockResolvedValueOnce({ mode: 'token', url: 'https://g/x?alt=media', token: 'ya29' });
+    const append = mockFs.append.bind(mockFs);
+    const spy = jest.spyOn(mockFs, 'append').mockImplementationOnce(async (uri, bytes) => {
+      await append(uri, bytes);
+      useLock.setState({ generation: useLock.getState().generation + 1 });
+    });
+    await expect(downloadFile(item)).rejects.toBeTruthy();
+    expect(mockFs.files.has('mem://f2h-open/photo.jpg')).toBe(false);
+    spy.mockRestore();
   });
 });

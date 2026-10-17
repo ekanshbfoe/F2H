@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfirmHost, dismissConfirm } from '@/components/ui';
 import { LockRuntime } from '@/features/lock/LockRuntime';
 import { useLock } from '@/features/lock/lock.store';
+import { clearScratch } from '@/services/file-adapter';
 import { usePushNavigation } from '@/services/push';
 import { ThemeProvider, colors, useAppFonts } from '@/theme';
 
@@ -44,6 +45,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => undefined);
   }, [ready]);
+
+  // a cold start is a locked vault: no decrypted copy from the last run may still be here
+  useEffect(() => {
+    clearScratch();
+  }, []);
 
   // a lock takes any open question with it, unanswered
   useEffect(

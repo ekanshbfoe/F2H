@@ -309,7 +309,7 @@ export async function downloadFile(item: StoredFile): Promise<string> {
     if (size !== p.size_ct || (await hashFile(ctUri, size)) !== p.sha256_ct) {
       throw new FilesError('hash_mismatch');
     }
-    return await withKey(async (mk) => {
+    return await withKey(async (mk, assertLive) => {
       const { data: row } = await supabase
         .from('vault_items')
         .select('dek_wrapped')
@@ -317,14 +317,24 @@ export async function downloadFile(item: StoredFile): Promise<string> {
         .maybeSingle();
       if (!row) throw new FilesError('not_found');
       const dek = envelope.unwrapDek(mk, fromBase64(row.dek_wrapped), item.id);
+      // a lock mid way stops the next plaintext write; the catch below deletes what was written,
+      // so no decrypted copy outlives the lock that emptied the scratch folder
+      const guarded = {
+        ...expoFileAdapter,
+        append: async (uri: string, bytes: Uint8Array) => {
+          assertLive();
+          await expoFileAdapter.append(uri, bytes);
+        },
+      };
       try {
         await chunked.decryptFile(ctUri, dek, fromHex(p.blob_id), {
-          fs: expoFileAdapter,
+          fs: guarded,
           outputUri: outUri,
         });
       } finally {
         zero(dek);
       }
+      assertLive();
       return outUri;
     });
   } catch (e) {

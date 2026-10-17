@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { useLock } from '@/features/lock/lock.store';
-import { clearScratch, fileExists } from '@/services/file-adapter';
+import { clearScratch, fileExists, removeFile } from '@/services/file-adapter';
 
 import {
   deleteFile,
@@ -99,7 +99,10 @@ export const useFiles = create<FilesState>((set, get) => ({
     if (known && fileExists(known)) return known;
     const generation = useLock.getState().generation;
     const uri = await downloadFile(item);
-    if (useLock.getState().generation !== generation) throw new Error('locked');
+    if (useLock.getState().generation !== generation) {
+      removeFile(uri);
+      throw new Error('locked');
+    }
     set((s) => ({
       // two files with the same name share a path; the older entry no longer holds its file
       opened: {
