@@ -29,7 +29,11 @@ jest.mock('expo-screen-capture', () => ({
   preventScreenCaptureAsync: jest.fn(() => Promise.resolve()),
   allowScreenCaptureAsync: jest.fn(() => Promise.resolve()),
 }));
-jest.mock('@/services/file-adapter', () => ({ clearScratch: jest.fn(), fileExists: () => true }));
+jest.mock('@/services/file-adapter', () => ({
+  clearScratch: jest.fn(),
+  fileExists: () => true,
+  removeFile: jest.fn(),
+}));
 jest.mock('expo-file-system', () => ({
   File: class {
     text() {
