@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
@@ -42,8 +41,8 @@ export function AudioPreview({ uri, name }: { uri: string; name: string }) {
   const playing = status.playing;
   const share = status.duration > 0 ? Math.min(1, status.currentTime / status.duration) : 0;
 
-  // stop when the sheet closes, even mid song
-  useEffect(() => () => player.pause(), [player]);
+  // no pause on close: useAudioPlayer releases the player as the sheet closes, which stops it,
+  // and a pause after that release would touch a freed player
 
   const toggle = () => {
     if (playing) {
