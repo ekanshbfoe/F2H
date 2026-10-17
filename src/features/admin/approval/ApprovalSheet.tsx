@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { MorphButton, type MorphState } from '@/components/motion';
+import { CardFan, MorphButton, type MorphState } from '@/components/motion';
 import { Badge, Button, Callout, Row, Sheet, Text } from '@/components/ui';
 import { loadRecoverySecretKey } from '@/features/keyring/admin-recovery';
 import { useSession } from '@/state/session.store';
@@ -109,19 +109,48 @@ function ApprovalBody({ device, onDone }: { device: MemberDevice; onDone: () => 
       pendingTitle={decision === 'approve' ? 'Approving' : 'Rejecting'}
       pendingSubtitle="Updating the family vault"
       success={
-        <View style={{ alignItems: 'center', gap: t.spacing.md }}>
-          <Text variant="heading" align="center">
-            {decision === 'approve' ? 'All set' : 'Request rejected'}
-          </Text>
-          <Text variant="body" color="muted" align="center">
-            {decision === 'approve'
-              ? `${who} can open their vault on ${phone} now.`
-              : 'That phone was told and holds nothing from the vault.'}
-          </Text>
-          <Button fullWidth={false} onPress={onDone}>
-            Done
-          </Button>
-        </View>
+        decision === 'approve' ? (
+          <View style={{ alignSelf: 'stretch', alignItems: 'center', gap: t.spacing.lg }}>
+            <View style={{ alignItems: 'center', gap: t.spacing.xs }}>
+              <Text variant="title" color="primary" align="center">
+                All set
+              </Text>
+              <Text variant="body" color="muted" align="center">
+                {`${who} can open their vault on this phone now.`}
+              </Text>
+            </View>
+            <CardFan testID="approve-card">
+              <View style={{ gap: t.spacing.xs }}>
+                <Text variant="heading" color="onPrimary" numberOfLines={1}>
+                  {who}
+                </Text>
+                <Text variant="body" color="onPrimary" numberOfLines={1}>
+                  {phone}
+                </Text>
+                <Text variant="caption" color="onPrimary" numberOfLines={1}>
+                  {whereOf(device)}
+                </Text>
+              </View>
+            </CardFan>
+            <View style={{ alignSelf: 'stretch' }}>
+              <Button onPress={onDone} testID="approve-done">
+                Done
+              </Button>
+            </View>
+          </View>
+        ) : (
+          <View style={{ alignItems: 'center', gap: t.spacing.md }}>
+            <Text variant="heading" align="center">
+              Request rejected
+            </Text>
+            <Text variant="body" color="muted" align="center">
+              That phone was told and holds nothing from the vault.
+            </Text>
+            <Button fullWidth={false} onPress={onDone}>
+              Done
+            </Button>
+          </View>
+        )
       }
       error={
         <View style={{ alignItems: 'center', gap: t.spacing.md }}>
