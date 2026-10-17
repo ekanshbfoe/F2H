@@ -22,6 +22,15 @@ describe('whileAway', () => {
     expect(awayGraceMs()).toBe(0);
   });
 
+  it('a trip that never comes back stops counting after the grace', async () => {
+    let release: () => void = () => undefined;
+    const stuck = whileAway(() => new Promise<void>((r) => (release = r)));
+    expect(awayGraceMs()).toBe(AWAY_GRACE_MS);
+    expect(awayGraceMs(Date.now() + AWAY_GRACE_MS + 1)).toBe(0);
+    release();
+    await stuck;
+  });
+
   it('a slow pick does not lock, a forgotten one still does', () => {
     const timeout = 60_000;
     const leftAt = 1_000_000;

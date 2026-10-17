@@ -7,10 +7,12 @@
 export const AWAY_GRACE_MS = 5 * 60 * 1000;
 
 let trips = 0;
+let startedAt = 0;
 
 /** Runs `task` (which opens another app's screen) with the auto lock grace in place. */
 export async function whileAway<T>(task: () => Promise<T>): Promise<T> {
   trips += 1;
+  startedAt = Date.now();
   try {
     return await task();
   } finally {
@@ -18,7 +20,10 @@ export async function whileAway<T>(task: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Extra time the auto lock allows for the step away starting now. */
-export function awayGraceMs(): number {
-  return trips > 0 ? AWAY_GRACE_MS : 0;
+/**
+ * Extra time the auto lock allows for the step away starting now. A trip that never came back
+ * (a picker that never answers, on a phone short of memory) stops counting after the grace.
+ */
+export function awayGraceMs(now: number = Date.now()): number {
+  return trips > 0 && now - startedAt < AWAY_GRACE_MS ? AWAY_GRACE_MS : 0;
 }
