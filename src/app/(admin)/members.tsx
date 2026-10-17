@@ -13,6 +13,7 @@ import {
   Sheet,
   Text,
   TextField,
+  confirm,
 } from '@/components/ui';
 import {
   createInvite,
@@ -126,26 +127,23 @@ export default function MembersScreen() {
   };
 
   // Oversight (spec 0005, AC-1): the member is told before anything is decrypted.
-  const openVault = () => {
+  const openVault = async () => {
     if (!member) return;
     const who = member.display_name;
-    Alert.alert(
-      `Open ${who}'s vault?`,
-      `${who} gets a notification and an entry in their Activity log saying you opened it. You see it read only.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Open, logged',
-          onPress: () => {
-            setMember(null);
-            router.push({
-              pathname: '/(admin)/oversight/[userId]',
-              params: { userId: member.id, name: who },
-            });
-          },
-        },
-      ],
-    );
+    const ok = await confirm({
+      title: `Open ${who}'s vault?`,
+      message: `${who} gets a notification and an Activity entry saying you opened it. You see it read only.`,
+      confirmLabel: 'Open, logged',
+      cancelLabel: 'Cancel',
+      tone: 'primary',
+      icon: 'eye-outline',
+    });
+    if (!ok) return;
+    setMember(null);
+    router.push({
+      pathname: '/(admin)/oversight/[userId]',
+      params: { userId: member.id, name: who },
+    });
   };
 
   // Sign out a member's phone (spec 0005, AC-6).
@@ -316,7 +314,7 @@ export default function MembersScreen() {
         title={member?.display_name ?? 'Member'}
       >
         {member && member.role !== 'admin' ? (
-          <Button variant="secondary" onPress={openVault} testID="member-open-vault">
+          <Button variant="secondary" onPress={() => void openVault()} testID="member-open-vault">
             Open vault (logged)
           </Button>
         ) : null}
