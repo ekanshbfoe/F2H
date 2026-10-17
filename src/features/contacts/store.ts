@@ -20,6 +20,8 @@ interface ContactsState {
   save: (payload: ContactPayload, existing?: StoredContact) => Promise<StoredContact>;
   saveMany: (payloads: ContactPayload[], onProgress?: (n: number) => void) => Promise<number>;
   remove: (c: StoredContact) => Promise<void>;
+  /** Deletes each contact in turn; the ones that failed stay in the list and come back as ids. */
+  removeMany: (list: StoredContact[]) => Promise<{ deleted: number; failed: string[] }>;
   clear: () => void;
 }
 
@@ -66,6 +68,20 @@ export const useContacts = create<ContactsState>((set, get) => ({
       delete items[c.id];
       return { items };
     });
+  },
+  removeMany: async (list) => {
+    const failed: string[] = [];
+    let deleted = 0;
+    // one at a time: a cheap phone stays responsive and a failure costs one contact, not all
+    for (const c of list) {
+      try {
+        await get().remove(c);
+        deleted += 1;
+      } catch {
+        failed.push(c.id);
+      }
+    }
+    return { deleted, failed };
   },
   clear: () => set({ ...EMPTY }),
 }));
