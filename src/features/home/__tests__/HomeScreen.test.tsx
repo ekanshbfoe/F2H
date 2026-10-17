@@ -120,8 +120,9 @@ describe('HomeScreen', () => {
   it('keeps security and account on Settings, and locks from the round button', async () => {
     signIn('member');
     await renderWithProviders(<HomeScreen />);
-    // your initial in the top bar opens Settings
+    // your initial in the top bar opens your account; Account settings goes to Settings
     await fireEvent.press(screen.getByRole('button', { name: 'Your account, Asha' }));
+    await fireEvent.press(await screen.findByTestId('account-settings'));
     expect(screen.getByRole('tab', { name: 'Settings' })).toBeSelected();
     await waitFor(() =>
       expect(screen.getByRole('radio', { name: 'Lock after 1 min' })).toBeSelected(),

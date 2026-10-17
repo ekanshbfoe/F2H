@@ -36,6 +36,7 @@ import { CREDENTIALS_HREF } from '@/features/credentials/routes';
 import { useCredentials } from '@/features/credentials/store';
 import { DRIVE_HREF, FILES_HREF } from '@/features/files/routes';
 import { useFiles } from '@/features/files/store';
+import { AccountSheet } from '@/features/home/components/AccountSheet';
 import { lockNow } from '@/features/lock/api';
 import { useLock } from '@/features/lock/lock.store';
 import { DEFAULT_TIMEOUT_MS, TIMEOUT_OPTIONS } from '@/features/lock/model';
@@ -69,6 +70,7 @@ export function HomeScreen() {
   const hasPin = useLock((s) => s.state === 'unlocked');
   const [tab, setTab] = useState<Tab>('vault');
   const [pending, setPending] = useState<number | null>(null);
+  const [account, setAccount] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) return undefined;
@@ -199,7 +201,7 @@ export function HomeScreen() {
 
   const page = (key: Tab): ReactNode =>
     key === 'vault' ? (
-      <VaultPage pending={isAdmin ? pending : null} onAccount={() => show('settings')} />
+      <VaultPage pending={isAdmin ? pending : null} onAccount={() => setAccount(true)} />
     ) : key === 'family' ? (
       <FamilyPage pending={pending} />
     ) : (
@@ -262,6 +264,11 @@ export function HomeScreen() {
           testID="home-tabs"
         />
       </View>
+      <AccountSheet
+        open={account}
+        onClose={() => setAccount(false)}
+        onSettings={() => show('settings', { scroll: true })}
+      />
     </View>
   );
 }
