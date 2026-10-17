@@ -272,7 +272,7 @@ _Steps derived from spec 0004 acceptance criteria. `/check verify` runs these; `
 _Queued by the autonomous run of 2026-10-12. The command and server checks ran green; the Google and phone steps wait for the engineer._
 
 ## Before anything (Google Cloud console, once)
-- [ ] The OAuth client (type Web) lists the redirect URI `https://abkjryjrwvnutwmzbkex.supabase.co/functions/v1/drive-link-callback`
+- [ ] The OAuth client (type Web) lists the redirect URI `https://<project-ref>.supabase.co/functions/v1/drive-link-callback`
 - [ ] The Drive API is enabled for the project, and the consent screen asks only for `drive.file` and is published to **Production** (Testing drops refresh tokens after 7 days)
 
 ## UI / manual (Admin phone in Expo Go)

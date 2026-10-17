@@ -6,7 +6,7 @@ A private, zero trust family vault for four people: contacts (Call Directory and
 - Backend: Supabase (Postgres with row level security, Auth, Realtime, Edge Functions, Vault, pg_cron).
 - Storage: Google Drive, two accounts, encrypted blobs and a nightly encrypted snapshot.
 
-Version 0.1.0. What is built, and what still waits for a phone check, is in `docs/scope/scope.md`; every manual step left is in `final_testing_checklist.md`.
+Version 0.1.0. What is built, and what still waits for a phone check, is in `docs/scope/scope.md`.
 
 ## Run
 

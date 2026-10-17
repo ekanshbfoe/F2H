@@ -234,7 +234,7 @@ EAS preview and production profiles, Android push credentials, README with setup
 - [ ] Build the APK and install it (`npx eas-cli login`, `npm run eas:env`, `npx eas-cli build --profile preview --platform android`): in `final_testing_checklist.md` Part 2
 - [ ] Android push credentials (FCM V1 key through `npx eas-cli credentials`) and a push received outside Expo Go
 - [ ] Tag `v0.1.0` once the checklist passes
-Code in `eas.json`, `app.json`, `scripts/push-eas-env.ts`, `README.md`, `final_testing_checklist.md`
+Code in `eas.json`, `app.json`, `scripts/push-eas-env.ts`, `README.md`, `SETUP.md`
 
 ## Deferred
 Out of scope for the current build pass, kept so the plan stays honest.
