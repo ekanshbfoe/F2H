@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfirmHost, dismissConfirm } from '@/components/ui';
 import { ApprovalSheet } from '@/features/admin/approval/ApprovalSheet';
 import { ApprovalWatcher } from '@/features/admin/approval/ApprovalWatcher';
+import { usePushTokenSync } from '@/features/device/push-sync';
 import { LockRuntime } from '@/features/lock/LockRuntime';
 import { useLock } from '@/features/lock/lock.store';
 import { clearScratch } from '@/services/file-adapter';
@@ -35,9 +36,13 @@ const FADE_IN = [
   '(lock)/wiped',
 ] as const;
 
-/** Opens the screen a tapped push names. Rendered inside the providers so the router exists. */
+/**
+ * Opens the screen a tapped push names and keeps this phone's push address current. Rendered
+ * inside the providers so the router exists.
+ */
 function PushNavigation() {
   usePushNavigation();
+  usePushTokenSync();
   return null;
 }
 
