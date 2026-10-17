@@ -41,16 +41,23 @@ export function loadNotifications(): NotificationsModule | null {
   return notifications;
 }
 
+/** The Android channel every F2H push uses; HIGH importance lets it drop down over other apps. */
+export const PUSH_CHANNEL = 'default';
+
 function installForegroundHandler(mod: NotificationsModule) {
   if (handlerInstalled) return;
   handlerInstalled = true;
   mod.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async (notification) => {
+      // with F2H open, the approval sheet already pops up for a new sign in: no second banner
+      const inApp = routeFor(notification.request.content.data) === SCREEN_ROUTES.approvals;
+      return {
+        shouldShowBanner: !inApp,
+        shouldShowList: true,
+        shouldPlaySound: !inApp,
+        shouldSetBadge: false,
+      };
+    },
   });
 }
 
@@ -70,7 +77,7 @@ export async function getPushToken(): Promise<string | null> {
   try {
     installForegroundHandler(mod);
     if (Platform.OS === 'android') {
-      await mod.setNotificationChannelAsync('default', {
+      await mod.setNotificationChannelAsync(PUSH_CHANNEL, {
         name: 'F2H',
         importance: mod.AndroidImportance.HIGH,
       });
@@ -100,14 +107,18 @@ export function usePushNavigation(): void {
     if (!mod) return undefined;
     installForegroundHandler(mod);
     let active = true;
+    // the tap that opened the app, once: it stays stored until cleared, and without the clear
+    // every later start would open the same screen again
     mod
       .getLastNotificationResponseAsync()
       .then((response) => {
         const route = response ? routeFor(response.notification.request.content.data) : null;
+        if (response) mod.clearLastNotificationResponse();
         if (active && route) router.push(route);
       })
       .catch(() => undefined);
     const sub = mod.addNotificationResponseReceivedListener((response) => {
+      mod.clearLastNotificationResponse();
       const route = routeFor(response.notification.request.content.data);
       if (route) router.push(route);
     });
