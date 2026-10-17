@@ -1,10 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
-import { Badge, Button, Callout, Card, Row, Screen, Text } from '@/components/ui';
+import { Avatar, Button, Callout, Card, Choice, Screen, Text } from '@/components/ui';
 import { formatPhone, sortContacts } from '@/features/contacts/model';
-import { SecretRow, ValueRow } from '@/features/credentials/components';
+import { categoryIcon, SecretRow, ValueRow } from '@/features/credentials/components';
 import { hostOf, toSections } from '@/features/credentials/model';
 import { formatSize, sortFiles } from '@/features/files/model';
 import { useScreenCaptureBlock } from '@/features/lock/hooks';
@@ -17,7 +18,7 @@ import { openMemberVault, OversightError, type MemberVault } from '../oversight'
 type Tab = 'contacts' | 'credentials' | 'files';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'contacts', label: 'Contacts' },
-  { key: 'credentials', label: 'Credentials' },
+  { key: 'credentials', label: 'Passwords' },
   { key: 'files', label: 'Files' },
 ];
 
@@ -76,19 +77,56 @@ export function OversightScreen() {
     void copySecret(value).then(() => setCopied(label));
   };
 
+  const count = (key: Tab) =>
+    !data
+      ? 0
+      : key === 'contacts'
+        ? data.contacts.length
+        : key === 'credentials'
+          ? data.credentials.length
+          : data.files.length;
+
   return (
     <Screen
       title={name ? `${name}'s vault` : 'Member vault'}
-      subtitle="Read only. The member was told you opened it, and it is in their Activity log."
       footer={
         <Button variant="secondary" onPress={() => router.back()} testID="oversight-close">
           Close
         </Button>
       }
     >
-      <View style={{ flexDirection: 'row', gap: t.spacing.sm }}>
-        <Badge tone="warning">Logged</Badge>
-        <Badge tone="neutral">Read only</Badge>
+      {/* the one thing never to forget on this screen: it is someone else's, and they know */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: t.spacing.md,
+          padding: t.spacing.md,
+          borderRadius: t.radii.lg,
+          backgroundColor: t.colors.skyTint,
+        }}
+        testID="oversight-banner"
+      >
+        <View
+          style={{
+            width: t.sizes.touch,
+            height: t.sizes.touch,
+            borderRadius: t.radii.pill,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: t.colors.surface,
+          }}
+        >
+          <Ionicons name="eye-outline" size={t.sizes.iconLg} color={t.colors.sky} />
+        </View>
+        <View style={{ flex: 1, gap: t.spacing.xxs }}>
+          <Text variant="label" color="ink">
+            Read only
+          </Text>
+          <Text variant="caption" color="muted">
+            {`${name ?? 'The member'} was told you opened this, and it is in their Activity log.`}
+          </Text>
+        </View>
       </View>
 
       {vault === 'loading' ? (
@@ -102,72 +140,79 @@ export function OversightScreen() {
         <Callout tone="danger">{vault.error}</Callout>
       ) : (
         <>
-          <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: t.spacing.sm }}>
-            {TABS.map((x) => {
-              const selected = x.key === tab;
-              const count =
-                x.key === 'contacts'
-                  ? vault.contacts.length
-                  : x.key === 'credentials'
-                    ? vault.credentials.length
-                    : vault.files.length;
-              return (
-                <Pressable
-                  key={x.key}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected }}
-                  onPress={() => setTab(x.key)}
-                  testID={`oversight-tab-${x.key}`}
-                  style={{
-                    flex: 1,
-                    minHeight: t.sizes.touch,
-                    borderRadius: t.radii.pill,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: selected ? t.colors.primary : t.colors.surface,
-                    borderWidth: t.sizes.hairline,
-                    borderColor: selected ? t.colors.primary : t.colors.line,
-                  }}
-                >
-                  <Text variant="caption" color={selected ? 'onPrimary' : 'ink'}>
-                    {`${x.label} · ${count}`}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <Choice
+            options={TABS.map((x) => ({
+              value: x.key,
+              label: `${x.label} ${count(x.key)}`,
+              accessibilityLabel: `${x.label}, ${count(x.key)}`,
+            }))}
+            value={tab}
+            onChange={setTab}
+            accessibilityLabel="Show"
+            testID="oversight-tabs"
+          />
           {vault.skipped > 0 ? (
             <Callout>{`${vault.skipped} item${vault.skipped === 1 ? '' : 's'} could not be opened.`}</Callout>
           ) : null}
 
           {tab === 'contacts' ? (
             contacts.length === 0 ? (
-              <Text variant="body" color="muted">
-                No contacts.
-              </Text>
+              <Empty icon="people-outline" text="No contacts." />
             ) : (
-              contacts.map((c) => (
-                <Card key={c.id} style={{ gap: t.spacing.xs }}>
-                  <Text variant="label">{c.payload.name}</Text>
-                  {c.payload.phones.map((p, i) => (
-                    <Row key={`${i}-${p.number}`} label={p.label} value={formatPhone(p.number)} />
-                  ))}
-                </Card>
-              ))
+              <Card style={{ paddingVertical: t.spacing.xs }}>
+                {contacts.map((c, i) => (
+                  <View
+                    key={c.id}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: t.spacing.md,
+                      paddingVertical: t.spacing.sm,
+                      borderTopWidth: i === 0 ? 0 : t.sizes.hairline,
+                      borderTopColor: t.colors.line,
+                    }}
+                  >
+                    <Avatar name={c.payload.name} />
+                    <View style={{ flex: 1, gap: t.spacing.xxs }}>
+                      <Text variant="label" color="ink" numberOfLines={1}>
+                        {c.payload.name}
+                      </Text>
+                      {c.payload.phones.map((p, j) => (
+                        <Pressable
+                          key={`${j}-${p.number}`}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Copy ${p.label} number`}
+                          onPress={() => copy('Number', p.number)}
+                          hitSlop={t.spacing.xs}
+                        >
+                          <Text variant="caption" color="muted">
+                            {`${formatPhone(p.number)} · ${p.label}`}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                ))}
+              </Card>
             )
           ) : null}
 
           {tab === 'credentials' ? (
             sections.length === 0 ? (
-              <Text variant="body" color="muted">
-                No credentials.
-              </Text>
+              <Empty icon="key-outline" text="No passwords." />
             ) : (
               sections.map((s) => (
                 <View key={s.category} style={{ gap: t.spacing.sm }}>
-                  <Text variant="label" color="primary">
-                    {s.title}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs }}>
+                    <Ionicons
+                      name={categoryIcon(s.category)}
+                      size={t.sizes.icon}
+                      color={t.colors.primary}
+                    />
+                    <Text variant="label" color="primary" accessibilityRole="header">
+                      {s.title}
+                    </Text>
+                  </View>
                   {s.data.map((c) => (
                     <Card key={c.id} style={{ gap: t.spacing.sm }}>
                       <Text variant="label">{c.payload.title}</Text>
@@ -222,18 +267,48 @@ export function OversightScreen() {
 
           {tab === 'files' ? (
             files.length === 0 ? (
-              <Text variant="body" color="muted">
-                No files.
-              </Text>
+              <Empty icon="documents-outline" text="No files." />
             ) : (
-              files.map((f) => (
-                <Card key={f.id} style={{ gap: t.spacing.xxs }}>
-                  <Text variant="label">{f.payload.name}</Text>
-                  <Text variant="caption" color="muted">
-                    {`${formatSize(f.payload.size)} · ${new Date(f.payload.added_at).toLocaleDateString()}`}
-                  </Text>
+              <>
+                <Card style={{ paddingVertical: t.spacing.xs }}>
+                  {files.map((f, i) => (
+                    <View
+                      key={f.id}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: t.spacing.md,
+                        paddingVertical: t.spacing.sm,
+                        borderTopWidth: i === 0 ? 0 : t.sizes.hairline,
+                        borderTopColor: t.colors.line,
+                      }}
+                    >
+                      <Ionicons
+                        name={
+                          f.payload.mime.startsWith('image/')
+                            ? 'image-outline'
+                            : f.payload.mime === 'application/pdf'
+                              ? 'document-text-outline'
+                              : 'document-outline'
+                        }
+                        size={t.sizes.iconLg}
+                        color={t.colors.primary}
+                      />
+                      <View style={{ flex: 1, gap: t.spacing.xxs }}>
+                        <Text variant="label" color="ink" numberOfLines={1}>
+                          {f.payload.name}
+                        </Text>
+                        <Text variant="caption" color="muted">
+                          {`${formatSize(f.payload.size)} · ${new Date(f.payload.added_at).toLocaleDateString()}`}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
                 </Card>
-              ))
+                <Text variant="caption" color="muted" align="center">
+                  Files are listed here only; they open on the member&apos;s own phone.
+                </Text>
+              </>
             )
           ) : null}
 
@@ -243,5 +318,20 @@ export function OversightScreen() {
         </>
       )}
     </Screen>
+  );
+}
+
+function Empty({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
+  const t = useTheme();
+  return (
+    <Card
+      dashed
+      style={{ alignItems: 'center', gap: t.spacing.sm, paddingVertical: t.spacing.xxl }}
+    >
+      <Ionicons name={icon} size={t.sizes.hero / 3} color={t.colors.sky} />
+      <Text variant="body" color="muted" align="center">
+        {text}
+      </Text>
+    </Card>
   );
 }
