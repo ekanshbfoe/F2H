@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import Swipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { interpolate, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 
-import { Text } from '@/components/ui';
+import { Text } from './Text';
 import { useTheme } from '@/theme';
 
 /** Width of the red delete panel the row slides off. */

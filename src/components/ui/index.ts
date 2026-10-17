@@ -21,6 +21,7 @@ export type { RowProps } from './Row';
 export { Sheet } from './Sheet';
 export type { SheetProps } from './Sheet';
 export { Surface } from './Surface';
+export { SwipeToDelete } from './SwipeToDelete';
 export type { SurfaceProps } from './Surface';
 export { Text } from './Text';
 export type { TextProps, TextVariant } from './Text';

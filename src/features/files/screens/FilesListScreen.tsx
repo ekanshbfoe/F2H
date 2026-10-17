@@ -14,7 +14,16 @@ import {
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge, Button, Callout, Card, Text, TextField, confirm } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Callout,
+  Card,
+  SwipeToDelete,
+  Text,
+  TextField,
+  confirm,
+} from '@/components/ui';
 import { whileAway } from '@/features/lock/away';
 import { useLock } from '@/features/lock/lock.store';
 import { useSession } from '@/state/session.store';
@@ -23,7 +32,6 @@ import { useSteadyRouter } from '@/hooks/useSteadyRouter';
 
 import { FilesError } from '../api';
 import { FileSheet } from '../components/FileSheet';
-import { SwipeToDelete } from '../components/SwipeToDelete';
 import { formatSize, matchesSearch, sortFiles, type StoredFile } from '../model';
 import { useFiles } from '../store';
 
