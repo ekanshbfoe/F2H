@@ -38,7 +38,7 @@ describe('sendPush', () => {
       ),
     );
     const tickets = await sendPush(
-      ['ExponentPushToken[aaa]', 'bad', 'ExponentPushToken[bbb]'],
+      ['ExponentPushToken[aaa]', 'bad', 'ExpoPushToken[bbb]'],
       message,
     );
     expect(tickets).toEqual([
@@ -49,8 +49,13 @@ describe('sendPush', () => {
     expect(String(url)).toBe('https://exp.host/--/api/v2/push/send');
     expect(init?.method).toBe('POST');
     const body = JSON.parse(String(init?.body)) as { to: string; title: string; data: unknown }[];
-    expect(body.map((m) => m.to)).toEqual(['ExponentPushToken[aaa]', 'ExponentPushToken[bbb]']);
-    expect(body[0]).toMatchObject({ title: 'Approval needed', data: { deviceId: 'd1' } });
+    expect(body.map((m) => m.to)).toEqual(['ExponentPushToken[aaa]', 'ExpoPushToken[bbb]']);
+    expect(body[0]).toMatchObject({
+      title: 'Approval needed',
+      data: { deviceId: 'd1' },
+      channelId: 'default',
+      priority: 'high',
+    });
   });
 
   it('returns an empty list on a non 2xx response or a network error instead of throwing', async () => {
