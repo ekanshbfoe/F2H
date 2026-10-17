@@ -3,7 +3,12 @@ import type { StoredFile } from '../model';
 
 const mockDelete = jest.fn();
 
-jest.mock('@/services/file-adapter', () => ({ clearScratch: jest.fn() }));
+const mockRemoveFile = jest.fn();
+jest.mock('@/services/file-adapter', () => ({
+  clearScratch: jest.fn(),
+  fileExists: () => true,
+  removeFile: (uri: string) => mockRemoveFile(uri),
+}));
 jest.mock('../api', () => ({
   listFiles: jest.fn(),
   uploadFile: jest.fn(),
@@ -49,5 +54,15 @@ describe('removeMany', () => {
     const r = await useFiles.getState().removeMany([file('1'), file('2'), file('3')]);
     expect(r).toEqual({ deleted: 2, failed: ['2'] });
     expect(Object.keys(useFiles.getState().items)).toEqual(['2']);
+  });
+});
+
+describe('remove', () => {
+  it('deletes the decrypted copy with the file', async () => {
+    mockDelete.mockResolvedValue(undefined);
+    useFiles.setState({ opened: { '1': 'file:///cache/f2h-open/1.pdf' } });
+    await useFiles.getState().remove(file('1'));
+    expect(mockRemoveFile).toHaveBeenCalledWith('file:///cache/f2h-open/1.pdf');
+    expect(useFiles.getState().opened['1']).toBeUndefined();
   });
 });

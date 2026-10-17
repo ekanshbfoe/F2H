@@ -86,6 +86,9 @@ export const useFiles = create<FilesState>((set, get) => ({
   },
   remove: async (item) => {
     await deleteFile(item.id);
+    // the decrypted copy goes with it, not at the next lock
+    const copy = get().opened[item.id];
+    if (copy) removeFile(copy);
     set((s) => {
       const items = { ...s.items };
       delete items[item.id];
