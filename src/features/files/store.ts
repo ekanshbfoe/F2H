@@ -49,6 +49,12 @@ const EMPTY = {
   opened: {},
 };
 
+/**
+ * Downloads under way, by item id: the preview and an "Open with" tapped while it loads share
+ * one download, instead of two writing the same scratch files over each other.
+ */
+const inFlight = new Map<string, Promise<string>>();
+
 export const useFiles = create<FilesState>((set, get) => ({
   ...EMPTY,
   load: async () => {
@@ -97,23 +103,30 @@ export const useFiles = create<FilesState>((set, get) => ({
       return { items, opened };
     });
   },
-  openCopy: async (item) => {
+  openCopy: (item) => {
     const known = get().opened[item.id];
-    if (known && fileExists(known)) return known;
+    if (known && fileExists(known)) return Promise.resolve(known);
+    const running = inFlight.get(item.id);
+    if (running) return running;
     const generation = useLock.getState().generation;
-    const uri = await downloadFile(item);
-    if (useLock.getState().generation !== generation) {
-      removeFile(uri);
-      throw new Error('locked');
-    }
-    set((s) => ({
-      // two files with the same name share a path; the older entry no longer holds its file
-      opened: {
-        ...Object.fromEntries(Object.entries(s.opened).filter(([, u]) => u !== uri)),
-        [item.id]: uri,
-      },
-    }));
-    return uri;
+    const task = downloadFile(item)
+      .then((uri) => {
+        if (useLock.getState().generation !== generation) {
+          removeFile(uri);
+          throw new Error('locked');
+        }
+        set((s) => ({
+          // two files with the same name share a path; the older entry no longer holds its file
+          opened: {
+            ...Object.fromEntries(Object.entries(s.opened).filter(([, u]) => u !== uri)),
+            [item.id]: uri,
+          },
+        }));
+        return uri;
+      })
+      .finally(() => inFlight.delete(item.id));
+    inFlight.set(item.id, task);
+    return task;
   },
   removeMany: async (list) => {
     const failed: string[] = [];

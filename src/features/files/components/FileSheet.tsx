@@ -138,7 +138,9 @@ function FileViewer({
     return () => {
       live = false;
     };
-  }, [file, kind, openCopy, loading]);
+    // the id, not the object: a list refresh hands over a new object for the same file
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file.id, kind, openCopy, loading]);
 
   const pdfFailed = useCallback(
     () =>

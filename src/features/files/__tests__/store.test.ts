@@ -2,6 +2,7 @@ import { useFiles } from '../store';
 import type { StoredFile } from '../model';
 
 const mockDelete = jest.fn();
+const mockDownload = jest.fn();
 
 const mockRemoveFile = jest.fn();
 jest.mock('@/services/file-adapter', () => ({
@@ -13,6 +14,7 @@ jest.mock('../api', () => ({
   listFiles: jest.fn(),
   uploadFile: jest.fn(),
   deleteFile: (id: string) => mockDelete(id),
+  downloadFile: (f: StoredFile) => mockDownload(f),
 }));
 
 const file = (id: string): StoredFile => ({
@@ -64,5 +66,19 @@ describe('remove', () => {
     await useFiles.getState().remove(file('1'));
     expect(mockRemoveFile).toHaveBeenCalledWith('file:///cache/f2h-open/1.pdf');
     expect(useFiles.getState().opened['1']).toBeUndefined();
+  });
+});
+
+describe('openCopy', () => {
+  it('shares one download between two opens of the same file', async () => {
+    let finish: (uri: string) => void = () => undefined;
+    mockDownload.mockReturnValueOnce(new Promise<string>((r) => (finish = r)));
+    useFiles.setState({ opened: {} });
+    const a = useFiles.getState().openCopy(file('1'));
+    const b = useFiles.getState().openCopy(file('1'));
+    finish('file:///cache/f2h-open/1.pdf');
+    await expect(a).resolves.toBe('file:///cache/f2h-open/1.pdf');
+    await expect(b).resolves.toBe('file:///cache/f2h-open/1.pdf');
+    expect(mockDownload).toHaveBeenCalledTimes(1);
   });
 });
