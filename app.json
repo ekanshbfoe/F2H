@@ -8,11 +8,9 @@
     "scheme": "f2h",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.ekansh.f2h"
+      "supportsTablet": false
     },
     "android": {
-      "package": "com.ekansh.f2h",
       "adaptiveIcon": {
         "backgroundColor": "#3575DF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -55,10 +53,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "eebcfc5e-2c28-4bcc-886f-3cf61fbb46d4"
-      }
+      "router": {}
     }
   }
 }
