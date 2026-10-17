@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge, Button, Callout, Card, Text, TextField, confirm } from '@/components/ui';
 import { whileAway } from '@/features/lock/away';
+import { useLock } from '@/features/lock/lock.store';
 import { useSession } from '@/state/session.store';
 import { useTheme } from '@/theme';
 import { useSteadyRouter } from '@/hooks/useSteadyRouter';
@@ -65,6 +66,15 @@ export function FilesListScreen() {
   const [picked, setPicked] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
   const picking = picked.length > 0;
+
+  // a lock empties the list; ticks for files no longer shown would be stale
+  useEffect(
+    () =>
+      useLock.subscribe((s, prev) => {
+        if (s.generation !== prev.generation) setPicked([]);
+      }),
+    [],
+  );
 
   // the system back leaves picking before it leaves the screen
   useEffect(() => {

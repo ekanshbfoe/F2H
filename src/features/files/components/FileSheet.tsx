@@ -49,7 +49,7 @@ export function FileSheet({ file, state, onClose }: FileSheetProps) {
       title={shown?.payload.name ?? 'File'}
       testID="file-sheet"
     >
-      {shown ? <FileViewer key={shown.id} file={shown} state={state} onClose={onClose} /> : null}
+      {shown ? <FileViewer key={shown.id} file={shown} state={state} /> : null}
     </Sheet>
   );
 }
@@ -94,15 +94,7 @@ const SHOW_LABEL: Record<Exclude<PreviewKind, 'other'>, string> = {
   audio: 'Play',
 };
 
-function FileViewer({
-  file,
-  state,
-  onClose,
-}: {
-  file: StoredFile;
-  state?: BlobState;
-  onClose: () => void;
-}) {
+function FileViewer({ file, state }: { file: StoredFile; state?: BlobState }) {
   const t = useTheme();
   useScreenCaptureBlock('f2h:file');
   const openCopy = useFiles((s) => s.openCopy);
@@ -174,12 +166,12 @@ function FileViewer({
     });
     if (!ok) return;
     setBusy('delete');
-    remove(file)
-      .then(onClose)
-      .catch(() => {
-        setBusy(null);
-        setMessage('Could not delete it. Check your connection.');
-      });
+    // no explicit close: the sheet closes because this file leaves the list, and a file opened
+    // in the meantime stays open
+    remove(file).catch(() => {
+      setBusy(null);
+      setMessage('Could not delete it. Check your connection.');
+    });
   };
 
   const rows: BloomRow[] = [
