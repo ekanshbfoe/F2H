@@ -16,6 +16,8 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { base64urlnopad } from '@scure/base';
 
 const KDF = { N: 2 ** 7, r: 8, p: 1, dkLen: 32 } as const;
+// Mirrors PASSWORD_MIN in src/features/auth/model.ts: the login form refuses anything shorter.
+const PASSWORD_MIN = 10;
 
 function loadEnv(path: string) {
   try {
@@ -46,6 +48,8 @@ async function main() {
   if (!rawEmail || !secretOrFlag)
     fail('usage: bootstrap-admin <email> <authSecret> | <email> --password <pw>');
   const email = rawEmail.trim().toLowerCase();
+  if (secretOrFlag === '--password' && (maybePassword ?? '').length < PASSWORD_MIN)
+    fail(`password must be at least ${PASSWORD_MIN} characters, the app refuses shorter ones`);
   const authSecret =
     secretOrFlag === '--password'
       ? deriveAuthSecret(email, maybePassword ?? fail('missing password after --password'))
